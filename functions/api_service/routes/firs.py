@@ -12,6 +12,7 @@ from utils.response import (
     success, created, not_found, bad_request, paginated, method_not_allowed,
 )
 from utils.validators import validate_fir
+from utils.auth import ROLES, check_roles, check_any_authenticated
 
 TABLE = "FIR"
 
@@ -21,6 +22,10 @@ def handle(request, path_parts):
     db = DataStore(request)
 
     if request.method == "GET":
+        # Any authenticated user can read FIRs
+        auth_error = check_any_authenticated(request)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return list_firs(request, db)
         elif len(path_parts) == 3:
@@ -30,10 +35,18 @@ def handle(request, path_parts):
                 return get_fir(db, path_parts[2])
 
     elif request.method == "POST":
+        # Officers and above can create FIRs
+        auth_error = check_roles(request, ROLES.OFFICER, ROLES.SHO, ROLES.ADMIN)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return create_fir(request, db)
 
     elif request.method == "PUT":
+        # Only SHO and Admin can update FIRs (e.g. change status)
+        auth_error = check_roles(request, ROLES.SHO, ROLES.ADMIN)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 3 and path_parts[2] != "search":
             return update_fir(request, db, path_parts[2])
 

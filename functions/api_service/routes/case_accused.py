@@ -9,6 +9,7 @@ DELETE /api/case-accused/<id>  — Remove a link
 from utils.db import DataStore
 from utils.response import success, created, not_found, bad_request, paginated, no_content
 from utils.validators import validate_case_accused
+from utils.auth import ROLES, check_roles, check_any_authenticated
 
 TABLE = "Case_Accused"
 
@@ -18,16 +19,26 @@ def handle(request, path_parts):
     db = DataStore(request)
 
     if request.method == "GET":
+        auth_error = check_any_authenticated(request)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return list_links(request, db)
         elif len(path_parts) == 3:
             return get_link(db, path_parts[2])
 
     elif request.method == "POST":
+        auth_error = check_roles(request, ROLES.OFFICER, ROLES.SHO, ROLES.ADMIN)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return create_link(request, db)
 
     elif request.method == "DELETE":
+        # Only SHO and Admin can unlink an accused from a case
+        auth_error = check_roles(request, ROLES.SHO, ROLES.ADMIN)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 3:
             return delete_link(db, path_parts[2])
 

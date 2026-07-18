@@ -7,10 +7,18 @@ GET /api/dashboard/district-summary — Per-district crime breakdown
 
 from utils.db import DataStore
 from utils.response import success, bad_request, server_error
+from utils.auth import ROLES, check_roles
 
 
 def handle(request, path_parts):
     """Route dispatcher for /api/dashboard endpoints."""
+    # Dashboard analytics are for SCRB Analysts, SHOs, and Admins only
+    auth_error = check_roles(
+        request, ROLES.SCRB_ANALYST, ROLES.SHO, ROLES.ADMIN
+    )
+    if auth_error:
+        return auth_error
+
     db = DataStore(request)
 
     if request.method != "GET":

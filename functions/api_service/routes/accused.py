@@ -9,6 +9,7 @@ PUT  /api/accused/<id>  — Update accused details
 from utils.db import DataStore
 from utils.response import success, created, not_found, bad_request, paginated
 from utils.validators import validate_accused
+from utils.auth import ROLES, check_roles, check_any_authenticated
 
 TABLE = "Accused"
 
@@ -18,16 +19,25 @@ def handle(request, path_parts):
     db = DataStore(request)
 
     if request.method == "GET":
+        auth_error = check_any_authenticated(request)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return list_accused(request, db)
         elif len(path_parts) == 3:
             return get_accused(db, path_parts[2])
 
     elif request.method == "POST":
+        auth_error = check_roles(request, ROLES.OFFICER, ROLES.SHO, ROLES.ADMIN)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return create_accused(request, db)
 
     elif request.method == "PUT":
+        auth_error = check_roles(request, ROLES.SHO, ROLES.ADMIN)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 3:
             return update_accused(request, db, path_parts[2])
 

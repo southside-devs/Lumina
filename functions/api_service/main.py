@@ -13,6 +13,7 @@ from flask import Request, make_response, jsonify
 
 from routes import districts, stations, firs, accused, victims
 from routes import case_accused, risk_scores, dashboard
+from routes import graph, hotspots, uploads
 
 # ── Logging ─────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -32,6 +33,11 @@ ROUTES = {
     "case-accused": case_accused,
     "risk-scores":  risk_scores,
     "dashboard":    dashboard,
+    # ── AppSail Proxy Routes ──────────────────────────────
+    "graph":        graph,      # → Neo4j AppSail container
+    "hotspots":     hotspots,   # → ML pipeline AppSail container
+    # ── File Uploads ──────────────────────────────────────
+    "uploads":      uploads,    # → Catalyst Stratus
 }
 
 

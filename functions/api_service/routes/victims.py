@@ -8,6 +8,7 @@ POST /api/victims       — Create a new victim
 from utils.db import DataStore
 from utils.response import success, created, not_found, bad_request, paginated
 from utils.validators import validate_victim
+from utils.auth import ROLES, check_roles, check_any_authenticated
 
 TABLE = "Victim"
 
@@ -17,12 +18,18 @@ def handle(request, path_parts):
     db = DataStore(request)
 
     if request.method == "GET":
+        auth_error = check_any_authenticated(request)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return list_victims(request, db)
         elif len(path_parts) == 3:
             return get_victim(db, path_parts[2])
 
     elif request.method == "POST":
+        auth_error = check_roles(request, ROLES.OFFICER, ROLES.SHO, ROLES.ADMIN)
+        if auth_error:
+            return auth_error
         if len(path_parts) == 2:
             return create_victim(request, db)
 
