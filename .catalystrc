@@ -1,0 +1,26 @@
+{
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "46634000000013049",
+      "name": "Lumina",
+      "domain": {
+        "id": "50044146598",
+        "name": "lumina-60078984780.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60078984780",
+          "name": "Development",
+          "type": 3
+        }
+      ]
+    }
+  ]
+}

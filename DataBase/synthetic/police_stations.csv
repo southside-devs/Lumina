@@ -1,0 +1,210 @@
+ID,District_ID,Name,Jurisdiction_Area,Latitude,Longitude
+1,1,Cubbon Park,Cubbon Park Jurisdiction,12.948995,77.67581
+2,1,Koramangala,Koramangala Jurisdiction,13.013401,77.612376
+3,1,HSR Layout,HSR Layout Jurisdiction,12.909621,77.532617
+4,1,Whitefield,Whitefield Jurisdiction,12.891975,77.660578
+5,1,Indiranagar,Indiranagar Jurisdiction,12.989819,77.632091
+6,1,Jayanagar,Jayanagar Jurisdiction,12.885219,77.679268
+7,1,Basavanagudi,Basavanagudi Jurisdiction,13.0315,77.542769
+8,1,Yeshwanthpur,Yeshwanthpur Jurisdiction,12.914271,77.537556
+9,1,Rajajinagar,Rajajinagar Jurisdiction,12.936328,77.599061
+10,1,Vijayanagar,Vijayanagar Jurisdiction,12.959338,77.556984
+11,1,Marathahalli,Marathahalli Jurisdiction,12.991754,77.529644
+12,1,Electronic City,Electronic City Jurisdiction,12.934149,77.570521
+13,1,Yelahanka,Yelahanka Jurisdiction,12.963685,77.645983
+14,1,Hebbal,Hebbal Jurisdiction,12.917487,77.597165
+15,1,Peenya,Peenya Jurisdiction,12.988251,77.512879
+16,1,K.R. Puram,K.R. Puram Jurisdiction,12.990977,77.535235
+17,1,Mahadevapura,Mahadevapura Jurisdiction,12.893231,77.67548
+18,1,Bommanahalli,Bommanahalli Jurisdiction,13.055498,77.650167
+19,1,Banashankari,Banashankari Jurisdiction,12.936395,77.522108
+20,1,Malleswaram,Malleswaram Jurisdiction,13.004795,77.583817
+21,2,Devanahalli,Devanahalli Jurisdiction,13.157599,77.574131
+22,2,Doddaballapur,Doddaballapur Jurisdiction,13.141806,77.648751
+23,2,Hosakote,Hosakote Jurisdiction,13.182237,77.604283
+24,2,Nelamangala,Nelamangala Jurisdiction,13.191774,77.578616
+25,2,Anekal,Anekal Jurisdiction,13.234116,77.518217
+26,2,Sarjapur,Sarjapur Jurisdiction,13.31031,77.624573
+27,2,Bidadi,Bidadi Jurisdiction,13.304889,77.64614
+28,3,Nazarbad,Nazarbad Jurisdiction,12.31344,76.715413
+29,3,Devaraja,Devaraja Jurisdiction,12.221655,76.584622
+30,3,K.R. Nagar,K.R. Nagar Jurisdiction,12.213859,76.607928
+31,3,Hunsur,Hunsur Jurisdiction,12.275742,76.598202
+32,3,T. Narsipur,T. Narsipur Jurisdiction,12.355032,76.61359
+33,3,Nanjangud,Nanjangud Jurisdiction,12.256329,76.647093
+34,3,Periyapatna,Periyapatna Jurisdiction,12.231102,76.69385
+35,3,H.D. Kote,H.D. Kote Jurisdiction,12.219142,76.727127
+36,4,Mangaluru North,Mangaluru North Jurisdiction,12.963153,74.801715
+37,4,Mangaluru South,Mangaluru South Jurisdiction,12.825005,74.91284
+38,4,Surathkal,Surathkal Jurisdiction,12.951372,74.897263
+39,4,Bantwal,Bantwal Jurisdiction,12.962978,74.779251
+40,4,Puttur,Puttur Jurisdiction,12.888598,74.786787
+41,4,Sullia,Sullia Jurisdiction,12.979524,74.878216
+42,4,Belthangady,Belthangady Jurisdiction,12.883631,74.777362
+43,4,Kadaba,Kadaba Jurisdiction,12.880043,74.824501
+44,5,Hubballi Old,Hubballi Old Jurisdiction,15.40607,75.148785
+45,5,Hubballi New,Hubballi New Jurisdiction,15.434468,75.118994
+46,5,Gokul Road,Gokul Road Jurisdiction,15.296158,75.162422
+47,5,Vidyanagar,Vidyanagar Jurisdiction,15.411688,75.135041
+48,5,Keshwapur,Keshwapur Jurisdiction,15.413523,75.122882
+49,5,Dharwad City,Dharwad City Jurisdiction,15.368796,75.110944
+50,6,Belagavi City,Belagavi City Jurisdiction,15.76419,74.42705
+51,6,Belagavi Rural,Belagavi Rural Jurisdiction,15.765273,74.522278
+52,6,Gokak,Gokak Jurisdiction,15.816251,74.499244
+53,6,Athani,Athani Jurisdiction,15.923135,74.452527
+54,6,Chikkodi,Chikkodi Jurisdiction,15.833553,74.543745
+55,6,Ramdurg,Ramdurg Jurisdiction,15.800835,74.42148
+56,6,Khanapur,Khanapur Jurisdiction,15.811817,74.436659
+57,6,Bailhongal,Bailhongal Jurisdiction,15.927123,74.553217
+58,6,Saundatti,Saundatti Jurisdiction,15.873737,74.56463
+59,7,Kalaburagi City,Kalaburagi City Jurisdiction,17.384416,76.777826
+60,7,Kalaburagi Rural,Kalaburagi Rural Jurisdiction,17.400431,76.841389
+61,7,Aland,Aland Jurisdiction,17.385095,76.905668
+62,7,Afzalpur,Afzalpur Jurisdiction,17.296908,76.764039
+63,7,Chincholi,Chincholi Jurisdiction,17.280679,76.821166
+64,7,Sedam,Sedam Jurisdiction,17.387,76.899297
+65,7,Jewargi,Jewargi Jurisdiction,17.240863,76.836236
+66,8,Ballari City,Ballari City Jurisdiction,15.124519,76.871329
+67,8,Ballari Rural,Ballari Rural Jurisdiction,15.070907,76.892141
+68,8,Hospet,Hospet Jurisdiction,15.219204,76.889545
+69,8,Sandur,Sandur Jurisdiction,15.142786,76.95798
+70,8,Siruguppa,Siruguppa Jurisdiction,15.114829,77.006406
+71,8,Kudligi,Kudligi Jurisdiction,15.222724,76.876676
+72,9,Tumakuru City,Tumakuru City Jurisdiction,13.337404,77.081422
+73,9,Tumakuru Rural,Tumakuru Rural Jurisdiction,13.299133,77.033856
+74,9,Tiptur,Tiptur Jurisdiction,13.357641,77.117783
+75,9,Turuvekere,Turuvekere Jurisdiction,13.257085,77.077416
+76,9,Kunigal,Kunigal Jurisdiction,13.411461,77.070374
+77,9,Madhugiri,Madhugiri Jurisdiction,13.273917,77.1154
+78,9,Sira,Sira Jurisdiction,13.425405,77.070823
+79,9,Gubbi,Gubbi Jurisdiction,13.368915,77.164439
+80,10,Shivamogga City,Shivamogga City Jurisdiction,13.882627,75.60922
+81,10,Shivamogga Rural,Shivamogga Rural Jurisdiction,13.906077,75.591939
+82,10,Bhadravathi,Bhadravathi Jurisdiction,13.953959,75.574546
+83,10,Sagar,Sagar Jurisdiction,13.856078,75.628515
+84,10,Shikaripura,Shikaripura Jurisdiction,13.897608,75.511617
+85,10,Sorab,Sorab Jurisdiction,13.847157,75.584477
+86,10,Hosanagara,Hosanagara Jurisdiction,13.961894,75.480999
+87,11,Raichur City,Raichur City Jurisdiction,16.209779,77.30972
+88,11,Raichur Rural,Raichur Rural Jurisdiction,16.233757,77.300327
+89,11,Manvi,Manvi Jurisdiction,16.242003,77.338592
+90,11,Sindhanur,Sindhanur Jurisdiction,16.28629,77.293688
+91,11,Devadurga,Devadurga Jurisdiction,16.178963,77.289356
+92,11,Lingasugur,Lingasugur Jurisdiction,16.284121,77.426989
+93,12,Vijayapura City,Vijayapura City Jurisdiction,16.786586,75.738826
+94,12,Vijayapura Rural,Vijayapura Rural Jurisdiction,16.887357,75.719946
+95,12,Indi,Indi Jurisdiction,16.835542,75.663487
+96,12,Muddebihal,Muddebihal Jurisdiction,16.756885,75.78157
+97,12,Sindagi,Sindagi Jurisdiction,16.902347,75.733982
+98,12,Basavana Bagevadi,Basavana Bagevadi Jurisdiction,16.801196,75.682831
+99,13,Davangere City,Davangere City Jurisdiction,14.505113,75.993351
+100,13,Davangere Rural,Davangere Rural Jurisdiction,14.534145,75.972228
+101,13,Harihar,Harihar Jurisdiction,14.489991,75.84687
+102,13,Jagalur,Jagalur Jurisdiction,14.403432,75.993612
+103,13,Channagiri,Channagiri Jurisdiction,14.483576,75.833367
+104,13,Honnali,Honnali Jurisdiction,14.392593,75.95126
+105,14,Hassan City,Hassan City Jurisdiction,12.914122,76.038484
+106,14,Hassan Rural,Hassan Rural Jurisdiction,13.012081,76.134176
+107,14,Belur,Belur Jurisdiction,13.03068,76.049919
+108,14,Sakleshpur,Sakleshpur Jurisdiction,13.04153,76.052257
+109,14,Arsikere,Arsikere Jurisdiction,12.97184,76.144013
+110,14,Channarayapatna,Channarayapatna Jurisdiction,13.030261,76.162523
+111,14,Holenarasipura,Holenarasipura Jurisdiction,13.031699,76.111908
+112,15,Karwar,Karwar Jurisdiction,14.608688,74.666065
+113,15,Sirsi,Sirsi Jurisdiction,14.639594,74.643772
+114,15,Kumta,Kumta Jurisdiction,14.767127,74.670638
+115,15,Ankola,Ankola Jurisdiction,14.752539,74.713529
+116,15,Honnavar,Honnavar Jurisdiction,14.735019,74.690375
+117,15,Bhatkal,Bhatkal Jurisdiction,14.695757,74.688552
+118,15,Dandeli,Dandeli Jurisdiction,14.626989,74.729981
+119,15,Joida,Joida Jurisdiction,14.6424,74.604191
+120,16,Chikkamagaluru City,Chikkamagaluru City Jurisdiction,13.341511,75.717222
+121,16,Kadur,Kadur Jurisdiction,13.394662,75.857189
+122,16,Tarikere,Tarikere Jurisdiction,13.39005,75.752005
+123,16,Mudigere,Mudigere Jurisdiction,13.227995,75.852575
+124,16,Koppa,Koppa Jurisdiction,13.30236,75.859482
+125,16,Sringeri,Sringeri Jurisdiction,13.398835,75.839005
+126,16,N.R. Pura,N.R. Pura Jurisdiction,13.278264,75.754697
+127,17,Udupi City,Udupi City Jurisdiction,13.404168,74.709113
+128,17,Kundapura,Kundapura Jurisdiction,13.281349,74.752334
+129,17,Karkala,Karkala Jurisdiction,13.419486,74.777421
+130,17,Brahmavar,Brahmavar Jurisdiction,13.353524,74.669519
+131,17,Kaup,Kaup Jurisdiction,13.361622,74.830398
+132,17,Hebri,Hebri Jurisdiction,13.27605,74.745403
+133,18,Chitradurga City,Chitradurga City Jurisdiction,14.290595,76.441382
+134,18,Chitradurga Rural,Chitradurga Rural Jurisdiction,14.258098,76.434484
+135,18,Challakere,Challakere Jurisdiction,14.197283,76.360809
+136,18,Hiriyur,Hiriyur Jurisdiction,14.278341,76.453876
+137,18,Holalkere,Holalkere Jurisdiction,14.288739,76.472458
+138,18,Hosadurga,Hosadurga Jurisdiction,14.224644,76.398273
+139,19,Mandya City,Mandya City Jurisdiction,12.575547,76.922121
+140,19,Mandya Rural,Mandya Rural Jurisdiction,12.55819,76.948396
+141,19,Srirangapatna,Srirangapatna Jurisdiction,12.592071,76.86591
+142,19,Pandavapura,Pandavapura Jurisdiction,12.499383,76.821944
+143,19,Maddur,Maddur Jurisdiction,12.535905,76.811486
+144,19,Malavalli,Malavalli Jurisdiction,12.515601,76.902784
+145,19,Nagamangala,Nagamangala Jurisdiction,12.483339,76.911466
+146,20,Kolar City,Kolar City Jurisdiction,13.051405,78.045839
+147,20,Kolar Rural,Kolar Rural Jurisdiction,13.194126,78.104009
+148,20,KGF,KGF Jurisdiction,13.068804,78.133208
+149,20,Bangarpet,Bangarpet Jurisdiction,13.184647,78.077997
+150,20,Malur,Malur Jurisdiction,13.158142,78.054488
+151,20,Mulbagal,Mulbagal Jurisdiction,13.055222,78.134849
+152,20,Srinivaspur,Srinivaspur Jurisdiction,13.143322,78.153962
+153,21,Ramanagara City,Ramanagara City Jurisdiction,12.756637,77.366739
+154,21,Channapatna,Channapatna Jurisdiction,12.718837,77.2491
+155,21,Magadi,Magadi Jurisdiction,12.769087,77.239709
+156,21,Kanakapura,Kanakapura Jurisdiction,12.704904,77.205046
+157,22,Chamarajanagar City,Chamarajanagar City Jurisdiction,11.840578,77.02706
+158,22,Gundlupet,Gundlupet Jurisdiction,11.986637,76.979011
+159,22,Kollegal,Kollegal Jurisdiction,11.909695,76.884834
+160,22,Yelandur,Yelandur Jurisdiction,11.864197,76.898699
+161,23,Chikkaballapur City,Chikkaballapur City Jurisdiction,13.44437,77.770166
+162,23,Chintamani,Chintamani Jurisdiction,13.464364,77.691848
+163,23,Gauribidanur,Gauribidanur Jurisdiction,13.517458,77.774364
+164,23,Sidlaghatta,Sidlaghatta Jurisdiction,13.445294,77.75163
+165,23,Gudibanda,Gudibanda Jurisdiction,13.421014,77.686046
+166,23,Bagepalli,Bagepalli Jurisdiction,13.409549,77.777959
+167,24,Madikeri,Madikeri Jurisdiction,12.336903,75.669024
+168,24,Virajpet,Virajpet Jurisdiction,12.342599,75.655448
+169,24,Somwarpet,Somwarpet Jurisdiction,12.488447,75.774895
+170,24,Kushalnagar,Kushalnagar Jurisdiction,12.419747,75.665738
+171,25,Dharwad City,Dharwad City Jurisdiction,15.457389,75.00302
+172,25,Dharwad Rural,Dharwad Rural Jurisdiction,15.400017,74.995881
+173,25,Navalgund,Navalgund Jurisdiction,15.440613,75.028674
+174,25,Kundgol,Kundgol Jurisdiction,15.483241,74.925873
+175,26,Haveri City,Haveri City Jurisdiction,14.772508,75.423277
+176,26,Haveri Rural,Haveri Rural Jurisdiction,14.795665,75.464832
+177,26,Ranebennur,Ranebennur Jurisdiction,14.823693,75.339867
+178,26,Byadgi,Byadgi Jurisdiction,14.717725,75.426261
+179,26,Savanur,Savanur Jurisdiction,14.709787,75.416055
+180,26,Shiggaon,Shiggaon Jurisdiction,14.874421,75.414199
+181,26,Hirekerur,Hirekerur Jurisdiction,14.77495,75.426418
+182,27,Gadag City,Gadag City Jurisdiction,15.409078,75.643719
+183,27,Gadag Rural,Gadag Rural Jurisdiction,15.496143,75.614978
+184,27,Ron,Ron Jurisdiction,15.499697,75.708536
+185,27,Mundargi,Mundargi Jurisdiction,15.361788,75.557907
+186,27,Nargund,Nargund Jurisdiction,15.344668,75.548693
+187,28,Koppal City,Koppal City Jurisdiction,15.281627,76.187774
+188,28,Koppal Rural,Koppal Rural Jurisdiction,15.277437,76.122183
+189,28,Gangavathi,Gangavathi Jurisdiction,15.41684,76.068903
+190,28,Kushtagi,Kushtagi Jurisdiction,15.411361,76.115495
+191,28,Yelburga,Yelburga Jurisdiction,15.285901,76.190248
+192,29,Bagalkot City,Bagalkot City Jurisdiction,16.192333,75.729513
+193,29,Bagalkot Rural,Bagalkot Rural Jurisdiction,16.211455,75.716181
+194,29,Badami,Badami Jurisdiction,16.129827,75.603381
+195,29,Mudhol,Mudhol Jurisdiction,16.214256,75.716786
+196,29,Jamkhandi,Jamkhandi Jurisdiction,16.257479,75.645755
+197,29,Bilgi,Bilgi Jurisdiction,16.14604,75.711304
+198,29,Hunagund,Hunagund Jurisdiction,16.140416,75.739114
+199,30,Bidar City,Bidar City Jurisdiction,17.974979,77.507106
+200,30,Bidar Rural,Bidar Rural Jurisdiction,17.955602,77.565764
+201,30,Bhalki,Bhalki Jurisdiction,17.838891,77.592432
+202,30,Aurad,Aurad Jurisdiction,17.911346,77.578721
+203,30,Basavakalyan,Basavakalyan Jurisdiction,17.877977,77.591165
+204,30,Humnabad,Humnabad Jurisdiction,17.890436,77.431763
+205,31,Yadgir City,Yadgir City Jurisdiction,16.843142,77.064658
+206,31,Yadgir Rural,Yadgir Rural Jurisdiction,16.737544,77.219392
+207,31,Shahapur,Shahapur Jurisdiction,16.85129,77.151532
+208,31,Shorapur,Shorapur Jurisdiction,16.793854,77.129011
+209,31,Gurmatkal,Gurmatkal Jurisdiction,16.732841,77.107429
