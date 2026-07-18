@@ -12,14 +12,14 @@ Lumina transforms the Karnataka State Police's fragmented, Excel-based crime rec
 
 ### Key Features
 
-| Feature | Technology |
-|---|---|
-| 🗺️ State Overview Heatmap | Deck.gl HeatmapLayer |
-| 🔴 Hotspot Explorer | ST-DBSCAN on AppSail |
-| 🕸️ Criminal Network Graph | Cytoscape.js + Neo4j |
-| 📊 Predictive Risk Scoreboard | Zia AutoML + ECharts |
-| 💬 AI Query Assistant | Catalyst QuickML (RAG) |
-| 📄 One-Click Briefing Reports | Catalyst SmartBrowz |
+| Feature                       | Technology             |
+| ----------------------------- | ---------------------- |
+| 🗺️ State Overview Heatmap     | Deck.gl HeatmapLayer   |
+| 🔴 Hotspot Explorer           | ST-DBSCAN on AppSail   |
+| 🕸️ Criminal Network Graph     | Cytoscape.js + Neo4j   |
+| 📊 Predictive Risk Scoreboard | Zia AutoML + ECharts   |
+| 💬 AI Query Assistant         | Catalyst QuickML (RAG) |
+| 📄 One-Click Briefing Reports | Catalyst SmartBrowz    |
 
 ---
 
@@ -27,18 +27,21 @@ Lumina transforms the Karnataka State Police's fragmented, Excel-based crime rec
 
 ```
 Lumina/
-├── catalyst.json              # Catalyst project manifest
-├── client/                    # React + Vite SPA (Web Client Hosting)
-├── functions/
-│   ├── api_service/           # Serverless CRUD APIs (Advanced I/O)
-│   └── etl_cron/              # Cron-triggered ETL functions
-├── appsail/
-│   ├── neo4j/                 # Neo4j Docker container
-│   └── ml_pipeline/           # ST-DBSCAN Python runtime
-├── data/
-│   ├── synthetic/             # Generated CSV datasets
-│   └── generator/             # Python data generation scripts
-└── docs/                      # Architecture & schema docs
+├── catalyst.json               # Catalyst project manifest
+├── BackEnd/                    # Backend services, containers, and functions
+│   ├── appsail/                # Custom container runtimes
+│   │   ├── neo4j/              # Neo4j Docker container + API
+│   │   └── ml_pipeline/        # ST-DBSCAN Python runtime
+│   ├── client/                 # React + Vite SPA (Web client)
+│   └── functions/              # Serverless backend functions
+│       ├── api_service/        # Serverless CRUD APIs
+│       └── etl_cron/           # Cron-triggered ETL jobs
+├── DataBase/                   # Data files, schema, and generation scripts
+│   ├── data/                   # Generated dataset files
+│   ├── docs/                   # Database schema and docs
+│   └── generator/              # Synthetic data generation scripts
+├── Documents/                  # Documentation, architecture, and API references
+└── FrontEnd/                   # Frontend assets / UI project
 ```
 
 ---
@@ -73,22 +76,22 @@ catalyst deploy
 
 ## Tech Stack
 
-| Layer | Catalyst Service |
-|---|---|
-| Frontend Hosting | Catalyst Web Client Hosting |
+| Layer              | Catalyst Service                         |
+| ------------------ | ---------------------------------------- |
+| Frontend Hosting   | Catalyst Web Client Hosting              |
 | Frontend Framework | React 18 + Vite + Deck.gl + Cytoscape.js |
-| API Gateway | Catalyst API Gateway |
-| Authentication | Catalyst Authentication (RBAC) |
-| Backend Compute | Catalyst Serverless (Advanced I/O) |
-| Custom Containers | Catalyst AppSail (Neo4j, ST-DBSCAN) |
-| Relational DB | Catalyst Data Store |
-| Object Storage | Catalyst Stratus |
-| Caching | Catalyst Cache |
-| LLM / RAG | Catalyst QuickML |
-| NLP | Catalyst Zia Services |
-| PDF Reports | Catalyst SmartBrowz |
-| Job Scheduling | Catalyst Cron |
-| Event Routing | Catalyst Signals |
+| API Gateway        | Catalyst API Gateway                     |
+| Authentication     | Catalyst Authentication (RBAC)           |
+| Backend Compute    | Catalyst Serverless (Advanced I/O)       |
+| Custom Containers  | Catalyst AppSail (Neo4j, ST-DBSCAN)      |
+| Relational DB      | Catalyst Data Store                      |
+| Object Storage     | Catalyst Stratus                         |
+| Caching            | Catalyst Cache                           |
+| LLM / RAG          | Catalyst QuickML                         |
+| NLP                | Catalyst Zia Services                    |
+| PDF Reports        | Catalyst SmartBrowz                      |
+| Job Scheduling     | Catalyst Cron                            |
+| Event Routing      | Catalyst Signals                         |
 
 ---
 
