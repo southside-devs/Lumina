@@ -1,0 +1,7 @@
+{
+  "project_name": "Lumina",
+  "project_id": null,
+  "project_domain": null,
+  "cli_version": "4.0.0",
+  "note": "This is a placeholder manifest. Run 'catalyst init' to link to your Zoho Catalyst project."
+}

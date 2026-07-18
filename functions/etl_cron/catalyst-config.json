@@ -1,0 +1,8 @@
+{
+  "name": "etl_cron",
+  "type": "cron",
+  "stack": "python",
+  "entry_point": "main.py",
+  "cron_expression": "0 2 * * *",
+  "timeout": 300000
+}

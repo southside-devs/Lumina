@@ -1,0 +1,7 @@
+{
+  "name": "api_service",
+  "type": "advancedio",
+  "stack": "python",
+  "entry_point": "main.py",
+  "timeout": 30000
+}

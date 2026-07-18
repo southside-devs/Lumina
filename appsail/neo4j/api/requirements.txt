@@ -1,0 +1,4 @@
+# Neo4j Flask API Proxy — Dependencies
+flask>=3.0.0
+gunicorn>=22.0.0
+neo4j>=5.20.0
