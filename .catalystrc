@@ -18,9 +18,21 @@
           "idx": 1,
           "id": "60078984780",
           "name": "Development",
-          "type": 3
+          "type": 3,
+          "env_status": "Active",
+          "project_details": {
+            "project_name": "Lumina",
+            "id": "46634000000013049",
+            "project_type": "Live"
+          },
+          "is_default": true,
+          "action_required": false
         }
       ]
     }
-  ]
+  ],
+  "defaults": {
+    "project": 1,
+    "env": 1
+  }
 }
