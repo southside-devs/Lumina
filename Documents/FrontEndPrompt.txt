@@ -1,0 +1,1162 @@
+------------------------------------------------------------Mobile app------------------------------------------------------------
+
+You are building the complete production frontend for **Lumina**, a Crime Intelligence & Analytical Platform (KSP CIAP) for the Karnataka State Police, deployed on Zoho Catalyst. The stack is React 19 + Vite, no TypeScript, no Tailwind. All styling is inline CSS using CSS variables defined in index.css.
+
+---
+
+## DESIGN SYSTEM
+
+Dark intelligence theme — command centre aesthetic, not SaaS startup.
+
+CSS variables (defined in :root on index.css):
+
+- --bg-primary: #0d1117 (page background)
+- --bg-surface: #161b22 (cards, sidebar, topbar)
+- --bg-elevated: #1c2333 (inputs, dropdowns, hover surfaces)
+- --bg-hover: #21262d
+- --border: #30363d
+- --border-subtle: #21262d
+- --text-primary: #e6edf3
+- --text-secondary: #8b949e
+- --text-muted: #484f58
+- --accent: #1f6feb (primary blue — authority)
+- --accent-hover: #388bfd
+- --accent-bg: rgba(31,111,235,0.15)
+- --danger: #da3633
+- --danger-bg: rgba(218,54,51,0.15)
+- --warning: #f0883e
+- --warning-bg: rgba(240,136,62,0.15)
+- --success: #2ea043
+- --success-bg: rgba(46,160,67,0.15)
+- --font-sans: 'Inter', system-ui, sans-serif
+- --font-mono: 'JetBrains Mono', monospace
+
+Load Inter + JetBrains Mono from Google Fonts in index.html.
+
+Global: box-sizing border-box everywhere, no margin/padding resets except zero. Scrollbar styled: 6px, --bg-surface track, --border thumb.
+
+Layout: #root is display:flex, height:100vh, overflow:hidden — sidebar + main column (topbar + content).
+
+Animations: fadeIn (opacity 0→1, translateY 8px→0, 0.25s), pulse-live (opacity 1→0.4→1, 2s infinite for live indicator bar), spin (360deg for loading spinner).
+
+---
+
+## FILE STRUCTURE
+
+FrontEnd/src/
+├── index.css ← global CSS vars + resets + animations
+├── main.jsx ← createRoot, StrictMode
+├── App.jsx ← BrowserRouter, layout shell, routes
+├── constants/
+│ └── index.js ← CRIME_GROUPS[], FIR_STATUSES[], GENDERS[], INVOLVEMENT_TYPES[], SES_LEVELS[], KARNATAKA_CENTER, KARNATAKA_BOUNDS, ROLES, STATUS_COLORS{}, CRIME_COLOR_MAP{}
+├── utils/
+│ ├── api.js ← fetch wrapper + all API calls
+│ ├── auth.js ← getMockUser(), canWrite(), canViewAnalytics(), canViewSensitive()
+│ └── helpers.js ← formatDate(), formatNumber(), getRiskColor(), getRiskLabel(), paginate(), debounce()
+├── components/
+│ ├── layout/
+│ │ ├── Sidebar.jsx ← collapsible sidebar, NavLink, section labels, live pulse bar
+│ │ └── Topbar.jsx ← page title, search bar (UI only), bell icon, user badge
+│ └── shared/
+│ └── UI.jsx ← Card, CardHeader, Badge, Button, Input, Select, Spinner, ErrorState, EmptyState, StatCard, Table, Pagination
+└── pages/
+├── Dashboard.jsx ← KPI grid + horizontal bar chart + status breakdown + district table
+├── FIRList.jsx ← filterable/paginated table + File New FIR CTA
+├── FIRDetail.jsx ← full FIR view + status edit + accused/victim lists
+├── NewFIR.jsx ← 4-step form (Incident → Accused → Victims → Review)
+├── AccusedList.jsx ← paginated accused table
+├── AccusedDetail.jsx ← profile + case history
+├── RepeatOffenders.jsx ← accused?repeat_offenders=true list
+├── CrimeMap.jsx ← SVG map of Karnataka, dot markers per FIR, choropleth circles per district, side panel filters + legend
+├── RiskBoard.jsx ← district×crimeType heatmap grid + top-risk cards + color scale
+├── NetworkGraph.jsx ← Cytoscape.js graph (react-cytoscapejs), cose layout, node types: Suspect/Victim/Incident/Location, COMMITTED/ASSOCIATED_WITH edges, side panel legend + node detail
+├── CrimeTrends.jsx ← bar + pie chart toggle (recharts), district table
+└── AIQuery.jsx ← chat UI stub with 5 canned demo responses, "Preview" badge
+
+---
+
+## MISSING FILES TO GENERATE
+
+The following files exist but are **not yet created** and must be built:
+
+### `src/App.jsx`
+
+- Import BrowserRouter, Routes, Route from react-router-dom
+- Import Sidebar, Topbar from layout components
+- useState for `collapsed` (sidebar)
+- Shell: flex row → Sidebar (collapsed, onToggle) | flex column → Topbar | main content (flex:1, overflowY:auto)
+- Routes:
+  - `/` → redirect to `/dashboard`
+  - `/dashboard` → Dashboard
+  - `/firs` → FIRList
+  - `/firs/new` → NewFIR
+  - `/firs/:id` → FIRDetail
+  - `/accused` → AccusedList
+  - `/accused/:id` → AccusedDetail
+  - `/repeat-offenders` → RepeatOffenders
+  - `/crime-map` → CrimeMap
+  - `/risk-board` → RiskBoard
+  - `/network` → NetworkGraph
+  - `/trends` → CrimeTrends
+  - `/ai-query` → AIQuery
+
+### `src/pages/AccusedList.jsx`
+
+- Paginated table with columns: Name, Gender, Arrest Count, Occupation
+- Filter: repeat_offenders toggle button
+- Each row navigates to `/accused/:ROWID`
+- Badge on Arrest_Count ≥ 2 in danger color
+
+### `src/pages/AccusedDetail.jsx`
+
+- useParams for id
+- Fetch `GET /api/accused/:id` (includes `cases[]` array)
+- Show: Name, DOB (hide for Officer role), Gender, Occupation, Arrest_Count
+- If Arrest_Count ≥ 2 → show repeat offender warning banner
+- Case history table: FIR_ID, Involvement_Type, link to `/firs/:FIR_ID`
+- Back button to `/accused`
+
+### `src/pages/RepeatOffenders.jsx`
+
+- Calls `GET /api/accused?repeat_offenders=true&limit=50&offset=N`
+- Paginated table: Name, Arrest Count (sorted desc), Gender, Occupation
+- Each row has View Profile button → `/accused/:ROWID`
+- Header stat: total repeat offenders count from dashboard overview
+- Empty state: "No repeat offenders found. This filter shows accused with 2 or more arrests."
+
+### `src/pages/AIQuery.jsx`
+
+- Chat interface: scrollable message list + input bar at bottom
+- Assistant bubble style (left-aligned, --bg-elevated background)
+- User bubble style (right-aligned, --accent-bg background)
+- 5 canned demo Q&A pairs (e.g. "Show theft trends in Mysuru", "Which districts have highest assault rates?", "How many FIRs were filed last month?", "Who are the top repeat offenders in Bengaluru?", "Show crime trends for Narcotics")
+- Typing indicator (animated dots) while "processing" (500ms delay)
+- "Preview" badge in header, disclaimer: "AI Preview — Live QuickML RAG integration in progress"
+- Send on Enter key or Send button
+
+---
+
+## API UTILITY (`src/utils/api.js`) — COMPLETE REFERENCE
+
+Base URL: `/api` (proxied via Vite to Catalyst)
+All requests: credentials: 'include', Content-Type: application/json
+Error shape: `{ status: "error", message: "...", details: [] }`
+Success shape: `{ status: "success", data: ..., meta: { total, limit, offset, has_more } }`
+Primary key on all records: `ROWID` (integer)
+
+Endpoints to expose:
+
+````js
+firApi.list(params)         // GET /firs?limit&offset&station_id&crime_group&status
+firApi.search(params)       // GET /firs/search?crime_group&date_from&date_to&station_id&lat_min&lat_max&lon_min&lon_max
+firApi.get(id)              // GET /firs/:id  → includes victims[] and accused[]
+firApi.create(data)         // POST /firs
+firApi.update(id, data)     // PUT /firs/:id
+
+accusedApi.list(params)     // GET /accused?limit&offset&repeat_offenders=true
+accusedApi.get(id)          // GET /accused/:id  → includes cases[]
+accusedApi.create(data)     // POST /accused
+accusedApi.update(id, data) // PUT /accused/:id
+
+victimApi.list(params)      // GET /victims?limit&offset&fir_id
+victimApi.get(id)           // GET /victims/:id
+victimApi.create(data)      // POST /victims
+
+caseAccusedApi.create(data) // POST /case-accused  { FIR_ID, Accused_ID, Involvement_Type }
+caseAccusedApi.delete(id)   // DELETE /case-accused/:id
+
+districtApi.list()          // GET /districts?limit=100
+stationApi.list(districtId) // GET /stations?limit=300&district_id=N
+
+dashboardApi.overview()     // GET /dashboard/overview
+dashboardApi.trends()       // GET /dashboard/crime-trends
+dashboardApi.districtSummary() // GET /dashboard/district-summary
+
+riskApi.list(params)        // GET /risk-scores?limit&offset&district_id&crime_type
+FIR POST required fields: Station_ID (int), FIR_Number (string), Date (YYYY-MM-DD), Crime_Group (enum), Latitude (float 11.5–18.5), Longitude (float 74.0–78.5)
+Accused POST required: Name
+Victim POST required: FIR_ID, Name
+Multi-step FIR workflow: POST /firs → save fir_id → POST /accused → POST /case-accused {FIR_ID, Accused_ID} → POST /victims {FIR_ID, Name, ...}
+
+FIR POST required fields: Station_ID (int), FIR_Number (string), Date (YYYY-MM-DD), Crime_Group (enum), Latitude (float 11.5–18.5), Longitude (float 74.0–78.5)
+Accused POST required: Name
+Victim POST required: FIR_ID, Name
+Multi-step FIR workflow: POST /firs → save fir_id → POST /accused → POST /case-accused {FIR_ID, Accused_ID} → POST /victims {FIR_ID, Name, ...}
+
+Other files to create
+index.html
+package.json
+vite.config.js
+src/index.css
+src/main.jsx
+src/constants/index.js
+src/utils/api.js
+src/utils/auth.js
+src/utils/helpers.js
+src/components/layout/Sidebar.jsx
+src/components/layout/Topbar.jsx
+src/components/shared/UI.jsx
+src/pages/Dashboard.jsx
+src/pages/FIRList.jsx
+src/pages/FIRDetail.jsx
+src/pages/NewFIR.jsx
+src/pages/CrimeMap.jsx
+src/pages/RiskBoard.jsx
+src/pages/NetworkGraph.jsx
+src/pages/CrimeTrends.jsx
+
+After generating all files, provide:
+Updated directory tree showing where each new file sits
+
+------------------------------------------------------------Desktop app------------------------------------------------------------
+
+You are building the complete production frontend for **Lumina**, a Crime Intelligence & Analytical Platform (KSP CIAP) for the Karnataka State Police, deployed on Zoho Catalyst. The stack is React 19 + Vite, no TypeScript, no Tailwind. All styling is inline CSS using CSS variables defined in index.css.
+
+---
+
+## DESIGN SYSTEM
+
+Dark intelligence theme — command centre aesthetic, not SaaS startup.
+
+CSS variables (defined in :root on index.css):
+- --bg-primary: #0d1117  (page background)
+- --bg-surface: #161b22  (cards, sidebar, topbar)
+- --bg-elevated: #1c2333 (inputs, dropdowns, hover surfaces)
+- --bg-hover: #21262d
+- --border: #30363d
+- --border-subtle: #21262d
+- --text-primary: #e6edf3
+- --text-secondary: #8b949e
+- --text-muted: #484f58
+- --accent: #1f6feb      (primary blue — authority)
+- --accent-hover: #388bfd
+- --accent-bg: rgba(31,111,235,0.15)
+- --danger: #da3633
+- --danger-bg: rgba(218,54,51,0.15)
+- --warning: #f0883e
+- --warning-bg: rgba(240,136,62,0.15)
+- --success: #2ea043
+- --success-bg: rgba(46,160,67,0.15)
+- --font-sans: 'Inter', system-ui, sans-serif
+- --font-mono: 'JetBrains Mono', monospace
+
+Load Inter + JetBrains Mono from Google Fonts in index.html.
+
+Global: box-sizing border-box everywhere, no margin/padding resets except zero. Scrollbar styled: 6px, --bg-surface track, --border thumb.
+
+Layout: #root is display:flex, height:100vh, overflow:hidden — sidebar + main column (topbar + content).
+
+Animations: fadeIn (opacity 0→1, translateY 8px→0, 0.25s), pulse-live (opacity 1→0.4→1, 2s infinite for live indicator bar), spin (360deg for loading spinner).
+
+---
+
+## FILE STRUCTURE
+
+FrontEnd/src/
+├── index.css                        ← global CSS vars + resets + animations
+├── main.jsx                         ← createRoot, StrictMode
+├── App.jsx                          ← BrowserRouter, layout shell, routes
+├── constants/
+│   └── index.js                     ← CRIME_GROUPS[], FIR_STATUSES[], GENDERS[], INVOLVEMENT_TYPES[], SES_LEVELS[], KARNATAKA_CENTER, KARNATAKA_BOUNDS, ROLES, STATUS_COLORS{}, CRIME_COLOR_MAP{}
+├── utils/
+│   ├── api.js                       ← fetch wrapper + all API calls
+│   ├── auth.js                      ← getMockUser(), canWrite(), canViewAnalytics(), canViewSensitive()
+│   └── helpers.js                   ← formatDate(), formatNumber(), getRiskColor(), getRiskLabel(), paginate(), debounce()
+├── components/
+│   ├── layout/
+│   │   ├── Sidebar.jsx              ← collapsible sidebar, NavLink, section labels, live pulse bar
+│   │   └── Topbar.jsx              ← page title, search bar (UI only), bell icon, user badge
+│   └── shared/
+│       └── UI.jsx                   ← Card, CardHeader, Badge, Button, Input, Select, Spinner, ErrorState, EmptyState, StatCard, Table, Pagination
+└── pages/
+├── Dashboard.jsx                ← KPI grid + horizontal bar chart + status breakdown + district table
+├── FIRList.jsx                  ← filterable/paginated table + File New FIR CTA
+├── FIRDetail.jsx                ← full FIR view + status edit + accused/victim lists
+├── NewFIR.jsx                   ← 4-step form (Incident → Accused → Victims → Review)
+├── AccusedList.jsx              ← paginated accused table
+├── AccusedDetail.jsx            ← profile + case history
+├── RepeatOffenders.jsx          ← accused?repeat_offenders=true list
+├── CrimeMap.jsx                 ← SVG map of Karnataka, dot markers per FIR, choropleth circles per district, side panel filters + legend
+├── RiskBoard.jsx                ← district×crimeType heatmap grid + top-risk cards + color scale
+├── NetworkGraph.jsx             ← Cytoscape.js graph (react-cytoscapejs), cose layout, node types: Suspect/Victim/Incident/Location, COMMITTED/ASSOCIATED_WITH edges, side panel legend + node detail
+├── CrimeTrends.jsx              ← bar + pie chart toggle (recharts), district table
+└── AIQuery.jsx                  ← chat UI stub with 5 canned demo responses, "Preview" badge
+
+---
+
+## MISSING FILES TO GENERATE
+
+The following files exist but are **not yet created** and must be built:
+
+### `src/App.jsx`
+- Import BrowserRouter, Routes, Route from react-router-dom
+- Import Sidebar, Topbar from layout components
+- useState for `collapsed` (sidebar)
+- Shell: flex row → Sidebar (collapsed, onToggle) | flex column → Topbar | main content (flex:1, overflowY:auto)
+- Routes:
+  - `/` → redirect to `/dashboard`
+  - `/dashboard` → Dashboard
+  - `/firs` → FIRList
+  - `/firs/new` → NewFIR
+  - `/firs/:id` → FIRDetail
+  - `/accused` → AccusedList
+  - `/accused/:id` → AccusedDetail
+  - `/repeat-offenders` → RepeatOffenders
+  - `/crime-map` → CrimeMap
+  - `/risk-board` → RiskBoard
+  - `/network` → NetworkGraph
+  - `/trends` → CrimeTrends
+  - `/ai-query` → AIQuery
+
+### `src/pages/AccusedList.jsx`
+- Paginated table with columns: Name, Gender, Arrest Count, Occupation
+- Filter: repeat_offenders toggle button
+- Each row navigates to `/accused/:ROWID`
+- Badge on Arrest_Count ≥ 2 in danger color
+
+### `src/pages/AccusedDetail.jsx`
+- useParams for id
+- Fetch `GET /api/accused/:id` (includes `cases[]` array)
+- Show: Name, DOB (hide for Officer role), Gender, Occupation, Arrest_Count
+- If Arrest_Count ≥ 2 → show repeat offender warning banner
+- Case history table: FIR_ID, Involvement_Type, link to `/firs/:FIR_ID`
+- Back button to `/accused`
+
+### `src/pages/RepeatOffenders.jsx`
+- Calls `GET /api/accused?repeat_offenders=true&limit=50&offset=N`
+- Paginated table: Name, Arrest Count (sorted desc), Gender, Occupation
+- Each row has View Profile button → `/accused/:ROWID`
+- Header stat: total repeat offenders count from dashboard overview
+- Empty state: "No repeat offenders found. This filter shows accused with 2 or more arrests."
+
+### `src/pages/AIQuery.jsx`
+- Chat interface: scrollable message list + input bar at bottom
+- Assistant bubble style (left-aligned, --bg-elevated background)
+- User bubble style (right-aligned, --accent-bg background)
+- 5 canned demo Q&A pairs (e.g. "Show theft trends in Mysuru", "Which districts have highest assault rates?", "How many FIRs were filed last month?", "Who are the top repeat offenders in Bengaluru?", "Show crime trends for Narcotics")
+- Typing indicator (animated dots) while "processing" (500ms delay)
+- "Preview" badge in header, disclaimer: "AI Preview — Live QuickML RAG integration in progress"
+- Send on Enter key or Send button
+
+---
+
+## API UTILITY (`src/utils/api.js`) — COMPLETE REFERENCE
+
+Base URL: `/api` (proxied via Vite to Catalyst)
+All requests: credentials: 'include', Content-Type: application/json
+Error shape: `{ status: "error", message: "...", details: [] }`
+Success shape: `{ status: "success", data: ..., meta: { total, limit, offset, has_more } }`
+Primary key on all records: `ROWID` (integer)
+
+Endpoints to expose:
+
+```js
+firApi.list(params)         // GET /firs?limit&offset&station_id&crime_group&status
+firApi.search(params)       // GET /firs/search?crime_group&date_from&date_to&station_id&lat_min&lat_max&lon_min&lon_max
+firApi.get(id)              // GET /firs/:id  → includes victims[] and accused[]
+firApi.create(data)         // POST /firs
+firApi.update(id, data)     // PUT /firs/:id
+
+accusedApi.list(params)     // GET /accused?limit&offset&repeat_offenders=true
+accusedApi.get(id)          // GET /accused/:id  → includes cases[]
+accusedApi.create(data)     // POST /accused
+accusedApi.update(id, data) // PUT /accused/:id
+
+victimApi.list(params)      // GET /victims?limit&offset&fir_id
+victimApi.get(id)           // GET /victims/:id
+victimApi.create(data)      // POST /victims
+
+caseAccusedApi.create(data) // POST /case-accused  { FIR_ID, Accused_ID, Involvement_Type }
+caseAccusedApi.delete(id)   // DELETE /case-accused/:id
+
+districtApi.list()          // GET /districts?limit=100
+stationApi.list(districtId) // GET /stations?limit=300&district_id=N
+
+dashboardApi.overview()     // GET /dashboard/overview
+dashboardApi.trends()       // GET /dashboard/crime-trends
+dashboardApi.districtSummary() // GET /dashboard/district-summary
+
+riskApi.list(params)        // GET /risk-scores?limit&offset&district_id&crime_type
+FIR POST required fields: Station_ID (int), FIR_Number (string), Date (YYYY-MM-DD), Crime_Group (enum), Latitude (float 11.5–18.5), Longitude (float 74.0–78.5)
+Accused POST required: Name
+Victim POST required: FIR_ID, Name
+Multi-step FIR workflow: POST /firs → save fir_id → POST /accused → POST /case-accused {FIR_ID, Accused_ID} → POST /victims {FIR_ID, Name, ...}
+
+FIR POST required fields: Station_ID (int), FIR_Number (string), Date (YYYY-MM-DD), Crime_Group (enum), Latitude (float 11.5–18.5), Longitude (float 74.0–78.5)
+Accused POST required: Name
+Victim POST required: FIR_ID, Name
+Multi-step FIR workflow: POST /firs → save fir_id → POST /accused → POST /case-accused {FIR_ID, Accused_ID} → POST /victims {FIR_ID, Name, ...}
+
+Other files to create
+index.html
+package.json
+vite.config.js
+src/index.css
+src/main.jsx
+src/constants/index.js
+src/utils/api.js
+src/utils/auth.js
+src/utils/helpers.js
+src/components/layout/Sidebar.jsx
+src/components/layout/Topbar.jsx
+src/components/shared/UI.jsx
+src/pages/Dashboard.jsx
+src/pages/FIRList.jsx
+src/pages/FIRDetail.jsx
+src/pages/NewFIR.jsx
+src/pages/CrimeMap.jsx
+src/pages/RiskBoard.jsx
+src/pages/NetworkGraph.jsx
+src/pages/CrimeTrends.jsx
+
+After generating all files, provide:
+Updated directory tree showing where each new file sits
+
+------------------------------------------------------------Website------------------------------------------------------------
+
+WEBSITE VERSION OF THE PROMPT
+
+ROLE
+
+You are building the complete production frontend for the Lumina Website, the official web presence for Lumina – Crime Intelligence & Analytical Platform (KSP CIAP) developed for the Karnataka State Police and deployed on Zoho Catalyst.
+
+The website is not a software dashboard or application. It is a modern, responsive marketing and information website that showcases the platform, its capabilities, technology, analytics, and contact information.
+
+Stack:
+
+React 19
+
+Vite
+
+JavaScript (No TypeScript)
+
+No Tailwind CSS
+
+Inline CSS only using CSS Variables defined in index.css
+
+
+
+---
+
+DESIGN SYSTEM
+
+Maintain the same dark intelligence command-centre visual identity.
+
+Use these CSS variables in index.css:
+
+(same CSS variables as original)
+
+Load:
+
+Inter
+
+JetBrains Mono
+
+
+from Google Fonts.
+
+Global requirements:
+
+Fully responsive
+
+Desktop-first
+
+Mobile responsive
+
+Tablet responsive
+
+
+Maximum content width:
+
+1400px
+
+Centered containers.
+
+Smooth scrolling.
+
+Sticky navigation bar.
+
+Modern hover animations.
+
+Fade-in animations on scroll.
+
+No external CSS framework.
+
+
+---
+
+WEBSITE STRUCTURE
+
+src/
+
+App.jsx
+
+components/
+
+Navbar.jsx
+
+Footer.jsx
+
+Hero.jsx
+
+FeatureCard.jsx
+
+SectionTitle.jsx
+
+Timeline.jsx
+
+StatCard.jsx
+
+TechStack.jsx
+
+CTASection.jsx
+
+FAQ.jsx
+
+ContactForm.jsx
+
+pages/
+
+Home.jsx
+
+Features.jsx
+
+Technology.jsx
+
+Analytics.jsx
+
+About.jsx
+
+Contact.jsx
+
+NotFound.jsx
+
+assets/
+
+images/
+
+icons/
+
+utils/
+
+helpers.js
+
+constants/
+
+index.js
+
+
+---
+
+WEBSITE ROUTES
+
+/
+
+Home
+
+/features
+
+Features
+
+/technology
+
+Technology
+
+/analytics
+
+Analytics
+
+/about
+
+About
+
+/contact
+
+Contact
+
+*
+404 Page
+
+Use React Router.
+
+
+---
+
+NAVBAR
+
+Sticky top navigation.
+
+Contains:
+
+Lumina Logo
+
+Home
+
+Features
+
+Technology
+
+Analytics
+
+About
+
+Contact
+
+
+Desktop:
+
+Horizontal navigation.
+
+Mobile:
+
+Hamburger menu.
+
+Transparent initially.
+
+Dark surface after scrolling.
+
+CTA button:
+
+Request Demo
+
+
+---
+
+HOME PAGE
+
+Contains the following sections.
+
+Hero
+
+Large headline.
+
+Example:
+
+Crime Intelligence.
+Reimagined.
+
+Subheading describing Lumina.
+
+Buttons:
+
+Explore Platform
+
+Request Demo
+
+
+Background:
+
+Animated intelligence grid.
+
+Subtle glowing effects.
+
+Right side:
+
+Illustration of intelligence dashboard.
+
+
+---
+
+Trusted By
+
+Government logos.
+
+Karnataka State Police.
+
+Zoho Catalyst.
+
+QuickML.
+
+(Placeholder logos.)
+
+
+---
+
+Platform Overview
+
+Cards explaining:
+
+FIR Management
+
+Crime Analytics
+
+Risk Prediction
+
+Crime Mapping
+
+Network Intelligence
+
+AI Query Assistant
+
+
+Each card:
+
+Icon
+
+Title
+
+Description
+
+Hover animation.
+
+
+---
+
+Key Statistics
+
+Animated counters.
+
+Examples:
+
+500K+
+
+FIR Records
+
+31
+
+Districts
+
+1000+
+
+Police Stations
+
+Real-time
+
+Analytics
+
+
+---
+
+Why Lumina
+
+Alternating feature sections with illustrations.
+
+Topics:
+
+Centralized Intelligence
+
+GIS Crime Mapping
+
+Repeat Offender Analysis
+
+AI-assisted Investigations
+
+Predictive Crime Models
+
+Criminal Network Graphs
+
+
+
+---
+
+Technology Stack
+
+Cards for:
+
+React
+
+Zoho Catalyst
+
+QuickML
+
+REST APIs
+
+GIS
+
+Recharts
+
+Cytoscape.js
+
+
+---
+
+Screenshots Gallery
+
+Modern carousel showing mock platform screenshots.
+
+Large cards.
+
+Rounded corners.
+
+Glow effect.
+
+
+---
+
+Testimonials
+
+Cards.
+
+Example quotes from officers.
+
+
+---
+
+FAQ
+
+Accordion.
+
+Questions like:
+
+What is Lumina?
+
+Who can access it?
+
+How secure is the platform?
+
+Does it integrate with Catalyst?
+
+
+
+---
+
+Call To Action
+
+Large banner.
+
+Heading:
+
+Transform Crime Intelligence with Lumina
+
+Buttons:
+
+Contact Us
+
+Schedule Demo
+
+
+
+---
+
+FEATURES PAGE
+
+Detailed sections explaining:
+
+FIR Lifecycle
+
+Accused Management
+
+Victim Management
+
+Crime Trends
+
+Risk Heatmaps
+
+Crime Maps
+
+AI Assistant
+
+Investigation Network Graph
+
+Dashboard
+
+Reporting
+
+
+Each feature:
+
+Icon
+
+Description
+
+Screenshot placeholder
+
+Benefits
+
+
+---
+
+TECHNOLOGY PAGE
+
+Architecture timeline.
+
+Explain:
+
+Frontend
+
+React 19
+
+Backend
+
+Zoho Catalyst
+
+Authentication
+
+REST APIs
+
+GIS Layer
+
+Analytics
+
+QuickML Integration
+
+Charts
+
+Recharts
+
+Network Visualization
+
+Cytoscape.js
+
+
+---
+
+ANALYTICS PAGE
+
+Marketing-style showcase.
+
+Explain capabilities.
+
+Sections:
+
+Crime Dashboard
+
+Risk Board
+
+Crime Trends
+
+Repeat Offender Analysis
+
+GIS Mapping
+
+AI Query
+
+Each section:
+
+Image placeholder
+
+Description
+
+Key metrics
+
+
+---
+
+ABOUT PAGE
+
+Mission.
+
+Vision.
+
+Objectives.
+
+Project background.
+
+Karnataka State Police modernization.
+
+Timeline.
+
+Platform evolution.
+
+
+---
+
+CONTACT PAGE
+
+Large responsive form.
+
+Fields:
+
+Name
+
+Email
+
+Organization
+
+Phone
+
+Message
+
+Button:
+
+Submit Inquiry
+
+Also show:
+
+Office Address
+
+Email
+
+Phone
+
+Map placeholder.
+
+
+---
+
+FOOTER
+
+Contains:
+
+Logo
+
+Quick Links
+
+Resources
+
+Technology
+
+Privacy Policy
+
+Terms
+
+Copyright
+
+© Karnataka State Police
+Lumina Crime Intelligence Platform
+
+
+---
+
+COMPONENTS
+
+Create reusable components.
+
+Button
+
+Card
+
+Hero
+
+Navbar
+
+Footer
+
+SectionTitle
+
+StatCard
+
+FeatureCard
+
+CTASection
+
+FAQAccordion
+
+ContactForm
+
+Timeline
+
+Gallery
+
+TestimonialCard
+
+
+
+---
+
+DESIGN REQUIREMENTS
+
+The design should resemble a premium government intelligence platform.
+
+Visual inspiration:
+
+Government command centres
+
+Bloomberg Terminal aesthetics
+
+GitHub Dark
+
+IBM Carbon
+
+Modern cybersecurity websites
+
+
+Avoid:
+
+Bright gradients
+
+Startup illustrations
+
+Cartoon icons
+
+Excessive animations
+
+
+Use:
+
+Glassmorphism sparingly
+
+Thin borders
+
+Blue accent highlights
+
+Dark surfaces
+
+Professional spacing
+
+Large typography
+
+Clean layouts
+
+
+
+---
+
+RESPONSIVENESS
+
+Support:
+
+1920px
+
+1440px
+
+1280px
+
+1024px
+
+768px
+
+480px
+
+360px
+
+
+Navigation becomes hamburger below 992px.
+
+Cards stack vertically on mobile.
+
+Hero becomes single-column.
+
+
+---
+
+PERFORMANCE
+
+Use lazy loading for pages.
+
+Split routes.
+
+Optimize images.
+
+Avoid unnecessary re-renders.
+
+
+---
+
+DELIVERABLES
+
+Generate every required file including:
+
+package.json
+
+vite.config.js
+
+index.html
+
+src/index.css
+
+src/main.jsx
+
+src/App.jsx
+
+All components
+
+All pages
+
+Assets folder structure
+
+Updated directory tree
+
+
+Build a polished, production-ready, fully responsive website suitable as the official web presence of the Lumina Crime Intelligence Platform rather than an internal application dashboard.
+````
