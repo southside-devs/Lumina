@@ -1,4 +1,4 @@
-import DashboardHeader from "./DashboardHeader";
+import DashboardHeader from "./DashBoardHeader";
 import KPIGrid from "./KPIGrid";
 
 import CrimeTrend from "./CrimeTrend";
@@ -7,7 +7,7 @@ import AlertsPanel from "./AlertsPanel";
 import ActivityFeed from "./ActivityFeed";
 import RecentCases from "./RecentCases";
 
-import "../../styles/dashboard-module.css";
+import "../../styles/dashboard.css";
 
 export default function Dashboard() {
 

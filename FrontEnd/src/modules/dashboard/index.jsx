@@ -1,6 +1,5 @@
 export { default } from "./Dashboard";
-export { default } from "./Dashboard";
-export { default as DashboardHeader } from "./DashboardHeader";
+export { default as DashboardHeader } from "./DashBoardHeader";
 export { default as KPIGrid } from "./KPIGrid";
 export { default as CrimeTrend } from "./CrimeTrend";
 export { default as DistrictHeatMap } from "./DistrictHeatMap";

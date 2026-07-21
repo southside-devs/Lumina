@@ -1,25 +1,19 @@
-import MenuBar from "./MenuBar";
-import Toolbar from "./Toolbar";
+import Topbar from "./Topbar";
 import Sidebar from "./Sidebar";
 import Workspace from "./Workspace";
-import RightPanel from "./RightPanel";
 import StatusBar from "./StatusBar";
 
 export default function AppShell() {
     return (
         <div className="app-shell">
 
-            <MenuBar />
-
-            <Toolbar />
+            <Topbar />
 
             <div className="desktop-body">
 
                 <Sidebar />
 
                 <Workspace />
-
-                <RightPanel />
 
             </div>
 

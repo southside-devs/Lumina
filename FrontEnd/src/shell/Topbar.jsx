@@ -1,4 +1,4 @@
-export default function Toolbar() {
+export default function Topbar() {
     return (
         <div className="toolbar">
 

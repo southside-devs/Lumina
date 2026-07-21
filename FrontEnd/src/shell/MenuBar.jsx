@@ -1,4 +1,4 @@
-import { MENU } from "../constants/menu";
+import { MENU } from "../constants/Menu";
 
 export default function MenuBar() {
     return (
