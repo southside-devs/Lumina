@@ -1,33 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Stitch Project 14487218080277870007 Design System Tokens */
-  --bg-dark: #0a0b0d;
-  --bg-surface: #121315;
-  --bg-card: rgba(22, 24, 29, 0.75);
-  --bg-card-hover: rgba(34, 37, 45, 0.85);
+  /* Stitch Project 2453893208035624584 (CyFocus Design System / Lumina Tech-Noir) */
+  --bg-dark: #0B0C0E;
+  --bg-surface: #14161A;
+  --bg-card: rgba(20, 22, 26, 0.85);
+  --bg-card-hover: rgba(30, 33, 40, 0.95);
 
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-highlight: rgba(255, 92, 0, 0.35);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-highlight: rgba(255, 61, 0, 0.4);
 
-  --text-main: #e3e2e5;
-  --text-muted: #ab897d;
-  --text-dim: #71717a;
+  --text-main: #F3F4F6;
+  --text-muted: #9CA3AF;
+  --text-dim: #6B7280;
 
-  /* Luminous Layering Accents */
-  --accent-orange: #ff5c00;
-  --accent-orange-light: #ffb59a;
-  --accent-cyan: #00f0ff;
-  --accent-cyan-light: #d3fbff;
-  --accent-red: #ff2e00;
-  --accent-emerald: #10b981;
-  --accent-purple: #c084fc;
+  /* Action Ember & Semantic Colors */
+  --accent-orange: #FF3D00;
+  --accent-ember: #FF3D00;
+  --accent-cyan: #00F0FF;
+  --accent-red: #EF4444;
+  --accent-amber: #F59E0B;
+  --accent-emerald: #10B981;
 
-  --gradient-primary: linear-gradient(135deg, #ff5c00 0%, #ff2e00 100%);
-  --gradient-cyan: linear-gradient(135deg, #00f0ff 0%, #00a8ff 100%);
-
-  --glow-orange: 0 0 20px rgba(255, 92, 0, 0.35);
-  --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.35);
+  --gradient-primary: linear-gradient(135deg, #FF3D00 0%, #D32F00 100%);
+  --glow-orange: 0 0 20px rgba(255, 61, 0, 0.35);
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -47,9 +43,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   overflow-x: hidden;
-  background-image: 
-    radial-gradient(circle at 50% -10%, rgba(255, 92, 0, 0.15) 0%, transparent 60%),
-    radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08) 0%, transparent 50%);
+  background-image: radial-gradient(circle at 80% 0%, rgba(255, 61, 0, 0.12), transparent 40%);
 }
 
 #root {
@@ -59,22 +53,22 @@ body {
   flex-direction: column;
 }
 
-.font-mono {
+.font-mono, code {
   font-family: var(--font-mono);
 }
 
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   transition: border-color 0.2s ease;
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 92, 0, 0.3);
+  border-color: rgba(255, 61, 0, 0.35);
 }
 
 .toast-banner {
@@ -91,9 +85,9 @@ body {
   font-weight: 600;
 }
 .toast-banner.success {
-  background: #00363a;
-  color: #d3fbff;
-  border: 1px solid #00f0ff;
+  background: #003060;
+  color: #d5e3ff;
+  border: 1px solid #2d91ff;
 }
 
 .spin {
@@ -108,10 +102,10 @@ body {
 }
 
 .skeleton-card {
-  background: linear-gradient(90deg, rgba(22, 24, 29, 0.4) 25%, rgba(34, 37, 45, 0.6) 50%, rgba(22, 24, 29, 0.4) 75%);
+  background: linear-gradient(90deg, rgba(20, 22, 26, 0.4) 25%, rgba(30, 33, 40, 0.6) 50%, rgba(20, 22, 26, 0.4) 75%);
   background-size: 200% 100%;
   animation: skeletonLoading 1.5s infinite;
-  border-radius: 8px;
+  border-radius: 6px;
   min-height: 120px;
 }
 @keyframes skeletonLoading {
