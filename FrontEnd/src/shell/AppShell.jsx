@@ -1,24 +1,14 @@
-import Topbar from "./Topbar";
+import React from "react";
 import Sidebar from "./Sidebar";
 import Workspace from "./Workspace";
-import StatusBar from "./StatusBar";
 
 export default function AppShell() {
-    return (
-        <div className="app-shell">
-
-            <Topbar />
-
-            <div className="desktop-body">
-
-                <Sidebar />
-
-                <Workspace />
-
-            </div>
-
-            <StatusBar />
-
-        </div>
-    );
+  return (
+    <div className="app-shell">
+      <Sidebar />
+      <div className="app-main">
+        <Workspace />
+      </div>
+    </div>
+  );
 }
