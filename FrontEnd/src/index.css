@@ -1,28 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Stitch Project 2453893208035624584 (CyFocus Design System / Lumina Tech-Noir) */
+  /* CY FOCUS / Lumina Tech-Noir Design System Tokens */
   --bg-dark: #0B0C0E;
   --bg-surface: #14161A;
-  --bg-card: rgba(20, 22, 26, 0.85);
-  --bg-card-hover: rgba(30, 33, 40, 0.95);
+  --bg-card: #14161A;
+  --bg-card-hover: #1A1D23;
 
   --border-color: rgba(255, 255, 255, 0.08);
-  --border-highlight: rgba(255, 61, 0, 0.4);
+  --border-highlight: rgba(255, 61, 0, 0.5);
 
   --text-main: #F3F4F6;
   --text-muted: #9CA3AF;
   --text-dim: #6B7280;
 
-  /* Action Ember & Semantic Colors */
+  /* CY FOCUS Signature Colors */
   --accent-orange: #FF3D00;
-  --accent-ember: #FF3D00;
-  --accent-cyan: #00F0FF;
+  --accent-orange-hover: #E03600;
   --accent-red: #EF4444;
   --accent-amber: #F59E0B;
   --accent-emerald: #10B981;
+  --accent-blue: #3B82F6;
 
-  --gradient-primary: linear-gradient(135deg, #FF3D00 0%, #D32F00 100%);
   --glow-orange: 0 0 20px rgba(255, 61, 0, 0.35);
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -43,7 +42,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   overflow-x: hidden;
-  background-image: radial-gradient(circle at 80% 0%, rgba(255, 61, 0, 0.12), transparent 40%);
+  background-image: 
+    radial-gradient(circle at 80% 0%, rgba(255, 61, 0, 0.12), transparent 45%),
+    radial-gradient(circle at 20% 100%, rgba(255, 61, 0, 0.05), transparent 40%);
 }
 
 #root {
@@ -57,25 +58,41 @@ body {
   font-family: var(--font-mono);
 }
 
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0B0C0E;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-orange);
+}
+
+/* Glass panel & cards */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--border-color);
   border-radius: 6px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-  transition: border-color 0.2s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.2s ease, transform 0.2s ease;
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 61, 0, 0.35);
+  border-color: rgba(255, 61, 0, 0.3);
 }
 
+/* Toast Banners */
 .toast-banner {
   position: fixed;
   top: 20px;
   right: 20px;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -83,22 +100,33 @@ body {
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
 }
 .toast-banner.success {
-  background: #003060;
-  color: #d5e3ff;
-  border: 1px solid #2d91ff;
+  background: #14161A;
+  color: #F3F4F6;
+  border: 1px solid var(--accent-orange);
 }
 
+/* Utility Animations */
 .spin {
   animation: spin 1s linear infinite;
 }
 .spin-slow {
-  animation: spin 3s linear infinite;
+  animation: spin 6s linear infinite;
 }
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2s infinite;
+}
+@keyframes pulseGlow {
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
 }
 
 .skeleton-card {
