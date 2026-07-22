@@ -12,7 +12,9 @@ import {
   ArrowUpRight,
   ChevronRight,
   Zap,
-  RotateCcw
+  RotateCcw,
+  Search,
+  Maximize2
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -23,9 +25,10 @@ import {
   Radar,
   Tooltip
 } from 'recharts'
+import KarnatakaCrimeMap, { KARNATAKA_HOTSPOTS } from '../../components/analytics/KarnatakaCrimeMap'
 
 export default function AnalyticsModule() {
-  const [activeView, setActiveView] = useState('dashboard') // 'dashboard', 'incident', 'kanban', 'table', 'globe'
+  const [activeView, setActiveView] = useState('dashboard') // 'dashboard', 'map_explorer', 'incident', 'kanban', 'globe'
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' or 'table' inside Findings
   const [notification, setNotification] = useState(null)
 
@@ -34,7 +37,7 @@ export default function AnalyticsModule() {
     setTimeout(() => setNotification(null), 3500)
   }
 
-  // Sample Radar Threat Surface Map Data (Image 1)
+  // Radar Spider Threat Map Data
   const threatRadarData = [
     { category: 'Authentication', observed: 85, expected: 40, residual: 20 },
     { category: 'Privilege Use', observed: 90, expected: 35, residual: 15 },
@@ -44,7 +47,7 @@ export default function AnalyticsModule() {
     { category: 'Network Access', observed: 75, expected: 50, residual: 20 }
   ]
 
-  // Sample Entities Table Data (Image 1)
+  // Entities Table Data
   const entitiesData = [
     { id: '1', type: 'Device', cvss: '8.7', ipHex: '12.4.123.20' },
     { id: '2', type: 'IP Address', cvss: '1.4', ipHex: '10.0.23.1135' },
@@ -52,7 +55,7 @@ export default function AnalyticsModule() {
     { id: '4', type: 'Database Node', cvss: '9.1', ipHex: '192.168.1.45' }
   ]
 
-  // Sample Kanban Board Data (Image 2)
+  // Kanban Board Data
   const kanbanColumns = [
     {
       id: 'open',
@@ -108,7 +111,7 @@ export default function AnalyticsModule() {
     }
   ]
 
-  // Findings Table Data (Image 2)
+  // Findings Table Data
   const findingsTable = [
     { id: 'FND-1045', severity: 'High', asset: 'web-app-03', cvss: '8.7', status: 'In Progress', badge: 'JD', fixDate: '2025-05-21' },
     { id: 'FND-0946', severity: 'Medium', asset: 'api-gateway', cvss: '8.7', status: 'Triaged', badge: 'SM', fixDate: '2025-05-17' },
@@ -138,6 +141,7 @@ export default function AnalyticsModule() {
           </div>
           <h1 className="cy-page-title">
             {activeView === 'dashboard' && 'Strategic Threat Dashboard'}
+            {activeView === 'karnataka_map' && 'Karnataka GIS Tactical Crime Map'}
             {activeView === 'incident' && 'Incident Details — INC-2042'}
             {activeView === 'kanban' && 'Findings Command Hub'}
             {activeView === 'globe' && 'Spatiotemporal 3D Threat Scanner'}
@@ -153,6 +157,13 @@ export default function AnalyticsModule() {
               onClick={() => setActiveView('dashboard')}
             >
               Dashboard
+            </button>
+            <button
+              type="button"
+              className={`cy-tab-pill ${activeView === 'karnataka_map' ? 'active' : ''}`}
+              onClick={() => setActiveView('karnataka_map')}
+            >
+              Karnataka GIS Map
             </button>
             <button
               type="button"
@@ -188,7 +199,7 @@ export default function AnalyticsModule() {
       </div>
 
       {/* ======================================================== */}
-      {/* VIEW 1: DASHBOARD THREAT OVERVIEW (Image 3) */}
+      {/* VIEW 1: DASHBOARD THREAT OVERVIEW */}
       {/* ======================================================== */}
       {activeView === 'dashboard' && (
         <>
@@ -231,88 +242,57 @@ export default function AnalyticsModule() {
             </div>
           </div>
 
-          {/* Threat World Map & Recent Activity Grid */}
-          <div className="cy-threat-map-grid">
-            <div className="cy-threat-map-card glass-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-orange)' }}>GEOGRAPHIC TELEMETRY</div>
-                  <h3 style={{ fontSize: '16px', color: '#fff', marginTop: '2px' }}>Statewide & Global Threat Map</h3>
-                </div>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Last Week ▾</span>
-              </div>
+          {/* Integrated Leaflet Karnataka Crime Map Feature */}
+          <KarnatakaCrimeMap
+            onSelectHotspot={(spot) => showToast(`Selected Hotspot: ${spot.name}`)}
+            onDeployPatrol={(spot) => showToast(`Deployed Emergency Response Unit to ${spot.name}`)}
+          />
 
-              <div className="cy-map-container">
-                <svg className="cy-map-svg" viewBox="0 0 1000 500" fill="none">
-                  <path d="M150 150 Q 200 100, 350 160 T 600 200 T 850 180" stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1.5" fill="none" />
-                  <path d="M100 250 Q 300 220, 500 300 T 900 280" stroke="rgba(255, 61, 0, 0.25)" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
-                  {/* Continental Dots */}
-                  <circle cx="220" cy="180" r="3" fill="#6B7280" />
-                  <circle cx="480" cy="160" r="3" fill="#6B7280" />
-                  <circle cx="750" cy="220" r="3" fill="#6B7280" />
-                  <circle cx="300" cy="320" r="3" fill="#6B7280" />
-                </svg>
-
-                {/* Hotspot Rings (Image 3) */}
-                <div className="cy-hotspot-node" style={{ top: '35%', left: '72%' }}>
-                  <div className="cy-node-core"></div>
-                  <div className="cy-node-ring"></div>
-                </div>
-                <div className="cy-hotspot-node" style={{ top: '48%', left: '42%' }}>
-                  <div className="cy-node-core"></div>
-                  <div className="cy-node-ring" style={{ width: '45px', height: '45px' }}></div>
-                </div>
-                <div className="cy-hotspot-node" style={{ top: '65%', left: '32%' }}>
-                  <div className="cy-node-core"></div>
-                  <div className="cy-node-ring"></div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-muted)' }} className="font-mono">
-                <span>Bengaluru Urban Sector — 72 Alerts</span>
-                <span>Mysuru Hub — 58 Alerts</span>
-                <span>Mangaluru Port — 21 Alerts</span>
-              </div>
+          {/* Recent Activity List Row */}
+          <div className="cy-activity-card glass-panel">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '15px', color: '#fff' }}>Recent Activity Stream</h3>
+              <span className="font-mono" style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Sort by ▾</span>
             </div>
 
-            {/* Recent Activity List */}
-            <div className="cy-activity-card glass-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '15px', color: '#fff' }}>Recent Activity Stream</h3>
-                <span className="font-mono" style={{ fontSize: '11px', color: 'var(--text-dim)' }}>Sort by ▾</span>
-              </div>
-
-              <div className="cy-activity-list">
-                {[
-                  { title: 'Policy "CIS Benchmark" applied', sub: 'Applied to 3 assets • 8 mins ago', icon: <ShieldAlert size={15} /> },
-                  { title: 'Critical vulnerability detected', sub: 'Found in nginx server • CVE-2025-1234', icon: <AlertTriangle size={15} /> },
-                  { title: 'SLA breach on Incident #4453', sub: 'Response time exceeded by 2 hours', icon: <Clock size={15} /> },
-                  { title: 'Compliance scan started', sub: 'Manual trigger by John.D', icon: <Activity size={15} /> },
-                  { title: 'Report scheduled: Monthly Summary', sub: 'Set to run on May 2, 10:00 UTC', icon: <FileText size={15} /> }
-                ].map((act, idx) => (
-                  <div key={idx} className="cy-activity-item">
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <span className="cy-activity-icon">{act.icon}</span>
-                      <div>
-                        <div className="cy-activity-title">{act.title}</div>
-                        <div className="cy-activity-sub font-mono">{act.sub}</div>
-                      </div>
+            <div className="cy-activity-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
+              {[
+                { title: 'Policy "CIS Benchmark" applied', sub: 'Applied to 3 assets • 8 mins ago', icon: <ShieldAlert size={15} /> },
+                { title: 'Critical vulnerability detected', sub: 'Found in nginx server • CVE-2025-1234', icon: <AlertTriangle size={15} /> },
+                { title: 'SLA breach on Incident #4453', sub: 'Response time exceeded by 2 hours', icon: <Clock size={15} /> },
+                { title: 'Compliance scan started', sub: 'Manual trigger by John.D', icon: <Activity size={15} /> }
+              ].map((act, idx) => (
+                <div key={idx} className="cy-activity-item">
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <span className="cy-activity-icon">{act.icon}</span>
+                    <div>
+                      <div className="cy-activity-title">{act.title}</div>
+                      <div className="cy-activity-sub font-mono">{act.sub}</div>
                     </div>
-                    <ArrowUpRight size={14} color="var(--text-dim)" />
                   </div>
-                ))}
-              </div>
+                  <ArrowUpRight size={14} color="var(--text-dim)" />
+                </div>
+              ))}
             </div>
           </div>
         </>
       )}
 
       {/* ======================================================== */}
-      {/* VIEW 2: INCIDENT DETAILS & RADAR SPIDER MAP (Image 1) */}
+      {/* VIEW 2: KARNATAKA GIS TACTICAL CRIME MAP VIEW */}
+      {/* ======================================================== */}
+      {activeView === 'karnataka_map' && (
+        <KarnatakaCrimeMap
+          onSelectHotspot={(spot) => showToast(`Selected Hotspot: ${spot.name}`)}
+          onDeployPatrol={(spot) => showToast(`Deployed Emergency Response Unit to ${spot.name}`)}
+        />
+      )}
+
+      {/* ======================================================== */}
+      {/* VIEW 3: INCIDENT DETAILS & RADAR SPIDER MAP */}
       {/* ======================================================== */}
       {activeView === 'incident' && (
         <div className="cy-incident-grid">
-          {/* Information & Threat Surface Radar Chart (Image 1) */}
           <div className="cy-radar-card glass-panel">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
@@ -338,7 +318,6 @@ export default function AnalyticsModule() {
               </tbody>
             </table>
 
-            {/* Radar Spider Chart (Image 1 Right Widget) */}
             <div style={{ marginTop: '20px' }}>
               <div className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-orange)', marginBottom: '8px' }}>
                 Threat Surface Map (Multi-Axis Polygon)
@@ -358,7 +337,6 @@ export default function AnalyticsModule() {
             </div>
           </div>
 
-          {/* Entities Table & Polar Ring Chart (Image 1 Right Panel) */}
           <div className="cy-radar-card glass-panel">
             <div>
               <div className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-orange)' }}>AFFECTED ASSETS & CVSS</div>
@@ -389,30 +367,15 @@ export default function AnalyticsModule() {
                 </tbody>
               </table>
             </div>
-
-            {/* Concentric Circle Radar Gauge (Image 1 Bottom Left) */}
-            <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div className="font-mono" style={{ fontSize: '11px', color: 'var(--accent-orange)', marginBottom: '12px' }}>
-                Findings Sector Vector (Misconfiguration / Phishing / Malware)
-              </div>
-              <div style={{ position: 'relative', width: '180px', height: '180px', borderRadius: '50%', border: '2px solid rgba(255, 61, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ width: '130px', height: '130px', borderRadius: '50%', border: '2px dashed var(--accent-orange)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'rgba(255, 61, 0, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span className="font-mono" style={{ fontWeight: 800, color: '#fff', fontSize: '16px' }}>3</span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
 
       {/* ======================================================== */}
-      {/* VIEW 3: FINDINGS KANBAN BOARD & TABLE VIEW (Image 2) */}
+      {/* VIEW 4: FINDINGS KANBAN BOARD & TABLE VIEW */}
       {/* ======================================================== */}
       {activeView === 'kanban' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Sub View Toggle Bar (Kanban vs Table) */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
@@ -440,7 +403,6 @@ export default function AnalyticsModule() {
             </button>
           </div>
 
-          {/* Mode 1: Kanban Columns (Image 2 Top) */}
           {viewMode === 'kanban' && (
             <div className="cy-kanban-board">
               {kanbanColumns.map((col) => (
@@ -470,7 +432,6 @@ export default function AnalyticsModule() {
             </div>
           )}
 
-          {/* Mode 2: Table List (Image 2 Bottom) */}
           {viewMode === 'table' && (
             <div className="glass-panel" style={{ padding: '20px', overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }} className="font-mono">
@@ -515,7 +476,7 @@ export default function AnalyticsModule() {
       )}
 
       {/* ======================================================== */}
-      {/* VIEW 4: 3D INTELLIGENCE WIREFRAME GLOBE (Image 4) */}
+      {/* VIEW 5: 3D GLOBE SCANNER */}
       {/* ======================================================== */}
       {activeView === 'globe' && (
         <div className="glass-panel cy-globe-container">
