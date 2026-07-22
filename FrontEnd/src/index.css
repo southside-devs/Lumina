@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Stitch Project 14487218080277870007 Design System Tokens */
+  --bg-dark: #0a0b0d;
+  --bg-surface: #121315;
+  --bg-card: rgba(22, 24, 29, 0.75);
+  --bg-card-hover: rgba(34, 37, 45, 0.85);
+
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-highlight: rgba(255, 92, 0, 0.35);
+
+  --text-main: #e3e2e5;
+  --text-muted: #ab897d;
+  --text-dim: #71717a;
+
+  /* Luminous Layering Accents */
+  --accent-orange: #ff5c00;
+  --accent-orange-light: #ffb59a;
+  --accent-cyan: #00f0ff;
+  --accent-cyan-light: #d3fbff;
+  --accent-red: #ff2e00;
+  --accent-emerald: #10b981;
+  --accent-purple: #c084fc;
+
+  --gradient-primary: linear-gradient(135deg, #ff5c00 0%, #ff2e00 100%);
+  --gradient-cyan: linear-gradient(135deg, #00f0ff 0%, #00a8ff 100%);
+
+  --glow-orange: 0 0 20px rgba(255, 92, 0, 0.35);
+  --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.35);
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 50% -10%, rgba(255, 92, 0, 0.15) 0%, transparent 60%),
+    radial-gradient(circle at 85% 30%, rgba(0, 240, 255, 0.08) 0%, transparent 50%);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+.glass-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  transition: border-color 0.2s ease;
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 92, 0, 0.3);
+}
+
+.toast-banner {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.toast-banner.success {
+  background: #00363a;
+  color: #d3fbff;
+  border: 1px solid #00f0ff;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+.spin-slow {
+  animation: spin 3s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.skeleton-card {
+  background: linear-gradient(90deg, rgba(22, 24, 29, 0.4) 25%, rgba(34, 37, 45, 0.6) 50%, rgba(22, 24, 29, 0.4) 75%);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite;
+  border-radius: 8px;
+  min-height: 120px;
+}
+@keyframes skeletonLoading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
