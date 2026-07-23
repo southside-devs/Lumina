@@ -1,41 +1,69 @@
 import React, { useState } from "react";
-import { Shield, Search, Bell, RefreshCw, Download, Activity, ChevronDown, CheckCircle2 } from "lucide-react";
+import NotificationsPopover from "./NotificationsPopover";
+import { Search, Bell, RefreshCw, ShieldCheck, UserCheck, CheckCircle2, ChevronDown } from "lucide-react";
 
 export default function Topbar() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [userRole, setUserRole] = useState("Inspector General"); // Catalyst RBAC tier
+  const [logoError, setLogoError] = useState(false);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
     setTimeout(() => setIsRefreshing(false), 800);
   };
 
+  const roleOptions = [
+    "Inspector General (IG)",
+    "Superintendent of Police (SP)",
+    "Station House Officer (SHO)",
+    "Lead Intelligence Analyst"
+  ];
+
   return (
     <header className="topbar">
+      {/* Top Left: KSP Logo + Branding */}
       <div className="topbar-left">
         <div className="topbar-brand">
-          <div className="topbar-logo-icon">
-            <Shield size={20} />
+          {!logoError ? (
+            <img
+              src="/assets/ksp_logo.png"
+              alt="Karnataka State Police Logo"
+              className="topbar-ksp-logo"
+              onError={() => setLogoError(true)}
+            />
+          ) : (
+            <span className="ksp-fallback-badge font-mono">KSP</span>
+          )}
+          <div className="topbar-brand-titles">
+            <div className="topbar-title-row">
+              <span className="topbar-brand-text">LUMINA</span>
+              <span className="topbar-brand-tag font-mono">KSP Beta Version</span>
+            </div>
+            <span className="topbar-brand-hub-sub font-mono">KSP Strategic Intelligence Hub</span>
           </div>
-          <span className="topbar-brand-text">LUMINA</span>
-          <span className="topbar-brand-tag">KSP v2.6</span>
         </div>
 
+        {/* Global Fast Search Bar */}
         <div className="global-search">
           <Search size={15} className="global-search-icon" />
           <input
             type="text"
-            placeholder="Search FIR, Suspect, Case ID, District..."
+            placeholder="Search FIR, Suspect Name, Police Station, Vehicle Reg No..."
           />
         </div>
       </div>
 
+      {/* Top Right: Status, Alerts, Role Badge & User Profile */}
       <div className="topbar-right">
+        {/* Live API Sync Status Indicator */}
         <div className="status-badge">
           <span className="pulse-indicator"></span>
           <span>Live API Sync Active</span>
         </div>
 
+        {/* Sync Button */}
         <button
           className="topbar-action-btn"
           onClick={handleRefresh}
@@ -44,6 +72,7 @@ export default function Topbar() {
           <RefreshCw size={16} className={isRefreshing ? "spin" : ""} />
         </button>
 
+        {/* Real-time Alerts Dropdown */}
         <div style={{ position: "relative" }}>
           <button
             className="topbar-action-btn"
@@ -55,44 +84,47 @@ export default function Topbar() {
           </button>
 
           {notificationsOpen && (
-            <div
-              style={{
-                position: "absolute",
-                top: "48px",
-                right: "0",
-                width: "320px",
-                background: "#0f172a",
-                border: "1px solid rgba(255,255,255,0.12)",
-                borderRadius: "12px",
-                padding: "16px",
-                boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
-                zIndex: 100,
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "12px" }}>
-                <span style={{ fontWeight: 700, fontSize: "13px" }}>Critical Alerts</span>
-                <span style={{ fontSize: "11px", color: "#38bdf8", cursor: "pointer" }}>Mark all read</span>
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ fontSize: "12px", background: "rgba(244,63,94,0.1)", border: "1px solid rgba(244,63,94,0.2)", padding: "10px", borderRadius: "8px" }}>
-                  <div style={{ color: "#fb7185", fontWeight: 700 }}>🚨 High Threat Spike</div>
-                  <div style={{ color: "#94a3b8", fontSize: "11px", marginTop: "2px" }}>Bengaluru Urban risk score elevated to 8.9</div>
-                </div>
-                <div style={{ fontSize: "12px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.2)", padding: "10px", borderRadius: "8px" }}>
-                  <div style={{ color: "#fbbf24", fontWeight: 700 }}>⚠️ Network Link Detected</div>
-                  <div style={{ color: "#94a3b8", fontSize: "11px", marginTop: "2px" }}>Suspect #4902 linked to FIR-2026-9901</div>
-                </div>
-              </div>
-            </div>
+            <NotificationsPopover onClose={() => setNotificationsOpen(false)} />
           )}
         </div>
 
-        <div className="officer-profile">
-          <div className="officer-avatar">SP</div>
-          <div className="officer-info">
-            <span className="officer-name">Sup. S. Rao</span>
-            <span className="officer-role">KSP Cyber Cell</span>
-          </div>
+        {/* Catalyst RBAC Role Badge & Profile */}
+        <div className="rbac-profile-wrapper" style={{ position: "relative" }}>
+          <button
+            className="officer-profile-btn"
+            onClick={() => setRoleMenuOpen(!roleMenuOpen)}
+          >
+            <div className="officer-avatar">RR</div>
+            <div className="officer-info">
+              <span className="officer-name">Ramachandra Rao</span>
+              <span className="rbac-role-badge font-mono">
+                <ShieldCheck size={11} /> {userRole}
+              </span>
+            </div>
+            <ChevronDown size={14} style={{ opacity: 0.6, marginLeft: "4px" }} />
+          </button>
+
+          {/* Role Switcher (Catalyst RBAC Simulation) */}
+          {roleMenuOpen && (
+            <div className="rbac-role-menu glass-panel">
+              <div className="rbac-menu-header font-mono">
+                <span>CATALYST RBAC TIER</span>
+              </div>
+              {roleOptions.map((role) => (
+                <button
+                  key={role}
+                  className={`rbac-role-option ${userRole === role ? "active" : ""}`}
+                  onClick={() => {
+                    setUserRole(role);
+                    setRoleMenuOpen(false);
+                  }}
+                >
+                  <CheckCircle2 size={13} style={{ opacity: userRole === role ? 1 : 0 }} />
+                  <span>{role}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </header>

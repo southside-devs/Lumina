@@ -14,7 +14,10 @@ import {
   Zap,
   RotateCcw,
   Search,
-  Maximize2
+  Maximize2,
+  Home,
+  Calendar,
+  Sparkles
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -26,6 +29,8 @@ import {
   Tooltip
 } from 'recharts'
 import KarnatakaCrimeMap, { KARNATAKA_HOTSPOTS } from '../../components/analytics/KarnatakaCrimeMap'
+import StateOverviewMap from '../../components/maps/StateOverviewMap'
+import Spline3DViewer from '../../components/Spline3DViewer'
 
 export default function AnalyticsModule() {
   const [activeView, setActiveView] = useState('dashboard') // 'dashboard', 'map_explorer', 'incident', 'kanban', 'globe'
@@ -132,8 +137,8 @@ export default function AnalyticsModule() {
       {/* Top Header & Breadcrumb Bar */}
       <div className="cy-header-bar">
         <div>
-          <div className="cy-breadcrumbs font-mono">
-            <span>🏠</span>
+          <div className="cy-breadcrumbs font-mono flex items-center gap-1">
+            <Home size={13} />
             <ChevronRight size={12} />
             <span>Incidents</span>
             <ChevronRight size={12} />
@@ -181,10 +186,11 @@ export default function AnalyticsModule() {
             </button>
             <button
               type="button"
-              className={`cy-tab-pill ${activeView === 'globe' ? 'active' : ''}`}
+              className={`cy-tab-pill flex items-center gap-1.5 ${activeView === 'globe' ? 'active' : ''}`}
               onClick={() => setActiveView('globe')}
             >
-              3D Globe Scanner
+              <Sparkles size={13} />
+              <span>3D Spline Scene</span>
             </button>
           </div>
 
@@ -242,10 +248,9 @@ export default function AnalyticsModule() {
             </div>
           </div>
 
-          {/* Integrated Leaflet Karnataka Crime Map Feature */}
-          <KarnatakaCrimeMap
-            onSelectHotspot={(spot) => showToast(`Selected Hotspot: ${spot.name}`)}
-            onDeployPatrol={(spot) => showToast(`Deployed Emergency Response Unit to ${spot.name}`)}
+          {/* State Overview Heatmap Specification Component */}
+          <StateOverviewMap
+            onSelectHotspot={(spot) => showToast(`Selected GIS Hotspot: ${spot.districtName} (${spot.threatScore} Risk Score)`)}
           />
 
           {/* Recent Activity List Row */}
@@ -476,34 +481,10 @@ export default function AnalyticsModule() {
       )}
 
       {/* ======================================================== */}
-      {/* VIEW 5: 3D GLOBE SCANNER */}
+      {/* VIEW 5: 3D INTERACTIVE SPLINE SCENE */}
       {/* ======================================================== */}
       {activeView === 'globe' && (
-        <div className="glass-panel cy-globe-container">
-          <div className="cy-wireframe-globe">
-            <svg className="cy-globe-svg" viewBox="0 0 200 200" fill="none">
-              <circle cx="100" cy="100" r="80" stroke="var(--accent-orange)" strokeWidth="1.5" strokeDasharray="3 3" />
-              <ellipse cx="100" cy="100" rx="80" ry="30" stroke="var(--accent-orange)" strokeWidth="1" />
-              <ellipse cx="100" cy="100" rx="30" ry="80" stroke="var(--accent-orange)" strokeWidth="1" />
-              <line x1="20" y1="100" x2="180" y2="100" stroke="var(--accent-orange)" strokeWidth="1" />
-              <line x1="100" y1="20" x2="100" y2="180" stroke="var(--accent-orange)" strokeWidth="1" />
-            </svg>
-          </div>
-
-          <h2 style={{ fontSize: '20px', color: '#fff' }}>Nice, no active findings match these filters!</h2>
-          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }} className="font-mono">
-            Statewide Karnataka threat scan completed across 31 districts.
-          </p>
-
-          <button
-            type="button"
-            className="btn-primary"
-            style={{ padding: '10px 20px', marginTop: '8px' }}
-            onClick={() => showToast('Triggered new deep spatiotemporal network scan...')}
-          >
-            <RotateCcw size={15} /> New scan +
-          </button>
-        </div>
+        <Spline3DViewer sceneUrl="https://prod.spline.design/PcMI71yI07N-AnFq/scene.splinecode" />
       )}
     </div>
   )

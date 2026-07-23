@@ -1,30 +1,30 @@
 import React, { useState } from "react";
-import { ShieldAlert, X, CheckCircle2, Radio } from "lucide-react";
+import { ShieldAlert, X, CheckCircle2, Radio, AlertTriangle, Lock } from "lucide-react";
 
 const ALERTS = [
   {
     id: 1, severity: "critical", badge: "CRITICAL",
     title: "Gang Activity Spike — Bengaluru North",
     desc: "ST-DBSCAN detected 3 new cluster nodes near Hebbal. Coordinated theft pattern confirmed.",
-    time: "4 min ago", icon: "🚨",
+    time: "4 min ago", icon: <ShieldAlert size={16} color="#fb7185" />,
   },
   {
     id: 2, severity: "high", badge: "HIGH",
     title: "Narcotics Seizure Alert — Mysuru",
     desc: "NDPS case FIR-2026-7741 elevated: 4.2 kg contraband, 2 accused linked to Colombo network.",
-    time: "18 min ago", icon: "⚠️",
+    time: "18 min ago", icon: <AlertTriangle size={16} color="#fbbf24" />,
   },
   {
     id: 3, severity: "high", badge: "HIGH",
     title: "Cyber-Fraud Network Identified",
     desc: "IPC-66D: Rs 1.4Cr siphoned via spoofed banking portals. 6 victims, Bengaluru & Mangaluru.",
-    time: "42 min ago", icon: "🔐",
+    time: "42 min ago", icon: <Lock size={16} color="#fbbf24" />,
   },
   {
     id: 4, severity: "medium", badge: "MEDIUM",
     title: "Missing Person — Red Flag",
     desc: "Case escalated to district level. Last tracked near Tumkur Road CCTV node at 02:14 AM.",
-    time: "1 hr ago", icon: "📡",
+    time: "1 hr ago", icon: <Radio size={16} color="#60a5fa" />,
   },
 ];
 

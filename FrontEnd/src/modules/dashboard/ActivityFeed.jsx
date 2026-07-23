@@ -1,39 +1,39 @@
 import React from "react";
-import { Activity } from "lucide-react";
+import { Activity, FileText, Share2, MapPin, Cpu, FileCheck, Shield } from "lucide-react";
 
 const FEED = [
   {
-    id: 1, icon: "📄", color: "#3b82f6",
+    id: 1, icon: <FileText size={15} color="#3b82f6" />, color: "#3b82f6",
     title: "FIR-2026-9901 Filed",
     desc: "Cybercrime: Banking fraud — ₹3.2L. PS: Whitefield, Bengaluru Urban.",
     time: "2 min ago",
   },
   {
-    id: 2, icon: "🔗", color: "#8b5cf6",
+    id: 2, icon: <Share2 size={15} color="#8b5cf6" />, color: "#8b5cf6",
     title: "Suspect Network Updated",
     desc: "Accused #4902 linked to 3 additional FIRs via financial transaction trace.",
     time: "11 min ago",
   },
   {
-    id: 3, icon: "📍", color: "#f43f5e",
+    id: 3, icon: <MapPin size={15} color="#f43f5e" />, color: "#f43f5e",
     title: "Hotspot Cluster Upgraded",
     desc: "Hebbal–Nagavara corridor upgraded to Risk Level RED by ST-DBSCAN.",
     time: "29 min ago",
   },
   {
-    id: 4, icon: "🧠", color: "#10b981",
+    id: 4, icon: <Cpu size={15} color="#10b981" />, color: "#10b981",
     title: "AI Prediction Updated",
     desc: "Zia AutoML: Weekend theft likelihood +22% in Koramangala–BTM zone.",
     time: "45 min ago",
   },
   {
-    id: 5, icon: "📋", color: "#f59e0b",
+    id: 5, icon: <FileCheck size={15} color="#f59e0b" />, color: "#f59e0b",
     title: "Charge Sheet Filed",
     desc: "FIR-2026-8812 — Narcotics NDPS case charge-sheeted. Court date: Aug 4.",
     time: "1 hr ago",
   },
   {
-    id: 6, icon: "🚔", color: "#06b6d4",
+    id: 6, icon: <Shield size={15} color="#06b6d4" />, color: "#06b6d4",
     title: "Unit Deployed",
     desc: "QRT dispatched to Belagavi Central based on predictive patrol schedule.",
     time: "1.5 hr ago",
