@@ -1,40 +1,32 @@
-import axios from "axios";
-import { dashboardMock } from "./dashboard.mock";
+/**
+ * Lumina — Dashboard Service (legacy compatibility shim)
+ * The dashboardStore.js imports getDashboardData/refreshDashboard from here.
+ * We now proxy to the live Catalyst API instead of localhost mock.
+ */
+import { fetchOverview, fetchCrimeTrends, fetchDistrictSummary, fetchRecentFIRs } from "../../api/dashboard";
 
-const USE_MOCK = true;
+async function buildDashboardData() {
+  const [overview, trends, districts, recentFIRs] = await Promise.all([
+    fetchOverview(),
+    fetchCrimeTrends(),
+    fetchDistrictSummary(),
+    fetchRecentFIRs(10),
+  ]);
 
-const api = axios.create({
-
-    baseURL: "http://localhost:9000/api",
-
-    timeout: 10000
-
-});
+  return {
+    kpis: overview,
+    crimeTrend: Array.isArray(trends) ? trends : [],
+    districts: Array.isArray(districts) ? districts : [],
+    alerts: [],
+    activities: [],
+    recentCases: Array.isArray(recentFIRs) ? recentFIRs : [],
+  };
+}
 
 export async function getDashboardData() {
-
-    if (USE_MOCK) {
-
-        return dashboardMock;
-
-    }
-
-    const { data } = await api.get("/dashboard");
-
-    return data;
-
+  return buildDashboardData();
 }
 
 export async function refreshDashboard() {
-
-    if (USE_MOCK) {
-
-        return dashboardMock;
-
-    }
-
-    const { data } = await api.get("/dashboard/refresh");
-
-    return data;
-
+  return buildDashboardData();
 }

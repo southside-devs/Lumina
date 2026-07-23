@@ -157,12 +157,12 @@ def validate_station(data):
 def validate_fir(data):
     """Validate FIR creation/update payload."""
     errors = validate_required(
-        data, ["Station_ID", "FIR_Number", "Date", "Crime_Group", "Latitude", "Longitude"]
+        data, ["Station_ID", "FIR_Number", "Incident_Date", "Crime_Group", "Latitude", "Longitude"]
     )
     err = validate_positive_int(data.get("Station_ID"), "Station_ID")
     if err:
         errors.append(err)
-    err = validate_date(data.get("Date"), "Date")
+    err = validate_date(data.get("Incident_Date"), "Incident_Date")
     if err:
         errors.append(err)
     err = validate_enum(data.get("Crime_Group"), VALID_CRIME_GROUPS, "Crime_Group")

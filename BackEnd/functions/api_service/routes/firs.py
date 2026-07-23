@@ -75,7 +75,7 @@ def list_firs(request, db):
 
     query = (
         f"SELECT * FROM {TABLE} {where_sql} "
-        f"ORDER BY Date DESC LIMIT {limit} OFFSET {offset}"
+        f"ORDER BY Incident_Date DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
@@ -140,11 +140,11 @@ def search_firs(request, db):
 
     date_from = request.args.get("date_from")
     if date_from:
-        conditions.append(f"Date >= '{date_from}'")
+        conditions.append(f"Incident_Date >= '{date_from}'")
 
     date_to = request.args.get("date_to")
     if date_to:
-        conditions.append(f"Date <= '{date_to}'")
+        conditions.append(f"Incident_Date <= '{date_to}'")
 
     station_id = request.args.get("station_id")
     if station_id:
@@ -166,7 +166,7 @@ def search_firs(request, db):
 
     query = (
         f"SELECT * FROM {TABLE} {where_sql} "
-        f"ORDER BY Date DESC LIMIT {limit} OFFSET {offset}"
+        f"ORDER BY Incident_Date DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
@@ -190,7 +190,7 @@ def create_fir(request, db):
     row = {
         "Station_ID": int(data["Station_ID"]),
         "FIR_Number": data["FIR_Number"],
-        "Date": data["Date"],
+        "Incident_Date": data["Incident_Date"],
         "Crime_Group": data["Crime_Group"],
         "Latitude": float(data["Latitude"]),
         "Longitude": float(data["Longitude"]),
@@ -226,7 +226,7 @@ def update_fir(request, db, fir_id):
     # Only validate fields that are being updated
     update_fields = {}
     updatable = [
-        "Station_ID", "FIR_Number", "Date", "Crime_Group", "Crime_Subgroup",
+        "Station_ID", "FIR_Number", "Incident_Date", "Crime_Group", "Crime_Subgroup",
         "Latitude", "Longitude", "Narrative", "Status",
     ]
     for field in updatable:

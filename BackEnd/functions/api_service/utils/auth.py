@@ -31,6 +31,17 @@ from flask import jsonify, make_response
 
 logger = logging.getLogger("lumina.auth")
 
+# ── Demo bypass ──────────────────────────────────────────────────────────
+# During hackathon demos the frontend sends this key to skip Catalyst auth.
+_DEMO_API_KEY = "lumina-demo-ksp-2026"
+_DEMO_USER = {
+    "user_id":    "demo",
+    "email":      "demo@lumina.ksp.gov.in",
+    "first_name": "Demo",
+    "last_name":  "Inspector",
+    "role":       "Admin",
+}
+
 
 # ── Role Constants ───────────────────────────────────────────────────────
 
@@ -65,6 +76,11 @@ def get_current_user(request):
 
     Returns None if the user is not authenticated.
     """
+    # Demo bypass: accept a shared secret header for hackathon demos
+    demo_key = request.headers.get("X-Lumina-Demo-Key", "")
+    if demo_key == _DEMO_API_KEY:
+        return _DEMO_USER
+
     try:
         app = zcatalyst_sdk.initialize(request)
         user_management = app.user_management()
