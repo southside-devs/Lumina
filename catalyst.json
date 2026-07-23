@@ -4,8 +4,9 @@
       "api_service",
       "etl_cron"
     ],
-    "source": "functions"
+    "source": "BackEnd/functions"
   },
+
   "client": {
     "source": "FrontEnd"
   }
