@@ -1,6 +1,13 @@
 const { app, BrowserWindow } = require("electron");
 const path = require("path");
 
+let autoUpdater = null;
+try {
+  autoUpdater = require("electron-updater").autoUpdater;
+} catch (e) {
+  console.log("electron-updater unavailable:", e.message);
+}
+
 const isDev = process.env.NODE_ENV === "development" || !app.isPackaged;
 
 function createWindow() {
@@ -51,6 +58,15 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+
+  // Check for auto-updates quietly from GitHub Releases in production
+  if (autoUpdater && !isDev) {
+    try {
+      autoUpdater.checkForUpdatesAndNotify();
+    } catch (err) {
+      console.log("Auto-update check skipped:", err.message);
+    }
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

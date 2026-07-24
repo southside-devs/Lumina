@@ -15,6 +15,13 @@
   "build": {
     "appId": "com.ksp.lumina",
     "productName": "Lumina",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "southside-devs",
+        "repo": "Lumina"
+      }
+    ],
     "directories": {
       "output": "dist-electron"
     },
@@ -24,7 +31,13 @@
       "package.json"
     ],
     "win": {
-      "target": "nsis"
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     }
   },
   "dependencies": {
