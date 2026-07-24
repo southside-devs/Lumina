@@ -39,7 +39,7 @@ export default function Topbar() {
           <div className="topbar-brand-titles">
             <div className="topbar-title-row">
               <span className="topbar-brand-text">LUMINA</span>
-              <span className="topbar-brand-tag font-mono">KSP Beta Version</span>
+              <span className="topbar-brand-tag font-mono">KSP Prototype v0.1.0</span>
             </div>
             <span className="topbar-brand-hub-sub font-mono">KSP Strategic Intelligence Hub</span>
           </div>
