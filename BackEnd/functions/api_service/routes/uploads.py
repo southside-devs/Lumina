@@ -124,7 +124,7 @@ def generate_signed_url(request):
         return bad_request("Validation failed", details=errors)
 
     try:
-        app = zcatalyst_sdk.initialize(req=request)
+        app = zcatalyst_sdk.initialize()
         stratus = app.stratus()
 
         # Ensure the per-FIR folder exists (or get it if it does)
@@ -178,7 +178,7 @@ def get_file_url(request, file_id):
         return bad_request("Invalid file ID")
 
     try:
-        app = zcatalyst_sdk.initialize(req=request)
+        app = zcatalyst_sdk.initialize()
 
         stratus = app.stratus()
 
