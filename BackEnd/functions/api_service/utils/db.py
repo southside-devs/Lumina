@@ -12,9 +12,15 @@ logger = logging.getLogger("lumina.db")
 class DataStore:
     """Wrapper around Catalyst Data Store ZCQL operations."""
 
-    def __init__(self, request):
-        """Initialize Catalyst app from the incoming request context."""
-        self.app = zcatalyst_sdk.get_app()
+    def __init__(self, request=None):
+        """Initialize Catalyst app safely."""
+        try:
+            self.app = zcatalyst_sdk.get_app()
+        except Exception:
+            try:
+                self.app = zcatalyst_sdk.initialize()
+            except Exception:
+                self.app = zcatalyst_sdk.initialize(request)
         self.zcql = self.app.zcql()
 
 
