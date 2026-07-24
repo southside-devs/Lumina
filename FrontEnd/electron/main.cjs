@@ -27,8 +27,10 @@ function createWindow() {
   // Remove default menu bar
   mainWindow.setMenuBarVisibility(false);
 
-  // Always open Developer Tools in prototype phase for diagnostics
-  mainWindow.webContents.openDevTools({ mode: 'detach' });
+  // Open Developer Tools in development mode
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
+  }
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173").catch(() => {
