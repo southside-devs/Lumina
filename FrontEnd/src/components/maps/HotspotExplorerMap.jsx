@@ -95,6 +95,20 @@ export default function HotspotExplorerMap({
   const [selectedCluster, setSelectedCluster] = useState(clusters[0]);
   const [showTuningPanel, setShowTuningPanel] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(7);
+  const [timelineScrub, setTimelineScrub] = useState(90);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    let interval = null;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setTimelineScrub((prev) => (prev >= 100 ? 0 : prev + 2));
+      }, 250);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying]);
 
   const handleClusterClick = (cluster) => {
     setSelectedCluster(cluster);
