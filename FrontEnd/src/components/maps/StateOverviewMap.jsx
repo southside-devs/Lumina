@@ -1,9 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Filter, Flame, ShieldAlert, Sparkles, MapPin, Layers, Globe, Activity, ChevronDown } from 'lucide-react';
-import Map, { Marker, Popup } from 'react-map-gl/mapbox';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+// Fix default Leaflet icon paths
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png'
+});
 
 // Statewide Karnataka Crime Incidents Dataset
 export const KARNATAKA_SAMPLE_CRIME_EVENTS = [
@@ -160,64 +167,63 @@ export default function StateOverviewMap({
 
       {/* 2. SPATIAL MAP CANVAS CONTAINER */}
       <div className="relative flex-1 w-full h-[520px] bg-[#000000] overflow-hidden rounded-2xl border border-[rgba(100,100,100,0.3)]">
-        <Map
-          {...viewState}
-          onMove={(evt) => setViewState(evt.viewState)}
-          mapboxAccessToken={MAPBOX_TOKEN}
-          mapStyle="mapbox://styles/mapbox/dark-v11"
-          style={{ width: "100%", height: "100%" }}
+        <MapContainer
+          center={[15.3173, 75.7139]}
+          zoom={7}
+          scrollWheelZoom={true}
+          style={{ height: '100%', width: '100%', background: '#090d16' }}
         >
+          <TileLayer
+            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          />
+
           {filteredData.map((spot) => {
             const isCritical = spot.threatScore >= 80;
-            const isSelected = selectedPoint?.id === spot.id;
+            const color = isCritical ? '#f43f5e' : spot.threatScore >= 70 ? '#f59e0b' : '#3b82f6';
+            const radius = Math.max(12, Math.round(spot.threatScore / 4));
 
             return (
-              <Marker
-                key={spot.id}
-                longitude={spot.longitude}
-                latitude={spot.latitude}
-                anchor="center"
-                onClick={(e) => {
-                  e.originalEvent.stopPropagation();
-                  handleHotspotClick(spot);
-                }}
-              >
-                <div className="relative cursor-pointer group transition-all duration-300">
-                  {mapMode === 'heatmap' && (
-                    <div
-                      className={`absolute inset-0 rounded-full animate-ping opacity-35 ${
-                        isCritical ? 'bg-[#f43f5e]' : 'bg-[#f59e0b]'
-                      }`}
-                      style={{
-                        width: `${spot.threatScore * 0.6}px`,
-                        height: `${spot.threatScore * 0.6}px`,
-                        margin: `-${spot.threatScore * 0.3}px`,
-                      }}
-                    />
-                  )}
+              <React.Fragment key={spot.id}>
+                {mapMode === 'heatmap' && (
+                  <CircleMarker
+                    center={[spot.latitude, spot.longitude]}
+                    radius={radius * 2}
+                    pathOptions={{
+                      color: color,
+                      fillColor: color,
+                      fillOpacity: 0.2,
+                      weight: 1
+                    }}
+                  />
+                )}
 
-                  <div
-                    className={`rounded-2xl transition-all duration-300 border flex items-center justify-center p-2 ${
-                      isSelected
-                        ? 'bg-[#E85002] border-[#F9F9F9] shadow-[0_0_25px_rgba(232,80,2,0.8)] scale-110'
-                        : isCritical
-                        ? 'bg-[#C10801]/40 border-[#C10801] text-[#F9F9F9] shadow-[0_0_15px_rgba(193,8,1,0.6)] hover:scale-105'
-                        : 'bg-[#1e293b]/90 border-[rgba(100,100,100,0.5)] text-[#F9F9F9] hover:border-[#E85002]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold">
-                      <MapPin size={13} className={isCritical ? 'text-[#f43f5e]' : 'text-[#E85002]'} />
-                      <span>{spot.districtName}</span>
-                      <span className="px-1.5 py-0.2 rounded bg-black/50 text-[10px] text-[#A7A7A7]">
-                        {spot.threatScore}
-                      </span>
+                <CircleMarker
+                  center={[spot.latitude, spot.longitude]}
+                  radius={radius}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.85,
+                    weight: 2
+                  }}
+                  eventHandlers={{
+                    click: () => handleHotspotClick(spot)
+                  }}
+                >
+                  <Popup className="cy-map-popup">
+                    <div className="font-mono text-xs p-2 bg-[#0d1117] text-white rounded border border-[#f59e0b]">
+                      <div className="font-bold text-[#f59e0b]">{spot.districtName}</div>
+                      <div>Threat Score: {spot.threatScore}/100</div>
+                      <div>FIRs: {spot.firCount.toLocaleString()}</div>
+                      <div>Category: {spot.category}</div>
                     </div>
-                  </div>
-                </div>
-              </Marker>
+                  </Popup>
+                </CircleMarker>
+              </React.Fragment>
             );
           })}
-        </Map>
+        </MapContainer>
 
         {/* 3. FLOATING GLASS INSPECTOR DRAWER */}
         {selectedPoint && (
