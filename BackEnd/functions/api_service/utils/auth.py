@@ -82,7 +82,8 @@ def get_current_user(request):
         return _DEMO_USER
 
     try:
-        app = zcatalyst_sdk.initialize(request)
+        app = zcatalyst_sdk.initialize(req=request)
+
         user_management = app.user_management()
 
         # Get the currently authenticated user from the session
