@@ -21,10 +21,27 @@ function createWindow() {
   mainWindow.setMenuBarVisibility(false);
 
   if (isDev) {
-    mainWindow.loadURL("http://localhost:5173");
+    mainWindow.loadURL("http://localhost:5173").catch(() => {
+      console.log("Dev server not ready yet, loading built dist...");
+      mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    });
   } else {
     mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
   }
+
+  // Handle load failure gracefully
+  mainWindow.webContents.on("did-fail-load", () => {
+    console.log("Page failed to load. Retrying in 1s...");
+    setTimeout(() => {
+      if (isDev) {
+        mainWindow.loadURL("http://localhost:5173").catch(() => {
+          mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+        });
+      } else {
+        mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+      }
+    }, 1000);
+  });
 }
 
 app.whenReady().then(() => {
