@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Filter, Flame, ShieldAlert, Sparkles, MapPin, Layers, Globe, Activity, ChevronDown } from 'lucide-react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -36,15 +36,6 @@ const KARNATAKA_INITIAL_VIEW = {
   bearing: 0,
 };
 
-function ZoomTracker({ onZoomChange }) {
-  const map = useMapEvents({
-    zoomend() {
-      onZoomChange(map.getZoom());
-    },
-  });
-  return null;
-}
-
 export default function StateOverviewMap({
   rawCrimeEvents = KARNATAKA_SAMPLE_CRIME_EVENTS,
   onSelectHotspot
@@ -55,7 +46,6 @@ export default function StateOverviewMap({
   const [timelineIndex, setTimelineIndex] = useState(85);
   const [isPlaying, setIsPlaying] = useState(false);
   const [mapMode, setMapMode] = useState('heatmap'); // 'heatmap' | 'hotspots'
-  const [zoomLevel, setZoomLevel] = useState(7);
 
   const categories = [
     'ALL',
@@ -65,32 +55,6 @@ export default function StateOverviewMap({
     'Financial & Commercial Fraud',
     'Property & Vehicle Theft'
   ];
-
-  // Aggregated Karnataka Statewide Marker for zoomed-out view (zoom < 7)
-  const aggregatedCluster = useMemo(() => {
-    if (!rawCrimeEvents || rawCrimeEvents.length === 0) {
-      return {
-        id: 'STATEWIDE-CLUSTER',
-        districtName: 'Karnataka Statewide Intelligence Hub',
-        threatScore: 85,
-        firCount: 1500,
-        category: 'Aggregated Hotspots',
-        latitude: 14.5,
-        longitude: 75.8,
-      };
-    }
-    const totalFirs = rawCrimeEvents.reduce((acc, curr) => acc + (curr.firCount || 0), 0);
-    const maxScore = Math.max(...rawCrimeEvents.map((e) => e.threatScore || 0));
-    return {
-      id: 'STATEWIDE-CLUSTER',
-      districtName: 'Karnataka Statewide Intelligence Hub',
-      threatScore: maxScore > 0 ? maxScore : 85,
-      firCount: totalFirs,
-      category: 'Aggregated Hotspots',
-      latitude: 14.5,
-      longitude: 75.8,
-    };
-  }, [rawCrimeEvents]);
 
   // Timeline Animation Loop
   useEffect(() => {
@@ -206,102 +170,61 @@ export default function StateOverviewMap({
         <MapContainer
           center={[15.3173, 75.7139]}
           zoom={7}
-          minZoom={5.5}
+          minZoom={6}
           maxZoom={18}
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%', background: '#090d16' }}
         >
-          <ZoomTracker onZoomChange={setZoomLevel} />
-
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {/* If zoomed out below 6.8, collapse all markers into a single statewide macro cluster */}
-          {zoomLevel < 6.8 ? (
-            <React.Fragment>
-              <CircleMarker
-                center={[aggregatedCluster.latitude, aggregatedCluster.longitude]}
-                radius={45}
-                pathOptions={{
-                  color: '#f43f5e',
-                  fillColor: '#f43f5e',
-                  fillOpacity: 0.25,
-                  weight: 2,
-                  dashArray: '6, 6'
-                }}
-              />
-              <CircleMarker
-                center={[aggregatedCluster.latitude, aggregatedCluster.longitude]}
-                radius={24}
-                pathOptions={{
-                  color: '#f43f5e',
-                  fillColor: '#e85002',
-                  fillOpacity: 0.9,
-                  weight: 3
-                }}
-                eventHandlers={{
-                  click: () => handleHotspotClick(rawCrimeEvents[0])
-                }}
-              >
-                <Popup className="cy-map-popup">
-                  <div className="font-mono text-xs p-2.5 bg-[#0d1117] text-white rounded-lg border border-[#f59e0b]">
-                    <div className="font-bold text-[#f59e0b] text-sm">{aggregatedCluster.districtName}</div>
-                    <div className="mt-1 text-gray-300">Total Statewide FIRs: <strong className="text-white">{aggregatedCluster.firCount.toLocaleString()}</strong></div>
-                    <div>Peak Threat Score: <strong className="text-[#f43f5e]">{aggregatedCluster.threatScore}/100</strong></div>
-                    <div className="text-[10px] text-amber-400 mt-1.5 font-sans">💡 Zoom in closer to inspect individual district hotspots</div>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            </React.Fragment>
-          ) : (
-            filteredData.map((spot) => {
-              const isCritical = spot.threatScore >= 80;
-              const color = isCritical ? '#f43f5e' : spot.threatScore >= 70 ? '#f59e0b' : '#3b82f6';
-              const radius = Math.max(12, Math.round(spot.threatScore / 4));
+          {filteredData.map((spot) => {
+            const isCritical = spot.threatScore >= 80;
+            const color = isCritical ? '#f43f5e' : spot.threatScore >= 70 ? '#f59e0b' : '#3b82f6';
+            const radius = Math.max(12, Math.round(spot.threatScore / 4));
 
-              return (
-                <React.Fragment key={spot.id}>
-                  {mapMode === 'heatmap' && (
-                    <CircleMarker
-                      center={[spot.latitude, spot.longitude]}
-                      radius={radius * 2}
-                      pathOptions={{
-                        color: color,
-                        fillColor: color,
-                        fillOpacity: 0.2,
-                        weight: 1
-                      }}
-                    />
-                  )}
-
+            return (
+              <React.Fragment key={spot.id}>
+                {mapMode === 'heatmap' && (
                   <CircleMarker
                     center={[spot.latitude, spot.longitude]}
-                    radius={radius}
+                    radius={radius * 2}
                     pathOptions={{
                       color: color,
                       fillColor: color,
-                      fillOpacity: 0.85,
-                      weight: 2
+                      fillOpacity: 0.2,
+                      weight: 1
                     }}
-                    eventHandlers={{
-                      click: () => handleHotspotClick(spot)
-                    }}
-                  >
-                    <Popup className="cy-map-popup">
-                      <div className="font-mono text-xs p-2 bg-[#0d1117] text-white rounded border border-[#f59e0b]">
-                        <div className="font-bold text-[#f59e0b]">{spot.districtName}</div>
-                        <div>Threat Score: {spot.threatScore}/100</div>
-                        <div>FIRs: {spot.firCount.toLocaleString()}</div>
-                        <div>Category: {spot.category}</div>
-                      </div>
-                    </Popup>
-                  </CircleMarker>
-                </React.Fragment>
-              );
-            })
-          )}
+                  />
+                )}
+
+                <CircleMarker
+                  center={[spot.latitude, spot.longitude]}
+                  radius={radius}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.85,
+                    weight: 2
+                  }}
+                  eventHandlers={{
+                    click: () => handleHotspotClick(spot)
+                  }}
+                >
+                  <Popup className="cy-map-popup">
+                    <div className="font-mono text-xs p-2 bg-[#0d1117] text-white rounded border border-[#f59e0b]">
+                      <div className="font-bold text-[#f59e0b]">{spot.districtName}</div>
+                      <div>Threat Score: {spot.threatScore}/100</div>
+                      <div>FIRs: {spot.firCount.toLocaleString()}</div>
+                      <div>Category: {spot.category}</div>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              </React.Fragment>
+            );
+          })}
         </MapContainer>
 
         {/* 3. FLOATING GLASS INSPECTOR DRAWER */}

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Sliders, Flame, ShieldAlert, Sparkles, MapPin, Layers, RefreshCw, FileText, ChevronDown, Activity, Play, Pause } from 'lucide-react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
@@ -75,76 +75,22 @@ export const ST_DBSCAN_SAMPLE_CLUSTERS = [
   }
 ];
 
-function ZoomTracker({ onZoomChange }) {
-  const map = useMapEvents({
-    zoomend() {
-      onZoomChange(map.getZoom());
-    },
-  });
-  return null;
-}
-
 export default function HotspotExplorerMap({
   clusters = ST_DBSCAN_SAMPLE_CLUSTERS,
-  onSelectCluster,
-  onRecalculate
+  onSelectCluster
 }) {
-  const [eps1, setEps1] = useState(500); // Spatial eps in meters
-  const [eps2, setEps2] = useState(24);   // Temporal eps in hours
-  const [minPts, setMinPts] = useState(10);  // Min FIR count for core point
-  const [selectedCluster, setSelectedCluster] = useState(clusters[0]);
+  const [selectedCluster, setSelectedCluster] = useState(ST_DBSCAN_SAMPLE_CLUSTERS[0]);
   const [showTuningPanel, setShowTuningPanel] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(7);
+  const [eps1, setEps1] = useState(500); // Spatial distance threshold (meters)
+  const [eps2, setEps2] = useState(24);  // Time window threshold (hours)
+  const [minPts, setMinPts] = useState(10); // Density threshold (minimum FIRs)
   const [timelineScrub, setTimelineScrub] = useState(90);
   const [isPlaying, setIsPlaying] = useState(false);
-
-  useEffect(() => {
-    let interval = null;
-    if (isPlaying) {
-      interval = setInterval(() => {
-        setTimelineScrub((prev) => (prev >= 100 ? 0 : prev + 2));
-      }, 250);
-    } else {
-      clearInterval(interval);
-    }
-    return () => clearInterval(interval);
-  }, [isPlaying]);
 
   const handleClusterClick = (cluster) => {
     setSelectedCluster(cluster);
     if (onSelectCluster) onSelectCluster(cluster);
   };
-
-  const handleRunDBSCAN = () => {
-    if (onRecalculate) {
-      onRecalculate({ eps1, eps2, minPts });
-    }
-  };
-
-  const aggregatedCluster = useMemo(() => {
-    if (!clusters || clusters.length === 0) {
-      return {
-        id: 'STATEWIDE-HOTSPOT-CLUSTER',
-        name: 'Karnataka High-Density Cyber & Crime Corridor',
-        district: 'Statewide ST-DBSCAN Cluster',
-        threatScore: 92,
-        firCount: 500,
-        primaryMO: 'Organized Cyber Extortion & Property Theft',
-        coordinates: [14.5, 75.8],
-      };
-    }
-    const totalFirs = clusters.reduce((acc, curr) => acc + (curr.firCount || 0), 0);
-    const maxScore = Math.max(...clusters.map((c) => c.threatScore || 0));
-    return {
-      id: 'STATEWIDE-HOTSPOT-CLUSTER',
-      name: 'Karnataka High-Density Cyber & Crime Corridor',
-      district: 'Statewide ST-DBSCAN Cluster',
-      threatScore: maxScore > 0 ? maxScore : 92,
-      firCount: totalFirs,
-      primaryMO: 'Organized Cyber Extortion & Property Theft',
-      coordinates: [14.5, 75.8],
-    };
-  }, [clusters]);
 
   const handleGenerateReport = (cluster) => {
     alert(`Generating ST-DBSCAN Hotspot Intelligence Report for ${cluster.name} (${cluster.id})...`);
@@ -254,105 +200,64 @@ export default function HotspotExplorerMap({
         <MapContainer
           center={[15.3173, 75.7139]}
           zoom={7}
-          minZoom={5.5}
+          minZoom={6}
           maxZoom={18}
           scrollWheelZoom={true}
           style={{ height: '100%', width: '100%', background: '#090d16' }}
         >
-          <ZoomTracker onZoomChange={setZoomLevel} />
-
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {/* If zoomed out below 6.8, collapse all cluster markers into a single statewide macro hotspot */}
-          {zoomLevel < 6.8 ? (
-            <React.Fragment>
-              <CircleMarker
-                center={aggregatedCluster.coordinates}
-                radius={50}
-                pathOptions={{
-                  color: '#e85002',
-                  fillColor: '#e85002',
-                  fillOpacity: 0.25,
-                  weight: 2,
-                  dashArray: '6, 6'
-                }}
-              />
-              <CircleMarker
-                center={aggregatedCluster.coordinates}
-                radius={26}
-                pathOptions={{
-                  color: '#f43f5e',
-                  fillColor: '#c10801',
-                  fillOpacity: 0.9,
-                  weight: 3
-                }}
-                eventHandlers={{
-                  click: () => handleClusterClick(clusters[0])
-                }}
-              >
-                <Popup className="cy-map-popup">
-                  <div className="font-mono text-xs p-2.5 bg-[#0d1117] text-white rounded-lg border border-[#e85002]">
-                    <div className="font-bold text-[#e85002] text-sm">{aggregatedCluster.name}</div>
-                    <div className="mt-1 text-gray-300">Total Statewide Cluster FIRs: <strong className="text-white">{aggregatedCluster.firCount}</strong></div>
-                    <div>Peak Threat Score: <strong className="text-[#f43f5e]">{aggregatedCluster.threatScore}/100</strong></div>
-                    <div className="text-[10px] text-amber-400 mt-1.5 font-sans">💡 Zoom in closer to inspect individual ST-DBSCAN clusters</div>
-                  </div>
-                </Popup>
-              </CircleMarker>
-            </React.Fragment>
-          ) : (
-            clusters.map((cluster) => {
-              const isSelected = selectedCluster?.id === cluster.id;
-              const isCritical = cluster.threatLevel === 'Critical';
-              const color = isCritical ? '#f43f5e' : cluster.threatScore >= 70 ? '#f59e0b' : '#38bdf8';
-              const radius = Math.max(16, Math.round(cluster.threatScore / 3.5));
+          {clusters.map((cluster) => {
+            const isSelected = selectedCluster?.id === cluster.id;
+            const isCritical = cluster.threatLevel === 'Critical';
+            const color = isCritical ? '#f43f5e' : cluster.threatScore >= 70 ? '#f59e0b' : '#38bdf8';
+            const radius = Math.max(16, Math.round(cluster.threatScore / 3.5));
 
-              return (
-                <React.Fragment key={cluster.id}>
-                  {/* Cluster Outer Radius */}
-                  <CircleMarker
-                    center={cluster.coordinates}
-                    radius={radius * 2}
-                    pathOptions={{
-                      color: color,
-                      fillColor: color,
-                      fillOpacity: isSelected ? 0.35 : 0.15,
-                      weight: isSelected ? 2 : 1,
-                      dashArray: '4, 4'
-                    }}
-                  />
+            return (
+              <React.Fragment key={cluster.id}>
+                {/* Cluster Outer Radius */}
+                <CircleMarker
+                  center={cluster.coordinates}
+                  radius={radius * 2}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: isSelected ? 0.35 : 0.15,
+                    weight: isSelected ? 2 : 1,
+                    dashArray: '4, 4'
+                  }}
+                />
 
-                  {/* Core Cluster Pin */}
-                  <CircleMarker
-                    center={cluster.coordinates}
-                    radius={radius}
-                    pathOptions={{
-                      color: color,
-                      fillColor: color,
-                      fillOpacity: 0.85,
-                      weight: 2
-                    }}
-                    eventHandlers={{
-                      click: () => handleClusterClick(cluster)
-                    }}
-                  >
-                    <Popup className="cy-map-popup">
-                      <div className="font-mono text-xs p-2 bg-[#0d1117] text-white rounded border border-[#f59e0b]">
-                        <div className="font-bold text-[#f59e0b]">{cluster.name}</div>
-                        <div>District: {cluster.district}</div>
-                        <div>Threat Score: {cluster.threatScore}/100</div>
-                        <div>FIR Density: {cluster.firCount} Cases</div>
-                        <div>Primary MO: {cluster.primaryMO}</div>
-                      </div>
-                    </Popup>
-                  </CircleMarker>
-                </React.Fragment>
-              );
-            })
-          )}
+                {/* Core Cluster Pin */}
+                <CircleMarker
+                  center={cluster.coordinates}
+                  radius={radius}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.85,
+                    weight: 2
+                  }}
+                  eventHandlers={{
+                    click: () => handleClusterClick(cluster)
+                  }}
+                >
+                  <Popup className="cy-map-popup">
+                    <div className="font-mono text-xs p-2 bg-[#0d1117] text-white rounded border border-[#f59e0b]">
+                      <div className="font-bold text-[#f59e0b]">{cluster.name}</div>
+                      <div>District: {cluster.district}</div>
+                      <div>Threat Score: {cluster.threatScore}/100</div>
+                      <div>FIR Density: {cluster.firCount} Cases</div>
+                      <div>Primary MO: {cluster.primaryMO}</div>
+                    </div>
+                  </Popup>
+                </CircleMarker>
+              </React.Fragment>
+            );
+          })}
         </MapContainer>
 
         {/* 4. RIGHT SIDE GLASS CLUSTER INSPECTION DRAWER */}
