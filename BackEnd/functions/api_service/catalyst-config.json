@@ -1,7 +1,7 @@
 {
-  "name": "api_service",
-  "type": "advancedio",
   "deployment": {
+    "name": "api_service",
+    "type": "advancedio",
     "stack": "python_3_13"
   },
   "entry_point": "main.py",

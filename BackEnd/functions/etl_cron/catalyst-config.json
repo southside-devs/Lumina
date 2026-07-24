@@ -1,7 +1,7 @@
 {
-  "name": "etl_cron",
-  "type": "cron",
   "deployment": {
+    "name": "etl_cron",
+    "type": "cron",
     "stack": "python_3_13"
   },
   "entry_point": "main.py",
