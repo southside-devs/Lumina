@@ -1,6 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { Sliders, Flame, ShieldAlert, Sparkles, MapPin, Layers, RefreshCw, FileText, ChevronDown, Activity, Play, Pause } from 'lucide-react';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png'
+});
 
 // Sample ST-DBSCAN Crime Clusters in Karnataka
 export const ST_DBSCAN_SAMPLE_CLUSTERS = [
@@ -187,68 +196,67 @@ export default function HotspotExplorerMap({
       )}
 
       {/* 3. CLUSTER MAP CANVAS VIEWPORT */}
-      <div className="relative flex-1 w-full h-full bg-[#000000] overflow-hidden">
-        {/* Tactical Coordinates Grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(#333333_1px,transparent_1px)] [background-size:28px_28px] opacity-40"></div>
+      <div className="relative flex-1 w-full h-[520px] bg-[#000000] overflow-hidden rounded-2xl border border-[rgba(100,100,100,0.3)]">
+        <MapContainer
+          center={[15.3173, 75.7139]}
+          zoom={7}
+          scrollWheelZoom={true}
+          style={{ height: '100%', width: '100%', background: '#090d16' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          />
 
-        {/* ST-DBSCAN Clusters Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center p-6">
-          <div className="relative w-full h-full max-w-4xl max-h-[500px]">
+          {clusters.map((cluster) => {
+            const isSelected = selectedCluster?.id === cluster.id;
+            const isCritical = cluster.threatLevel === 'Critical';
+            const color = isCritical ? '#f43f5e' : cluster.threatScore >= 70 ? '#f59e0b' : '#38bdf8';
+            const radius = Math.max(16, Math.round(cluster.threatScore / 3.5));
 
-            {clusters.map((cluster) => {
-              const leftPercent = ((cluster.coordinates[1] - 74.0) / (78.5 - 74.0)) * 100;
-              const topPercent = 100 - ((cluster.coordinates[0] - 11.5) / (18.5 - 11.5)) * 100;
-
-              const isSelected = selectedCluster?.id === cluster.id;
-              const isCritical = cluster.threatLevel === 'Critical';
-
-              return (
-                <div
-                  key={cluster.id}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-300 z-10"
-                  style={{
-                    left: `${Math.min(Math.max(leftPercent, 10), 90)}%`,
-                    top: `${Math.min(Math.max(topPercent, 10), 90)}%`
+            return (
+              <React.Fragment key={cluster.id}>
+                {/* Cluster Outer Radius */}
+                <CircleMarker
+                  center={cluster.coordinates}
+                  radius={radius * 2}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: isSelected ? 0.35 : 0.15,
+                    weight: isSelected ? 2 : 1,
+                    dashArray: '4, 4'
                   }}
-                  onClick={() => handleClusterClick(cluster)}
-                >
-                  {/* ST-DBSCAN Polygon Cluster Radius Hull */}
-                  <div
-                    className={`absolute inset-0 rounded-full border-2 border-dashed transition-all duration-500 ${
-                      isSelected
-                        ? 'border-[#E85002] bg-[#E85002]/20 animate-pulse'
-                        : isCritical
-                        ? 'border-[#C10801]/60 bg-[#C10801]/10'
-                        : 'border-[#38BDF8]/40 bg-[#38BDF8]/10'
-                    }`}
-                    style={{
-                      width: `${cluster.radius * 2.2}px`,
-                      height: `${cluster.radius * 2.2}px`,
-                      margin: `-${cluster.radius * 1.1}px`,
-                    }}
-                  ></div>
+                />
 
-                  {/* Cluster Center Tag */}
-                  <div
-                    className={`px-3 py-2 rounded-xl backdrop-blur-xl transition-all duration-300 border flex items-center gap-2 shadow-2xl ${
-                      isSelected
-                        ? 'bg-[#E85002] border-[#F9F9F9] text-[#F9F9F9] shadow-[0_0_25px_rgba(232,80,2,0.8)] scale-110'
-                        : isCritical
-                        ? 'bg-[#333333]/90 border-[#C10801] text-[#F9F9F9] hover:border-[#E85002]'
-                        : 'bg-[#333333]/80 border-[rgba(100,100,100,0.5)] text-[#F9F9F9] hover:border-[#E85002]'
-                    }`}
-                  >
-                    <Flame size={14} className={isCritical ? 'text-[#C10801]' : 'text-[#E85002]'} />
-                    <div className="font-mono text-xs">
-                      <div className="font-bold">{cluster.name}</div>
-                      <div className="text-[10px] text-[#A7A7A7]">{cluster.firCount} FIRs • Score: {cluster.threatScore}</div>
+                {/* Core Cluster Pin */}
+                <CircleMarker
+                  center={cluster.coordinates}
+                  radius={radius}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.85,
+                    weight: 2
+                  }}
+                  eventHandlers={{
+                    click: () => handleClusterClick(cluster)
+                  }}
+                >
+                  <Popup className="cy-map-popup">
+                    <div className="font-mono text-xs p-2 bg-[#0d1117] text-white rounded border border-[#f59e0b]">
+                      <div className="font-bold text-[#f59e0b]">{cluster.name}</div>
+                      <div>District: {cluster.district}</div>
+                      <div>Threat Score: {cluster.threatScore}/100</div>
+                      <div>FIR Density: {cluster.firCount} Cases</div>
+                      <div>Primary MO: {cluster.primaryMO}</div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  </Popup>
+                </CircleMarker>
+              </React.Fragment>
+            );
+          })}
+        </MapContainer>
 
         {/* 4. RIGHT SIDE GLASS CLUSTER INSPECTION DRAWER */}
         {selectedCluster && (

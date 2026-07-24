@@ -1,6 +1,16 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Play, Pause, RotateCcw, Filter, Flame, ShieldAlert, Sparkles, MapPin, Layers, Globe, Activity, ChevronDown } from 'lucide-react';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+// Fix default Leaflet icon paths
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png'
+});
 
 // Statewide Karnataka Crime Incidents Dataset
 export const KARNATAKA_SAMPLE_CRIME_EVENTS = [
@@ -155,70 +165,65 @@ export default function StateOverviewMap({
         </div>
       </div>
 
-      {/* 2. SPATIAL CANVAS CONTAINER WITH GRID OVERLAY */}
-      <div className="relative flex-1 w-full h-full bg-[#000000] overflow-hidden">
-        {/* Tactical Coordinates Grid */}
-        <div className="absolute inset-0 bg-[radial-gradient(#333333_1px,transparent_1px)] [background-size:24px_24px] opacity-40"></div>
+      {/* 2. SPATIAL MAP CANVAS CONTAINER */}
+      <div className="relative flex-1 w-full h-[520px] bg-[#000000] overflow-hidden rounded-2xl border border-[rgba(100,100,100,0.3)]">
+        <MapContainer
+          center={[15.3173, 75.7139]}
+          zoom={7}
+          scrollWheelZoom={true}
+          style={{ height: '100%', width: '100%', background: '#090d16' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          />
 
-        {/* Statewide Node Visualizer Viewport */}
-        <div className="absolute inset-0 flex items-center justify-center p-6">
-          <div className="relative w-full h-full max-w-4xl max-h-[500px]">
+          {filteredData.map((spot) => {
+            const isCritical = spot.threatScore >= 80;
+            const color = isCritical ? '#f43f5e' : spot.threatScore >= 70 ? '#f59e0b' : '#3b82f6';
+            const radius = Math.max(12, Math.round(spot.threatScore / 4));
 
-            {/* Hotspot Data Nodes */}
-            {filteredData.map((spot) => {
-              const leftPercent = ((spot.longitude - 74.0) / (78.5 - 74.0)) * 100;
-              const topPercent = 100 - ((spot.latitude - 11.5) / (18.5 - 11.5)) * 100;
+            return (
+              <React.Fragment key={spot.id}>
+                {mapMode === 'heatmap' && (
+                  <CircleMarker
+                    center={[spot.latitude, spot.longitude]}
+                    radius={radius * 2}
+                    pathOptions={{
+                      color: color,
+                      fillColor: color,
+                      fillOpacity: 0.2,
+                      weight: 1
+                    }}
+                  />
+                )}
 
-              const isCritical = spot.threatScore >= 80;
-              const isSelected = selectedPoint?.id === spot.id;
-
-              return (
-                <div
-                  key={spot.id}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 cursor-pointer group transition-all duration-300 z-10"
-                  style={{
-                    left: `${Math.min(Math.max(leftPercent, 5), 95)}%`,
-                    top: `${Math.min(Math.max(topPercent, 5), 95)}%`
+                <CircleMarker
+                  center={[spot.latitude, spot.longitude]}
+                  radius={radius}
+                  pathOptions={{
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.85,
+                    weight: 2
                   }}
-                  onClick={() => handleHotspotClick(spot)}
+                  eventHandlers={{
+                    click: () => handleHotspotClick(spot)
+                  }}
                 >
-                  {/* Heat Density Radial Glow */}
-                  {mapMode === 'heatmap' && (
-                    <div
-                      className={`absolute inset-0 rounded-full animate-ping opacity-30 ${
-                        isCritical ? 'bg-[#C10801]' : 'bg-[#E85002]'
-                      }`}
-                      style={{
-                        width: `${spot.threatScore * 0.8}px`,
-                        height: `${spot.threatScore * 0.8}px`,
-                        margin: `-${spot.threatScore * 0.4}px`,
-                      }}
-                    ></div>
-                  )}
-
-                  {/* Hotspot Pin Badge */}
-                  <div
-                    className={`rounded-2xl transition-all duration-300 border flex items-center justify-center p-2.5 ${
-                      isSelected
-                        ? 'bg-[#E85002] border-[#F9F9F9] shadow-[0_0_25px_rgba(232,80,2,0.8)] scale-110'
-                        : isCritical
-                        ? 'bg-[#C10801]/30 border-[#C10801] text-[#F9F9F9] shadow-[0_0_15px_rgba(193,8,1,0.5)] hover:scale-105'
-                        : 'bg-[#333333]/80 border-[rgba(100,100,100,0.5)] text-[#F9F9F9] hover:border-[#E85002]'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold">
-                      <MapPin size={13} className={isCritical ? 'text-[#C10801]' : 'text-[#E85002]'} />
-                      <span>{spot.districtName}</span>
-                      <span className="px-1.5 py-0.2 rounded bg-black/40 text-[10px] text-[#A7A7A7]">
-                        {spot.threatScore}
-                      </span>
+                  <Popup className="cy-map-popup">
+                    <div className="font-mono text-xs p-2 bg-[#0d1117] text-white rounded border border-[#f59e0b]">
+                      <div className="font-bold text-[#f59e0b]">{spot.districtName}</div>
+                      <div>Threat Score: {spot.threatScore}/100</div>
+                      <div>FIRs: {spot.firCount.toLocaleString()}</div>
+                      <div>Category: {spot.category}</div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  </Popup>
+                </CircleMarker>
+              </React.Fragment>
+            );
+          })}
+        </MapContainer>
 
         {/* 3. FLOATING GLASS INSPECTOR DRAWER */}
         {selectedPoint && (
