@@ -14,7 +14,7 @@ class DataStore:
 
     def __init__(self, request):
         """Initialize Catalyst app from the incoming request context."""
-        self.app = zcatalyst_sdk.initialize()
+        self.app = zcatalyst_sdk.get_app()
         self.zcql = self.app.zcql()
 
 

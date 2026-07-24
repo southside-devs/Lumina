@@ -9,6 +9,7 @@ URL Pattern: /api/<resource>[/<id>][/<action>]
 """
 
 import logging
+import zcatalyst_sdk
 from flask import Request, make_response, jsonify
 
 from routes import districts, stations, firs, accused, victims
@@ -41,7 +42,7 @@ ROUTES = {
 }
 
 
-def handler(request: Request):
+def handler(context, request: Request):
     """
     Main Catalyst Advanced I/O handler.
 
@@ -49,6 +50,8 @@ def handler(request: Request):
     Expected path format: /api/<resource>[/<id>][/<action>]
     """
     try:
+        # Initialize SDK with context (injected by Catalyst runtime)
+        zcatalyst_sdk.initialize(context)
         path = request.path.rstrip("/")
         path_parts = [p for p in path.split("/") if p]
 

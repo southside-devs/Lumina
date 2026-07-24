@@ -82,7 +82,7 @@ def get_current_user(request):
         return _DEMO_USER
 
     try:
-        app = zcatalyst_sdk.initialize()
+        app = zcatalyst_sdk.get_app()
 
         user_management = app.user_management()
 
