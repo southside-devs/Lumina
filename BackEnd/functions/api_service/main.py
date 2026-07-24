@@ -42,16 +42,19 @@ ROUTES = {
 }
 
 
-def handler(context, request: Request):
+def handler(request: Request):
     """
     Main Catalyst Advanced I/O handler.
-
-    Parses the URL path and dispatches to the appropriate route handler.
+    Parses the URL path and dispatches to the appropriate resource handler.
     Expected path format: /api/<resource>[/<id>][/<action>]
     """
     try:
-        # Initialize SDK with context (injected by Catalyst runtime)
-        zcatalyst_sdk.initialize(context)
+        # Initialize Catalyst SDK
+        try:
+            zcatalyst_sdk.initialize()
+        except Exception as ie:
+            logger.warning(f"SDK initialize note: {ie}")
+
         path = request.path.rstrip("/")
         path_parts = [p for p in path.split("/") if p]
 

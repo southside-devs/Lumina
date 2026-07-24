@@ -1,4 +1,7 @@
 {
+  "name": "api_service",
+  "type": "advancedio",
+  "stack": "python_3_13",
   "deployment": {
     "name": "api_service",
     "type": "advancedio",
