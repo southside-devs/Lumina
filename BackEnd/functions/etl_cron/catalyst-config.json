@@ -7,6 +7,9 @@
     "type": "cron",
     "stack": "python_3_13"
   },
+  "execution": {
+    "main": "main.py"
+  },
   "entry_point": "main.py",
   "cron_expression": "0 2 * * *",
   "timeout": 300000

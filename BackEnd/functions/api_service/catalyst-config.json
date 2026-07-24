@@ -7,6 +7,9 @@
     "type": "advancedio",
     "stack": "python_3_13"
   },
+  "execution": {
+    "main": "main.py"
+  },
   "entry_point": "main.py",
   "timeout": 30000
 }
