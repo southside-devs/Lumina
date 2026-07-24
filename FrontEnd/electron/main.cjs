@@ -20,6 +20,11 @@ function createWindow() {
   // Remove default menu bar
   mainWindow.setMenuBarVisibility(false);
 
+  // Open Developer Tools in dev mode for diagnostics
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
+  }
+
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173").catch(() => {
       console.log("Dev server not ready yet, loading built dist...");
