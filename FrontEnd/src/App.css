@@ -270,6 +270,12 @@
   box-shadow: 0 0 8px #10B981;
 }
 
+/* Scope Leaflet map stacking context below floating docks */
+.leaflet-container {
+  z-index: 1 !important;
+  isolation: isolate;
+}
+
 /* Contextual Control Panel / Drawer (Sleek Floating Dock Overlay) */
 .contextual-drawer.floating-dock {
   position: absolute;
@@ -282,8 +288,8 @@
   border: 1px solid rgba(255, 255, 255, 0.14);
   display: flex;
   flex-direction: column;
-  z-index: 50;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
