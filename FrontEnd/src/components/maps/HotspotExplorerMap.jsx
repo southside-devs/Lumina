@@ -93,7 +93,7 @@ export default function HotspotExplorerMap({
   const [eps2, setEps2] = useState(24);   // Temporal eps in hours
   const [minPts, setMinPts] = useState(10);  // Min FIR count for core point
   const [selectedCluster, setSelectedCluster] = useState(clusters[0]);
-  const [showControls, setShowControls] = useState(false);
+  const [showTuningPanel, setShowTuningPanel] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(7);
 
   const handleClusterClick = (cluster) => {
