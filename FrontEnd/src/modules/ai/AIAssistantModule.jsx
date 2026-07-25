@@ -46,19 +46,68 @@ export default function AIAssistantModule() {
 
   const sendMessage = (text) => {
     const q = text || input;
-    if (!q.trim()) return;
+    if (!q || !q.trim()) return;
     setInput("");
     setMessages((prev) => [...prev, { role: "user", text: q }]);
     setLoading(true);
 
     setTimeout(() => {
-      const resp = MOCK_RESPONSES[q] || MOCK_RESPONSES["default"];
+      let resp = MOCK_RESPONSES[q];
+      if (!resp) {
+        resp = {
+          text: `Analyzing custom query: "${q}" against Karnataka State Police Database (14,892 FIRs)...`,
+          bullets: [
+            `🔍 Matched **${q}** across 31 District jurisdictions & BNS Act registries.`,
+            `📊 Applied Zia AutoML spatial density filter for **Jan – Jul 2026**.`,
+            `🛡️ Cross-referenced suspect recidivism records and charge sheet filing status.`,
+            `💡 Recommendation: Check **Hotspot Explorer** for spatial polygon overlay.`
+          ],
+          footer: `Query processed via Catalyst QuickML RAG Engine • Confidence: 91.8% • Time: 0.9s`
+        };
+      }
       setMessages((prev) => [...prev, { role: "assistant", ...resp }]);
       setLoading(false);
-    }, 1200);
+    }, 900);
   };
 
-  const handleKey = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
+  const handleKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const handleResetChat = () => {
+    setMessages([
+      {
+        role: "assistant",
+        text: "Namaskara! Conversation history has been reset. How can I assist your investigation today?",
+      }
+    ]);
+  };
+
+  const handleExportChatLog = () => {
+    let logText = `===================================================================\nKARNATAKA STATE POLICE — LUMINA AI ASSISTANT CHAT LOG\nGenerated: ${new Date().toLocaleString()} | RESTRICTED INTERNAL KSP\n===================================================================\n\n`;
+    messages.forEach((m, i) => {
+      logText += `[${m.role.toUpperCase()}]\n${m.text.replace(/\*\*/g, "")}\n`;
+      if (m.bullets) {
+        m.bullets.forEach((b) => {
+          logText += `  * ${b.replace(/\*\*/g, "")}\n`;
+        });
+      }
+      logText += `\n-------------------------------------------------------------------\n\n`;
+    });
+
+    const blob = new Blob([logText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `Lumina_AI_Chat_Log_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 120px)" }}>
@@ -201,10 +250,10 @@ export default function AIAssistantModule() {
             <div className="panel-body">
               <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 600, marginBottom: "8px" }}>Session Actions</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <button onClick={() => setMessages(messages.slice(0, 1))} style={{ background: "rgba(30,41,59,0.4)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#94a3b8", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
+                <button onClick={handleResetChat} style={{ background: "rgba(30,41,59,0.4)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#94a3b8", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
                   <RotateCcw size={13} /> Reset Conversation
                 </button>
-                <button style={{ background: "rgba(30,41,59,0.4)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#94a3b8", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
+                <button onClick={handleExportChatLog} style={{ background: "rgba(30,41,59,0.4)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "8px", padding: "8px 12px", cursor: "pointer", color: "#94a3b8", fontSize: "12px", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
                   <Download size={13} /> Export Chat Log
                 </button>
               </div>

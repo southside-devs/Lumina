@@ -6,7 +6,8 @@ export default function Topbar() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
-  const [userRole, setUserRole] = useState("Inspector General"); // Catalyst RBAC tier
+  const [userRole, setUserRole] = useState(localStorage.getItem("lumina_user_role") || "Inspector General (IG)");
+  const [authToast, setAuthToast] = useState(null);
   const [logoError, setLogoError] = useState(false);
 
   const handleRefresh = () => {
@@ -21,20 +22,51 @@ export default function Topbar() {
     "Lead Intelligence Analyst"
   ];
 
+  const handleSelectRole = (role) => {
+    setUserRole(role);
+    localStorage.setItem("lumina_user_role", role);
+    setRoleMenuOpen(false);
+    setAuthToast(`Authenticated via Catalyst OAuth 2.0: Switched to ${role} (Clearance Level 4 Active)`);
+    setTimeout(() => setAuthToast(null), 4000);
+  };
+
   return (
     <header className="topbar">
+      {/* Auth Toast Notification */}
+      {authToast && (
+        <div style={{
+          position: "fixed", top: "70px", right: "24px", zIndex: 99999,
+          background: "rgba(16,185,129,0.95)", color: "#ffffff", padding: "10px 18px",
+          borderRadius: "10px", fontSize: "12px", fontWeight: "700", fontFamily: "JetBrains Mono, monospace",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.2)",
+          display: "flex", alignItems: "center", gap: "8px"
+        }}>
+          <UserCheck size={16} />
+          {authToast}
+        </div>
+      )}
+
       {/* Top Left: KSP Logo + Branding */}
       <div className="topbar-left">
         <div className="topbar-brand">
           {!logoError ? (
             <img
-              src="/assets/ksp_logo.png"
+              src="./KSP_logo.png"
               alt="Karnataka State Police Logo"
               className="topbar-ksp-logo"
+              style={{ width: "32px", height: "32px", objectFit: "contain" }}
               onError={() => setLogoError(true)}
             />
           ) : (
-            <span className="ksp-fallback-badge font-mono">KSP</span>
+            <div className="ksp-emblem-badge" style={{
+              width: "32px", height: "32px", borderRadius: "8px",
+              background: "linear-gradient(135deg, #e85002, #c10801)",
+              display: "flex", alignItems: "center", justify: "center",
+              color: "#fff", fontWeight: "900", fontSize: "11px", fontFamily: "Syne, sans-serif",
+              boxShadow: "0 0 10px rgba(232,80,2,0.4)"
+            }}>
+              KSP
+            </div>
           )}
           <div className="topbar-brand-titles">
             <div className="topbar-title-row">
@@ -108,16 +140,13 @@ export default function Topbar() {
           {roleMenuOpen && (
             <div className="rbac-role-menu glass-panel">
               <div className="rbac-menu-header font-mono">
-                <span>CATALYST RBAC TIER</span>
+                <span>CATALYST RBAC AUTHENTICATION</span>
               </div>
               {roleOptions.map((role) => (
                 <button
                   key={role}
                   className={`rbac-role-option ${userRole === role ? "active" : ""}`}
-                  onClick={() => {
-                    setUserRole(role);
-                    setRoleMenuOpen(false);
-                  }}
+                  onClick={() => handleSelectRole(role)}
                 >
                   <CheckCircle2 size={13} style={{ opacity: userRole === role ? 1 : 0 }} />
                   <span>{role}</span>

@@ -105,7 +105,9 @@ export default function RecentCases() {
                         </span>
                       </td>
                       <td style={{ color: "#cbd5e1" }}>{c.Crime_Group || "—"}</td>
-                      <td style={{ color: "#94a3b8", fontSize: "12px" }}>{c.Crime_Subgroup || "—"}</td>
+                      <td style={{ color: "#94a3b8", fontSize: "12px" }}>
+                        {c.Crime_Subgroup ? String(c.Crime_Subgroup).replace(/IPC/g, "BNS") : "—"}
+                      </td>
                       <td style={{ color: "#64748b", fontFamily: "JetBrains Mono, monospace", fontSize: "12px" }}>{c.Station_ID || "—"}</td>
                       <td style={{ color: "#64748b", fontSize: "12px" }}>{c.Incident_Date || "—"}</td>
                       <td>

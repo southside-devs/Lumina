@@ -17,7 +17,7 @@ const ALERTS = [
   {
     id: 3, severity: "high", badge: "HIGH",
     title: "Cyber-Fraud Network Identified",
-    desc: "IPC-66D: Rs 1.4Cr siphoned via spoofed banking portals. 6 victims, Bengaluru & Mangaluru.",
+    desc: "BNS 318 / IT Act 66D: Rs 1.4Cr siphoned via spoofed banking portals. 6 victims, Bengaluru & Mangaluru.",
     time: "42 min ago", icon: <Lock size={16} color="#fbbf24" />,
   },
   {

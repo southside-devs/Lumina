@@ -20,10 +20,56 @@ export default function ContextualDrawer({ selectedNode, setSelectedNode }) {
   const [timeframe, setTimeframe] = useState("Last 7 Days");
   const [crimeType, setCrimeType] = useState("Cybercrime");
   const [riskLevel, setRiskLevel] = useState("All Levels");
+  const [filterToast, setFilterToast] = useState(null);
+
+  const handleApplyFilters = () => {
+    setFilterToast(`Filters Applied: ${district} | ${crimeType} | ${timeframe} | ${riskLevel}`);
+    setTimeout(() => setFilterToast(null), 3500);
+  };
+
+  const handleExportPDF = () => {
+    const text = `===================================================================
+KARNATAKA STATE POLICE — STRATEGIC CRIME DOSSIER
+Generated: ${new Date().toLocaleString()} | Classification: RESTRICTED / KSP ONLY
+===================================================================
+1. SCOPE & JURISDICTION
+   - Active Filter: ${district}
+   - Crime Category: ${crimeType}
+   - Timeframe Window: ${timeframe}
+   - Risk Threshold: ${riskLevel}
+
+2. RECORD SNAPSHOT
+   - Total Tracked Incidents: 5,000 FIR Records
+   - Primary Crime Vectors: Cyber Extortion (BNS 318), MV Theft (BNS 303), Assault (BNS 109)
+===================================================================`;
+
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `KSP_Strategic_Crime_Dossier_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportCSV = () => {
+    const csvContent = `FIR_Number,District,Crime_Group,Sub_Group,Incident_Date,Status\nFIR/2026/BLR/9901,Bengaluru Urban,Cybercrime,BNS 318,2026-07-20,Under Investigation\nFIR/2026/MYS/8802,Mysuru City,Vehicle Theft,BNS 303,2026-07-18,Chargesheeted\nFIR/2026/MNG/7703,Mangaluru,Assault,BNS 109,2026-07-15,Closed`;
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `KSP_Incident_Data_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   // Sample timeline logs
   const timelineLogs = [
-    { time: "10:24 AM", event: "FIR-2026-9901 registered at Whitefield PS", type: "critical" },
+    { time: "10:24 AM", event: "FIR-2026-9901 registered at Whitefield PS (BNS 318)", type: "critical" },
     { time: "09:45 AM", event: "Suspect #4902 geolocation matched near Electronic City", type: "warning" },
     { time: "08:30 AM", event: "Automated AI Risk Score recalculation completed for Bengaluru Urban", type: "info" },
     { time: "07:15 AM", event: "Catalyst RBAC clearance verified for Inspector General Ramachandra Rao", type: "success" }
@@ -40,6 +86,16 @@ export default function ContextualDrawer({ selectedNode, setSelectedNode }) {
 
   return (
     <div className={`contextual-drawer floating-dock ${isOpen ? "open" : "collapsed"}`}>
+      {filterToast && (
+        <div style={{
+          position: "fixed", bottom: "75px", left: "50%", transform: "translateX(-50%)", zIndex: 9999,
+          background: "rgba(56,189,248,0.95)", color: "#090d16", padding: "8px 16px",
+          borderRadius: "8px", fontSize: "12px", fontWeight: 700, fontFamily: "JetBrains Mono, monospace"
+        }}>
+          {filterToast}
+        </div>
+      )}
+
       {/* Sleek Floating Dock Header Bar */}
       <div className="drawer-header" onClick={() => setIsOpen(!isOpen)}>
         <div className="drawer-title-group">
@@ -159,7 +215,7 @@ export default function ContextualDrawer({ selectedNode, setSelectedNode }) {
                 <button
                   type="button"
                   className="btn-apply-filters"
-                  onClick={() => alert(`Applied filters: ${district} | ${crimeType} | ${timeframe}`)}
+                  onClick={handleApplyFilters}
                 >
                   Apply Filters
                 </button>
@@ -223,14 +279,14 @@ export default function ContextualDrawer({ selectedNode, setSelectedNode }) {
                 <button
                   type="button"
                   className="btn-export-action primary"
-                  onClick={() => alert("Exporting KSP Strategic Crime Dossier (PDF)...")}
+                  onClick={handleExportPDF}
                 >
                   <Download size={14} /> Export PDF Dossier
                 </button>
                 <button
                   type="button"
                   className="btn-export-action secondary"
-                  onClick={() => alert("Exporting Raw Incident Data (CSV)...")}
+                  onClick={handleExportCSV}
                 >
                   <FileSpreadsheet size={14} /> Export CSV
                 </button>

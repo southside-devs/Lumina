@@ -260,39 +260,53 @@ export default function HotspotExplorerMap({
           })}
         </MapContainer>
 
-        {/* 4. RIGHT SIDE GLASS CLUSTER INSPECTION DRAWER */}
+        {/* 4. RIGHT SIDE GLASS CLUSTER INSPECTION DRAWER WITH CLOSE BUTTON */}
         {selectedCluster && (
-          <div className="absolute top-6 right-6 w-84 bg-[#333333]/90 backdrop-blur-2xl border border-[rgba(100,100,100,0.4)] p-5 rounded-2xl shadow-[0_10px_30px_-10px_rgba(232,80,2,0.25)] text-xs text-[#F9F9F9] z-30 transition-all space-y-4">
+          <div className="absolute top-4 right-4 w-80 bg-[#121620]/95 backdrop-blur-2xl border border-[rgba(255,255,255,0.15)] p-4 rounded-2xl shadow-2xl text-xs text-[#F9F9F9] z-30 transition-all space-y-3">
             
-            <div className="flex justify-between items-start border-b border-[rgba(100,100,100,0.25)] pb-3">
+            <div className="flex justify-between items-start border-b border-[rgba(255,255,255,0.1)] pb-2.5">
               <div>
                 <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
                   selectedCluster.threatLevel === 'Critical'
-                    ? 'bg-[#C10801]/20 text-[#F9F9F9] border-[#C10801]/40'
+                    ? 'bg-[#C10801]/20 text-[#fb7185] border-[#C10801]/40'
                     : 'bg-[#E85002]/20 text-[#E85002] border-[#E85002]/40'
                 }`}>
                   {selectedCluster.threatLevel} Cluster Zone
                 </span>
-                <h3 className="text-base font-bold font-display text-[#F9F9F9] mt-2">{selectedCluster.name}</h3>
+                <h3 className="text-sm font-bold font-display text-[#F9F9F9] mt-1.5">{selectedCluster.name}</h3>
                 <p className="text-[11px] font-mono text-[#A7A7A7]">{selectedCluster.district} Jurisdiction</p>
               </div>
+
+              {/* Close Button to Unclutter Map View */}
+              <button
+                type="button"
+                onClick={() => setSelectedCluster(null)}
+                style={{
+                  background: "rgba(255,255,255,0.1)", border: "none", color: "#94a3b8",
+                  width: "24px", height: "24px", borderRadius: "6px", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}
+                title="Close Inspector & View Map"
+              >
+                ✕
+              </button>
             </div>
 
             {/* Metrics */}
-            <div className="grid grid-cols-2 gap-2.5 font-mono">
-              <div className="bg-[#000000]/60 border border-[rgba(100,100,100,0.3)] p-3 rounded-xl">
+            <div className="grid grid-cols-2 gap-2 font-mono">
+              <div className="bg-[#000000]/60 border border-[rgba(255,255,255,0.08)] p-2.5 rounded-xl">
                 <div className="text-[10px] text-[#A7A7A7] uppercase">Cluster Score</div>
-                <div className="text-lg font-bold text-[#E85002] mt-0.5">{selectedCluster.threatScore}/100</div>
+                <div className="text-base font-bold text-[#E85002] mt-0.5">{selectedCluster.threatScore}/100</div>
               </div>
-              <div className="bg-[#000000]/60 border border-[rgba(100,100,100,0.3)] p-3 rounded-xl">
+              <div className="bg-[#000000]/60 border border-[rgba(255,255,255,0.08)] p-2.5 rounded-xl">
                 <div className="text-[10px] text-[#A7A7A7] uppercase">Density (FIRs)</div>
-                <div className="text-lg font-bold text-[#38BDF8] mt-0.5">{selectedCluster.firCount} Cases</div>
+                <div className="text-base font-bold text-[#38BDF8] mt-0.5">{selectedCluster.firCount} Cases</div>
               </div>
             </div>
 
             {/* Primary Modus Operandi */}
-            <div className="bg-[#000000]/40 border border-[rgba(100,100,100,0.2)] p-3 rounded-xl font-mono text-[11px]">
-              <div className="text-[#A7A7A7] text-[10px] uppercase mb-1">Primary Modus Operandi (MO)</div>
+            <div className="bg-[#000000]/40 border border-[rgba(255,255,255,0.08)] p-2.5 rounded-xl font-mono text-[11px]">
+              <div className="text-[#A7A7A7] text-[10px] uppercase mb-1">Primary MO (BNS Codes)</div>
               <div className="text-[#F9F9F9] font-bold">{selectedCluster.primaryMO}</div>
             </div>
 
@@ -300,7 +314,7 @@ export default function HotspotExplorerMap({
             <button
               type="button"
               onClick={() => handleGenerateReport(selectedCluster)}
-              className="w-full py-2.5 rounded-xl bg-[#E85002] hover:bg-[#F16001] text-[#F9F9F9] font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(232,80,2,0.4)]"
+              className="w-full py-2 rounded-xl bg-[#E85002] hover:bg-[#F16001] text-[#F9F9F9] font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(232,80,2,0.4)]"
             >
               <FileText size={14} />
               <span>GENERATE TACTICAL REPORT</span>

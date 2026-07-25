@@ -24,14 +24,14 @@ const CRIME_GROUPS = [
 ];
 
 const BLANK_FORM = {
-  FIR_Number: "",
-  Station_ID: "",
+  FIR_Number: `FIR/2026/BLR/${Math.floor(1000 + Math.random() * 9000)}`,
+  Station_ID: "101",
   Incident_Date: new Date().toISOString().slice(0, 10),
   Crime_Group: "Theft",
-  Crime_Subgroup: "",
-  Latitude: "",
-  Longitude: "",
-  Narrative: "",
+  Crime_Subgroup: "BNS 303 (Theft)",
+  Latitude: "12.9716",
+  Longitude: "77.5946",
+  Narrative: "Complainant reported incident occurred near main sector junction. Investigation initiated under BNS 303.",
   Status: "Under Investigation",
 };
 

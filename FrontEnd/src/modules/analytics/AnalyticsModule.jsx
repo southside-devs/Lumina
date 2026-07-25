@@ -203,7 +203,7 @@ export default function AnalyticsModule() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={pieData} cx="50%" cy="50%" innerRadius={70} outerRadius={110}
+                        data={pieData} cx="50%" cy="40%" innerRadius={48} outerRadius={78}
                         dataKey="value" paddingAngle={3}
                         label={({ name, percent }) => `${name.replace("Under Investigation", "Active").replace("Chargesheeted", "Charged")}: ${(percent * 100).toFixed(0)}%`}
                         labelLine={false}
@@ -212,7 +212,7 @@ export default function AnalyticsModule() {
                         {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                       </Pie>
                       <Tooltip content={<DarkTooltip />} />
-                      <Legend wrapperStyle={{ fontSize: "11px", color: "#94a3b8" }} />
+                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: "11px", color: "#94a3b8", paddingTop: "10px" }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
