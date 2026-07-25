@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { FileText, Plus, Search, X, RefreshCw, CheckCircle2, AlertCircle, MapPin, Calendar, User } from "lucide-react";
 import { listFIRs, searchFIRs, createFIR } from "../../services/fir.service";
 
@@ -55,6 +56,7 @@ function Toast({ msg, ok, onDone }) {
 }
 
 export default function FIRModule() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [firs, setFirs] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -65,6 +67,13 @@ export default function FIRModule() {
   const [form, setForm] = useState(BLANK_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    if (searchParams.get("action") === "new") {
+      setShowNewFIR(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const showToast = (msg, ok = true) => setToast({ msg, ok });
 

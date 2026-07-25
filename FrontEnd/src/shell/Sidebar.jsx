@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Flame,
@@ -17,6 +17,7 @@ import {
 
 export default function Sidebar({ onTriggerExport }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   // Clean navigation modules
   const sidebarNavItems = [
@@ -29,7 +30,7 @@ export default function Sidebar({ onTriggerExport }) {
 
   return (
     <aside className={`cy-sidebar ${isCollapsed ? "collapsed" : ""}`}>
-      {/* Top Sidebar Navigation Header (No Duplicate Branding) */}
+      {/* Top Sidebar Navigation Header */}
       <div className="cy-sidebar-brand">
         {!isCollapsed ? (
           <span className="sidebar-section-title font-mono">NAVIGATION</span>
@@ -51,7 +52,7 @@ export default function Sidebar({ onTriggerExport }) {
         <button
           type="button"
           className="cy-btn-new-task"
-          onClick={() => alert("Initiating New KSP Crime Investigation Report (FIR / Case File)...")}
+          onClick={() => navigate("/firs?action=new")}
           title="New Investigation"
         >
           <div className="plus-icon-box"><FilePlus size={15} /></div>
@@ -79,7 +80,7 @@ export default function Sidebar({ onTriggerExport }) {
           className="cy-nav-item nav-export-btn"
           onClick={() => {
             if (onTriggerExport) onTriggerExport();
-            else alert("Opening Contextual Export Panel...");
+            else navigate("/analytics");
           }}
           title="Export"
         >
@@ -88,12 +89,12 @@ export default function Sidebar({ onTriggerExport }) {
         </button>
       </nav>
 
-      {/* Bottom Sidebar Utility Footer (Profile Removed to Eliminate Redundancy) */}
+      {/* Bottom Sidebar Utility Footer */}
       <div className="cy-sidebar-footer">
         <button
           type="button"
           className="cy-footer-link"
-          onClick={() => alert("Opening KSP Intelligence Documentation & Guidelines...")}
+          onClick={() => navigate("/ai-query")}
           title="Help & Docs"
         >
           <HelpCircle size={16} />
