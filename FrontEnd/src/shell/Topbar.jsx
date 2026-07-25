@@ -1,14 +1,26 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import NotificationsPopover from "./NotificationsPopover";
-import { Search, Bell, RefreshCw, ShieldCheck, UserCheck, CheckCircle2, ChevronDown } from "lucide-react";
+import UpdateNotificationModal from "../components/modals/UpdateNotificationModal";
+import { Search, Bell, RefreshCw, ShieldCheck, UserCheck, CheckCircle2, ChevronDown, Sparkles } from "lucide-react";
 
 export default function Topbar() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [hasUpdate, setHasUpdate] = useState(false);
   const [userRole, setUserRole] = useState(localStorage.getItem("lumina_user_role") || "Inspector General (IG)");
   const [authToast, setAuthToast] = useState(null);
   const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.onUpdateAvailable) {
+      window.electronAPI.onUpdateAvailable(() => {
+        setHasUpdate(true);
+        setShowUpdateModal(true);
+      });
+    }
+  }, []);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -71,7 +83,21 @@ export default function Topbar() {
           <div className="topbar-brand-titles">
             <div className="topbar-title-row">
               <span className="topbar-brand-text">LUMINA</span>
-              <span className="topbar-brand-tag font-mono">KSP Prototype v0.2.0</span>
+              <button
+                onClick={() => setShowUpdateModal(true)}
+                className="topbar-brand-tag font-mono"
+                style={{
+                  background: hasUpdate ? "rgba(232,80,2,0.25)" : "rgba(255,255,255,0.06)",
+                  border: hasUpdate ? "1px solid rgba(232,80,2,0.5)" : "1px solid rgba(255,255,255,0.1)",
+                  color: hasUpdate ? "#f97316" : "#94a3b8",
+                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px",
+                  padding: "2px 8px", borderRadius: "6px"
+                }}
+                title="Click to check for update & view release notes"
+              >
+                {hasUpdate && <span className="inline-block w-2 h-2 rounded-full bg-orange-500 animate-pulse" />}
+                KSP Prototype v0.2.0
+              </button>
             </div>
             <span className="topbar-brand-hub-sub font-mono">KSP Strategic Intelligence Hub</span>
           </div>
@@ -90,10 +116,15 @@ export default function Topbar() {
       {/* Top Right: Status, Alerts, Role Badge & User Profile */}
       <div className="topbar-right">
         {/* Live API Sync Status Indicator */}
-        <div className="status-badge">
+        <button
+          className="status-badge"
+          onClick={() => setShowUpdateModal(true)}
+          style={{ cursor: "pointer", border: "none", background: "rgba(16,185,129,0.12)" }}
+          title="Click to view version changelog and software updates"
+        >
           <span className="pulse-indicator"></span>
           <span>Live API Sync Active</span>
-        </div>
+        </button>
 
         {/* Sync Button */}
         <button
@@ -156,6 +187,11 @@ export default function Topbar() {
           )}
         </div>
       </div>
+
+      {/* Software Update & Changelog Modal */}
+      {showUpdateModal && (
+        <UpdateNotificationModal onClose={() => setShowUpdateModal(false)} />
+      )}
     </header>
   );
 }
