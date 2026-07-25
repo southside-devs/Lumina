@@ -33,28 +33,16 @@ function createWindow() {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
+  const distPath = path.join(__dirname, "../dist/index.html");
+
   if (isDev) {
     mainWindow.loadURL("http://localhost:5173").catch(() => {
-      console.log("Dev server not ready yet, loading built dist...");
-      mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+      console.log("Dev server not running, loading built dist/index.html...");
+      mainWindow.loadFile(distPath);
     });
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    mainWindow.loadFile(distPath);
   }
-
-  // Handle load failure gracefully
-  mainWindow.webContents.on("did-fail-load", () => {
-    console.log("Page failed to load. Retrying in 1s...");
-    setTimeout(() => {
-      if (isDev) {
-        mainWindow.loadURL("http://localhost:5173").catch(() => {
-          mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
-        });
-      } else {
-        mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
-      }
-    }, 1000);
-  });
 }
 
 // Set up Auto-Updater Events

@@ -100,7 +100,7 @@ export default function Topbar() {
                 title="Click to check for update & view release notes"
               >
                 {hasUpdate && <span className="inline-block w-2 h-2 rounded-full bg-orange-500 animate-pulse" />}
-                KSP Prototype v0.2.0
+                KSP Prototype v0.2.2
               </button>
             </div>
             <span className="topbar-brand-hub-sub font-mono">KSP Strategic Intelligence Hub</span>
