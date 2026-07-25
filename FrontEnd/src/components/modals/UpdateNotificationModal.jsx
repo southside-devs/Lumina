@@ -20,7 +20,7 @@ export default function UpdateNotificationModal({ onClose }) {
     } else {
       // 2. Demo fallback info for preview/testing
       setUpdateInfo({
-        version: "v0.2.0",
+        version: "v0.2.2",
         releaseNotes: [
           "Legal Act Code Transition: Replaced outdated IPC with BNS (Bharatiya Nyaya Sanhita, 2023) across all crime categories.",
           "Briefing & Tactical Reports: Added direct browser download for Intelligence Briefing text/PDF & ST-DBSCAN Cluster Dossiers.",
