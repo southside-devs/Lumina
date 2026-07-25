@@ -103,52 +103,56 @@ Generated: ${new Date().toLocaleString()} | Classification: RESTRICTED / KSP ONL
       )}
 
       {/* Sleek Floating Dock Header Bar */}
-      <div className="drawer-header" onClick={() => setIsOpen(!isOpen)}>
-        <div className="drawer-title-group">
-          <div className="drawer-icon-badge">
-            <SlidersHorizontal size={15} />
+      <div className="drawer-header" onClick={() => setIsOpen(!isOpen)} style={{ gap: "12px", padding: "0 14px" }}>
+        <div className="drawer-title-group" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <div className="drawer-icon-badge" style={{ color: "#f97316" }}>
+            <SlidersHorizontal size={14} />
           </div>
-          <span className="drawer-title font-mono">CONTEXTUAL CONTROL PANEL</span>
+          <span className="drawer-title font-mono" style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "0.05em", color: "#f1f5f9" }}>
+            CONTEXTUAL CONTROL PANEL
+          </span>
         </div>
 
-        {/* Tab Buttons */}
-        <div className="drawer-tabs" onClick={(e) => e.stopPropagation()}>
-          <button
-            className={`drawer-tab-btn ${isOpen && activeTab === "filters" ? "active" : ""}`}
-            onClick={() => handleTabClick("filters")}
-          >
-            <Filter size={13} />
-            <span>Contextual Filters</span>
-          </button>
+        {/* Tab Buttons (visible when expanded) */}
+        {isOpen && (
+          <div className="drawer-tabs" onClick={(e) => e.stopPropagation()}>
+            <button
+              className={`drawer-tab-btn ${activeTab === "filters" ? "active" : ""}`}
+              onClick={() => handleTabClick("filters")}
+            >
+              <Filter size={13} />
+              <span>Contextual Filters</span>
+            </button>
 
-          <button
-            className={`drawer-tab-btn ${isOpen && activeTab === "details" ? "active" : ""}`}
-            onClick={() => handleTabClick("details")}
-          >
-            <Info size={13} />
-            <span>Node Inspector {selectedNode ? <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse ml-1" /> : ""}</span>
-          </button>
+            <button
+              className={`drawer-tab-btn ${activeTab === "details" ? "active" : ""}`}
+              onClick={() => handleTabClick("details")}
+            >
+              <Info size={13} />
+              <span>Node Inspector {selectedNode ? <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse ml-1" /> : ""}</span>
+            </button>
 
-          <button
-            className={`drawer-tab-btn ${isOpen && activeTab === "timeline" ? "active" : ""}`}
-            onClick={() => handleTabClick("timeline")}
-          >
-            <Clock size={13} />
-            <span>Live Stream</span>
-          </button>
+            <button
+              className={`drawer-tab-btn ${activeTab === "timeline" ? "active" : ""}`}
+              onClick={() => handleTabClick("timeline")}
+            >
+              <Clock size={13} />
+              <span>Live Stream</span>
+            </button>
 
-          <button
-            className={`drawer-tab-btn ${isOpen && activeTab === "export" ? "active" : ""}`}
-            onClick={() => handleTabClick("export")}
-          >
-            <Download size={13} />
-            <span>Export & Reports</span>
-          </button>
-        </div>
+            <button
+              className={`drawer-tab-btn ${activeTab === "export" ? "active" : ""}`}
+              onClick={() => handleTabClick("export")}
+            >
+              <Download size={13} />
+              <span>Export & Reports</span>
+            </button>
+          </div>
+        )}
 
         {/* Collapse / Expand Toggle */}
-        <div className="drawer-toggle-box">
-          {isOpen ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+        <div className="drawer-toggle-box" style={{ color: "#94a3b8" }}>
+          {isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
         </div>
       </div>
 
