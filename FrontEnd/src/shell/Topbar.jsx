@@ -66,18 +66,22 @@ export default function Topbar() {
               src="./KSP_logo.png"
               alt="Karnataka State Police Logo"
               className="topbar-ksp-logo"
-              style={{ width: "32px", height: "32px", objectFit: "contain" }}
+              style={{ width: "36px", height: "36px", objectFit: "contain" }}
               onError={() => setLogoError(true)}
             />
           ) : (
             <div className="ksp-emblem-badge" style={{
-              width: "32px", height: "32px", borderRadius: "8px",
-              background: "linear-gradient(135deg, #e85002, #c10801)",
-              display: "flex", alignItems: "center", justify: "center",
-              color: "#fff", fontWeight: "900", fontSize: "11px", fontFamily: "Syne, sans-serif",
-              boxShadow: "0 0 10px rgba(232,80,2,0.4)"
+              width: "36px", height: "36px", borderRadius: "10px",
+              background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              border: "1px solid rgba(245,158,11,0.5)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 12px rgba(245,158,11,0.4)"
             }}>
-              KSP
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0f172a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="M12 8v4"/>
+                <path d="M12 16h.01"/>
+              </svg>
             </div>
           )}
           <div className="topbar-brand-titles">

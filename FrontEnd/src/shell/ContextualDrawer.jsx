@@ -21,10 +21,16 @@ export default function ContextualDrawer({ selectedNode, setSelectedNode }) {
   const [crimeType, setCrimeType] = useState("Cybercrime");
   const [riskLevel, setRiskLevel] = useState("All Levels");
   const [filterToast, setFilterToast] = useState(null);
+  const toastTimerRef = React.useRef(null);
 
-  const handleApplyFilters = () => {
-    setFilterToast(`Filters Applied: ${district} | ${crimeType} | ${timeframe} | ${riskLevel}`);
-    setTimeout(() => setFilterToast(null), 3500);
+  const handleApplyFilters = (e) => {
+    if (e) e.preventDefault();
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    setFilterToast(null);
+    setTimeout(() => {
+      setFilterToast(`Filters Applied: ${district} | ${crimeType} | ${timeframe} | ${riskLevel}`);
+      toastTimerRef.current = setTimeout(() => setFilterToast(null), 3500);
+    }, 50);
   };
 
   const handleExportPDF = () => {

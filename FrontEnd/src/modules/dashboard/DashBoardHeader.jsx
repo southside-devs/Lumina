@@ -6,6 +6,10 @@ export default function DashboardHeader({ onDistrictChange, selectedDistrict, on
   const [district, setDistrict] = useState(selectedDistrict || "all");
   const [isExporting, setIsExporting] = useState(false);
 
+  React.useEffect(() => {
+    if (selectedDistrict) setDistrict(selectedDistrict);
+  }, [selectedDistrict]);
+
   const handleTimeframeSelect = (val) => {
     setTimeframe(val);
     if (onTimeframeChange) onTimeframeChange(val);

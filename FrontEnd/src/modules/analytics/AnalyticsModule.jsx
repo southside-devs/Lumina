@@ -203,16 +203,24 @@ export default function AnalyticsModule() {
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
-                        data={pieData} cx="50%" cy="40%" innerRadius={48} outerRadius={78}
+                        data={pieData} cx="35%" cy="50%" innerRadius={45} outerRadius={75}
                         dataKey="value" paddingAngle={3}
-                        label={({ name, percent }) => `${name.replace("Under Investigation", "Active").replace("Chargesheeted", "Charged")}: ${(percent * 100).toFixed(0)}%`}
-                        labelLine={false}
-                        style={{ fontSize: "10px" }}
+                        label={false}
                       >
                         {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                       </Pie>
                       <Tooltip content={<DarkTooltip />} />
-                      <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: "11px", color: "#94a3b8", paddingTop: "10px" }} />
+                      <Legend
+                        layout="vertical"
+                        align="right"
+                        verticalAlign="middle"
+                        wrapperStyle={{ fontSize: "12px", color: "#cbd5e1", paddingLeft: "10px", lineHeight: "2" }}
+                        formatter={(value, entry) => {
+                          const item = pieData.find((p) => p.name === value);
+                          const val = item ? item.value : "";
+                          return <span style={{ color: "#e2e8f0", fontWeight: 600 }}>{value} ({val})</span>;
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

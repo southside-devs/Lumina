@@ -260,33 +260,33 @@ export default function HotspotExplorerMap({
           })}
         </MapContainer>
 
-        {/* 4. RIGHT SIDE GLASS CLUSTER INSPECTION DRAWER WITH CLOSE BUTTON */}
+        {/* 4. RIGHT SIDE GLASS CLUSTER INSPECTION DRAWER WITH SLEEK SIDE-DOCK */}
         {selectedCluster && (
-          <div className="absolute top-4 right-4 w-80 bg-[#121620]/95 backdrop-blur-2xl border border-[rgba(255,255,255,0.15)] p-4 rounded-2xl shadow-2xl text-xs text-[#F9F9F9] z-30 transition-all space-y-3">
+          <div className="absolute top-4 right-4 w-72 bg-[#090d16]/95 backdrop-blur-2xl border border-[rgba(232,80,2,0.35)] p-3.5 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.8)] text-xs text-[#F9F9F9] z-30 transition-all space-y-2.5">
             
-            <div className="flex justify-between items-start border-b border-[rgba(255,255,255,0.1)] pb-2.5">
+            <div className="flex justify-between items-start border-b border-[rgba(255,255,255,0.08)] pb-2">
               <div>
-                <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                <span className={`px-2 py-0.5 rounded-full text-[9px] font-mono font-bold uppercase border ${
                   selectedCluster.threatLevel === 'Critical'
-                    ? 'bg-[#C10801]/20 text-[#fb7185] border-[#C10801]/40'
-                    : 'bg-[#E85002]/20 text-[#E85002] border-[#E85002]/40'
+                    ? 'bg-[#f43f5e]/15 text-[#f43f5e] border-[#f43f5e]/30'
+                    : 'bg-[#f59e0b]/15 text-[#f59e0b] border-[#f59e0b]/30'
                 }`}>
                   {selectedCluster.threatLevel} Cluster Zone
                 </span>
-                <h3 className="text-sm font-bold font-display text-[#F9F9F9] mt-1.5">{selectedCluster.name}</h3>
-                <p className="text-[11px] font-mono text-[#A7A7A7]">{selectedCluster.district} Jurisdiction</p>
+                <h3 className="text-xs font-bold font-display text-[#F9F9F9] mt-1 tracking-wide">{selectedCluster.name}</h3>
+                <p className="text-[10px] font-mono text-[#94a3b8]">{selectedCluster.district} Jurisdiction</p>
               </div>
 
-              {/* Close Button to Unclutter Map View */}
+              {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setSelectedCluster(null)}
                 style={{
-                  background: "rgba(255,255,255,0.1)", border: "none", color: "#94a3b8",
-                  width: "24px", height: "24px", borderRadius: "6px", cursor: "pointer",
-                  display: "flex", alignItems: "center", justifyContent: "center"
+                  background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)",
+                  color: "#94a3b8", width: "22px", height: "22px", borderRadius: "6px", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px"
                 }}
-                title="Close Inspector & View Map"
+                title="Minimize Inspector & Expand Map View"
               >
                 ✕
               </button>
@@ -294,29 +294,29 @@ export default function HotspotExplorerMap({
 
             {/* Metrics */}
             <div className="grid grid-cols-2 gap-2 font-mono">
-              <div className="bg-[#000000]/60 border border-[rgba(255,255,255,0.08)] p-2.5 rounded-xl">
-                <div className="text-[10px] text-[#A7A7A7] uppercase">Cluster Score</div>
-                <div className="text-base font-bold text-[#E85002] mt-0.5">{selectedCluster.threatScore}/100</div>
+              <div className="bg-[#0f172a]/80 border border-[rgba(255,255,255,0.06)] p-2 rounded-xl">
+                <div className="text-[9px] text-[#64748b] uppercase font-bold">Cluster Score</div>
+                <div className="text-sm font-extrabold text-[#f97316] mt-0.5">{selectedCluster.threatScore}/100</div>
               </div>
-              <div className="bg-[#000000]/60 border border-[rgba(255,255,255,0.08)] p-2.5 rounded-xl">
-                <div className="text-[10px] text-[#A7A7A7] uppercase">Density (FIRs)</div>
-                <div className="text-base font-bold text-[#38BDF8] mt-0.5">{selectedCluster.firCount} Cases</div>
+              <div className="bg-[#0f172a]/80 border border-[rgba(255,255,255,0.06)] p-2 rounded-xl">
+                <div className="text-[9px] text-[#64748b] uppercase font-bold">Density (FIRs)</div>
+                <div className="text-sm font-extrabold text-[#38bdf8] mt-0.5">{selectedCluster.firCount} Cases</div>
               </div>
             </div>
 
             {/* Primary Modus Operandi */}
-            <div className="bg-[#000000]/40 border border-[rgba(255,255,255,0.08)] p-2.5 rounded-xl font-mono text-[11px]">
-              <div className="text-[#A7A7A7] text-[10px] uppercase mb-1">Primary MO (BNS Codes)</div>
-              <div className="text-[#F9F9F9] font-bold">{selectedCluster.primaryMO}</div>
+            <div className="bg-[#0f172a]/60 border border-[rgba(255,255,255,0.06)] p-2 rounded-xl font-mono text-[10px]">
+              <div className="text-[#64748b] text-[9px] uppercase font-bold mb-0.5">Primary MO (BNS Act Codes)</div>
+              <div className="text-[#f1f5f9] font-bold">{selectedCluster.primaryMO}</div>
             </div>
 
             {/* Action CTAs */}
             <button
               type="button"
               onClick={() => handleGenerateReport(selectedCluster)}
-              className="w-full py-2 rounded-xl bg-[#E85002] hover:bg-[#F16001] text-[#F9F9F9] font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(232,80,2,0.4)]"
+              className="w-full py-1.5 rounded-xl bg-gradient-to-r from-[#e85002] to-[#c10801] hover:brightness-110 text-[#ffffff] font-mono text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all shadow-[0_0_12px_rgba(232,80,2,0.35)]"
             >
-              <FileText size={14} />
+              <FileText size={13} />
               <span>GENERATE TACTICAL REPORT</span>
             </button>
           </div>

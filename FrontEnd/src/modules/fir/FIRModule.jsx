@@ -360,10 +360,11 @@ export default function FIRModule() {
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: "6px" }}>Station ID *</label>
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
                     value={form.Station_ID}
                     onChange={(e) => setForm({ ...form, Station_ID: e.target.value })}
-                    placeholder="e.g. 1"
+                    placeholder="e.g. 101"
                     style={{ width: "100%", padding: "10px 14px", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#f1f5f9", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
                   />
                 </div>
@@ -404,11 +405,11 @@ export default function FIRModule() {
               </div>
 
               <div>
-                <label style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: "6px" }}>Crime Sub-Group</label>
+                <label style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: "6px" }}>Crime Sub-Group (BNS Act Code)</label>
                 <input
                   value={form.Crime_Subgroup}
                   onChange={(e) => setForm({ ...form, Crime_Subgroup: e.target.value })}
-                  placeholder="Optional: e.g. ATM Fraud"
+                  placeholder="e.g. BNS 303 (Theft)"
                   style={{ width: "100%", padding: "10px 14px", background: "rgba(15,23,42,0.8)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "8px", color: "#f1f5f9", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
                 />
               </div>
@@ -417,7 +418,8 @@ export default function FIRModule() {
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: "6px" }}>Latitude *</label>
                   <input
-                    type="number" step="0.0001"
+                    type="text"
+                    inputMode="decimal"
                     value={form.Latitude}
                     onChange={(e) => setForm({ ...form, Latitude: e.target.value })}
                     placeholder="e.g. 12.9716"
@@ -427,7 +429,8 @@ export default function FIRModule() {
                 <div>
                   <label style={{ fontSize: "12px", fontWeight: 600, color: "#94a3b8", display: "block", marginBottom: "6px" }}>Longitude *</label>
                   <input
-                    type="number" step="0.0001"
+                    type="text"
+                    inputMode="decimal"
                     value={form.Longitude}
                     onChange={(e) => setForm({ ...form, Longitude: e.target.value })}
                     placeholder="e.g. 77.5946"
