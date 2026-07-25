@@ -24,7 +24,7 @@ const CRIME_GROUPS = [
 ];
 
 const BLANK_FORM = {
-  FIR_Number: `FIR/2026/BLR/${Math.floor(1000 + Math.random() * 9000)}`,
+  FIR_Number: Math.floor(1000 + Math.random() * 9000).toString(),
   Station_ID: "101",
   Incident_Date: new Date().toISOString().slice(0, 10),
   Crime_Group: "Theft",
@@ -120,6 +120,7 @@ export default function FIRModule() {
     try {
       await createFIR({
         ...form,
+        FIR_Number: parseInt(form.FIR_Number, 10) || Math.floor(1000 + Math.random() * 9000),
         Station_ID: parseInt(form.Station_ID, 10),
         Latitude: parseFloat(form.Latitude),
         Longitude: parseFloat(form.Longitude),
