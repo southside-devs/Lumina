@@ -14,7 +14,7 @@ from flask import Request, make_response, jsonify
 
 from routes import districts, stations, firs, accused, victims
 from routes import case_accused, risk_scores, dashboard
-from routes import graph, hotspots, uploads
+from routes import graph, hotspots, uploads, ai_chat
 
 # ── Logging ─────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -39,6 +39,8 @@ ROUTES = {
     "hotspots":     hotspots,   # → ML pipeline AppSail container
     # ── File Uploads ──────────────────────────────────────
     "uploads":      uploads,    # → Catalyst Stratus
+    # ── AI Copilot ────────────────────────────────────────
+    "ai-chat":      ai_chat,
 }
 
 

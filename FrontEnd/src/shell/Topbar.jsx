@@ -3,6 +3,8 @@ import NotificationsPopover from "./NotificationsPopover";
 import UpdateNotificationModal from "../components/modals/UpdateNotificationModal";
 import { Search, Bell, RefreshCw, ShieldCheck, UserCheck, CheckCircle2, ChevronDown, Sparkles } from "lucide-react";
 
+import { ShieldAlert, AlertTriangle, Activity } from "lucide-react";
+
 export default function Topbar() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -12,6 +14,54 @@ export default function Topbar() {
   const [userRole, setUserRole] = useState(localStorage.getItem("lumina_user_role") || "Inspector General (IG)");
   const [authToast, setAuthToast] = useState(null);
   const [logoError, setLogoError] = useState(false);
+
+  const [notifications, setNotifications] = useState([
+    {
+      id: "notif-1",
+      severity: "high",
+      icon: <ShieldAlert size={16} className="text-red-400" />,
+      title: "High Threat Spike Detected",
+      description: "Bengaluru Urban risk score elevated to 8.9 following cyber fraud surge.",
+      tags: ["Bengaluru Urban", "Risk Score: 8.9"],
+      time: "2m ago",
+      isUnread: true,
+      targetRoute: "/dashboard"
+    },
+    {
+      id: "notif-2",
+      severity: "amber",
+      icon: <AlertTriangle size={16} className="text-amber-400" />,
+      title: "New Network Link Identified",
+      description: "Suspect #4902 linked to cross-district syndicate in FIR-2026-9901.",
+      tags: ["Suspect #4902", "FIR-2026-9901"],
+      time: "15m ago",
+      isUnread: true,
+      targetRoute: "/network"
+    },
+    {
+      id: "notif-3",
+      severity: "high",
+      icon: <ShieldAlert size={16} className="text-red-400" />,
+      title: "Critical FIR Incident Escalation",
+      description: "FIR-2026-9901 registered at Whitefield PS assigned to Insp. V. Raju.",
+      tags: ["FIR-2026-9901", "Whitefield PS"],
+      time: "42m ago",
+      isUnread: true,
+      targetRoute: "/firs"
+    },
+    {
+      id: "notif-4",
+      severity: "blue",
+      icon: <Activity size={16} className="text-sky-400" />,
+      title: "Statewide Threat Scan Complete",
+      description: "AI Copilot spatiotemporal analysis completed across 31 police districts.",
+      tags: ["AI Copilot", "KSP Hub"],
+      time: "2h ago",
+      isUnread: false,
+      targetRoute: "/ai-query"
+    }
+  ]);
+
 
   useEffect(() => {
     if (window.electronAPI && window.electronAPI.onUpdateAvailable) {
@@ -147,11 +197,17 @@ export default function Topbar() {
             title="Real-Time Alerts"
           >
             <Bell size={16} />
-            <span className="notification-count">3</span>
+            {notifications.filter(n => n.isUnread).length > 0 && (
+              <span className="notification-count">{notifications.filter(n => n.isUnread).length}</span>
+            )}
           </button>
 
           {notificationsOpen && (
-            <NotificationsPopover onClose={() => setNotificationsOpen(false)} />
+            <NotificationsPopover 
+              onClose={() => setNotificationsOpen(false)} 
+              notifications={notifications}
+              setNotifications={setNotifications}
+            />
           )}
         </div>
 

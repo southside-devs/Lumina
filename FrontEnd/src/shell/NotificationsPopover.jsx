@@ -11,56 +11,9 @@ import {
   X
 } from "lucide-react";
 
-export default function NotificationsPopover({ onClose }) {
+export default function NotificationsPopover({ onClose, notifications, setNotifications }) {
   const navigate = useNavigate();
   const [filterTab, setFilterTab] = useState("all"); // 'all' | 'high'
-
-  const [notifications, setNotifications] = useState([
-    {
-      id: "notif-1",
-      severity: "high",
-      icon: <ShieldAlert size={16} className="text-red-400" />,
-      title: "High Threat Spike Detected",
-      description: "Bengaluru Urban risk score elevated to 8.9 following cyber fraud surge.",
-      tags: ["Bengaluru Urban", "Risk Score: 8.9"],
-      time: "2m ago",
-      isUnread: true,
-      targetRoute: "/dashboard"
-    },
-    {
-      id: "notif-2",
-      severity: "amber",
-      icon: <AlertTriangle size={16} className="text-amber-400" />,
-      title: "New Network Link Identified",
-      description: "Suspect #4902 linked to cross-district syndicate in FIR-2026-9901.",
-      tags: ["Suspect #4902", "FIR-2026-9901"],
-      time: "15m ago",
-      isUnread: true,
-      targetRoute: "/network"
-    },
-    {
-      id: "notif-3",
-      severity: "high",
-      icon: <ShieldAlert size={16} className="text-red-400" />,
-      title: "Critical FIR Incident Escalation",
-      description: "FIR-2026-9901 registered at Whitefield PS assigned to Insp. V. Raju.",
-      tags: ["FIR-2026-9901", "Whitefield PS"],
-      time: "42m ago",
-      isUnread: true,
-      targetRoute: "/firs"
-    },
-    {
-      id: "notif-4",
-      severity: "blue",
-      icon: <Activity size={16} className="text-sky-400" />,
-      title: "Statewide Threat Scan Complete",
-      description: "AI Copilot spatiotemporal analysis completed across 31 police districts.",
-      tags: ["AI Copilot", "KSP Hub"],
-      time: "2h ago",
-      isUnread: false,
-      targetRoute: "/ai-query"
-    }
-  ]);
 
   const unreadCount = notifications.filter((n) => n.isUnread).length;
   const highAlertCount = notifications.filter((n) => n.severity === "high").length;

@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Bot, Send, Sparkles, Download, RotateCcw, Copy } from "lucide-react";
+import useDashboardStore from "../../store/dashboardStore";
 
 const QUICK_PROMPTS = [
   "Show crime hotspots in Bengaluru Urban for last 30 days",
@@ -9,84 +10,80 @@ const QUICK_PROMPTS = [
   "List all pending review FIRs filed in July 2026",
 ];
 
-const MOCK_RESPONSES = {
-  "Show crime hotspots in Bengaluru Urban for last 30 days": {
-    text: "Based on ST-DBSCAN cluster analysis across 3,420 FIRs in Bengaluru Urban for the last 30 days:",
-    bullets: [
-      "🔴 **Hebbal–Nagavara Corridor** — Risk Score: 94/100 (Cybercrime cluster: 142 cases)",
-      "🔴 **Koramangala–BTM Zone** — Risk Score: 88/100 (Financial fraud concentration)",
-      "🟠 **Whitefield Tech Corridor** — Risk Score: 71/100 (Organised theft pattern active)",
-      "🟠 **Shivajinagar Central** — Risk Score: 68/100 (Vehicle theft & snatching uptick)",
-      "🟡 **Electronic City Phase 2** — Risk Score: 54/100 (Low-level cyber incidents)",
-    ],
-    footer: "Analysis based on 3,420 FIRs • 5 active ST-DBSCAN clusters detected • Confidence: 94.2%"
-  },
-  default: {
-    text: "Analyzing query against Karnataka Crime Database (14,892 FIRs) using Catalyst QuickML RAG engine...",
-    bullets: [
-      "🔍 Pattern recognition across 31 districts completed",
-      "📊 Temporal analysis: Jan–Jul 2026 data range processed",
-      "🧠 Zia AutoML risk model applied (v3.1, Accuracy: 91.4%)",
-      "📋 Cross-referencing with charge sheet rate and prediction intervals",
-    ],
-    footer: "Query processed by Catalyst QuickML RAG • Confidence: 88.7% • Response time: 1.2s"
-  }
-};
-
 export default function AIAssistantModule() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      text: "Namaskara! I am **Lumina AI**, your Karnataka State Police intelligence assistant powered by Catalyst QuickML RAG. I can analyze crime patterns, query FIR databases, generate district risk reports, predict hotspot clusters, and cross-reference criminal network links. How can I assist your investigation today?",
+      text: "Namaskara! I am **Lumina AI**, your Karnataka State Police intelligence assistant powered by Zoho Catalyst. I can analyze crime patterns, query FIR databases, generate district risk reports, predict hotspot clusters, and cross-reference criminal network links. How can I assist your investigation today?",
     }
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const sendMessage = (text) => {
+  // Fetch contextual data from the dashboard store to simulate RAG
+  const { kpis, recentCases } = useDashboardStore();
+
+  const sendMessage = async (text) => {
     const q = text || input;
     if (!q || !q.trim()) return;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: q }]);
+    
+    const userMsg = { role: "user", text: q };
+    setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
-    setTimeout(() => {
-      let resp = MOCK_RESPONSES[q];
-      if (!resp) {
-        const lower = q.toLowerCase();
-        let topicText = `Intelligence Analysis for: "${q}"`;
-        let bullet1 = `🔍 Spatial search across 14,892 FIR records in Karnataka State database.`;
-        let bullet2 = `📊 Identified 4 active crime clusters matching your query parameters.`;
-        let bullet3 = `🛡️ Flagged 12 repeat offenders under BNS 303 / BNS 318 sections.`;
-        let bullet4 = `💡 Recommendation: Deploy patrol vectors along high-density corridors.`;
+    try {
+      const contextData = `
+        You are Lumina AI, an elite intelligence assistant for the Karnataka State Police (KSP).
+        You analyze spatial crime data, FIRs, and predict hotspots.
+        Be professional, analytical, and format your responses in Markdown with bolding and bullet points when appropriate.
+        Current Live System Data (Use this to answer questions accurately if relevant):
+        - Total FIRs Registered: ${kpis.find(k => k.label === "Total FIRs Registered")?.value || "14,892"}
+        - Critical Hotspots: ${kpis.find(k => k.label === "Critical Hotspots Active")?.value || "4"}
+        - Recent Case 1: ${recentCases[0]?.Crime_Group || "Theft"} in ${recentCases[0]?.District_Name || "Bengaluru Urban"}
+        - Recent Case 2: ${recentCases[1]?.Crime_Group || "Assault"} in ${recentCases[1]?.District_Name || "Mysuru City"}
+      `;
 
-        if (lower.includes("bengaluru") || lower.includes("bangalore")) {
-          topicText = `Bengaluru Urban Police Intelligence Analysis: "${q}"`;
-          bullet1 = `📍 **Bengaluru Tech Corridor & Koramangala**: 142 Cybercrime FIRs registered (BNS 318 / IT Act 66D).`;
-          bullet2 = `📈 **Threat Index**: 92/100 (Critical Density). Highest concentration in Whitefield & Hebbal.`;
-          bullet3 = `🚔 **Active Operation**: Special task force assigned to track spoofed banking portals.`;
-        } else if (lower.includes("narcotics") || lower.includes("drugs") || lower.includes("ndps")) {
-          topicText = `Narcotics Seizure & NDPS Enforcement Analysis: "${q}"`;
-          bullet1 = `🚨 **Total NDPS Seizures**: 385 kg contraband confiscated across Coastal & Transit corridors (Jan–Jul 2026).`;
-          bullet2 = `📍 **Key Transit Belts**: Mangaluru Port Hub & Hubballi Industrial Outer Ring Road.`;
-          bullet3 = `⚖️ **Filing Status**: 78% Chargesheet rate achieved under NDPS Act.`;
-        } else if (lower.includes("theft") || lower.includes("vehicle") || lower.includes("snatching")) {
-          topicText = `Property Offence & Motor Vehicle Theft Analysis (BNS 303): "${q}"`;
-          bullet1 = `🏍️ **MV Theft Hotspots**: Mysuru Tourist Hub & Belagavi Border Crossings.`;
-          bullet2 = `🔍 **ANPR Camera Correlation**: 34 stolen two-wheelers intercepted at inter-state checkpoints.`;
-          bullet3 = `📋 **BNS Section 303**: 24 active repeat offenders currently under surveillance.`;
-        }
+      // Build chat history
+      const chatHistory = messages.map(m => ({
+        role: m.role,
+        text: m.text
+      }));
 
-        resp = {
-          text: topicText,
-          bullets: [bullet1, bullet2, bullet3, bullet4],
-          footer: `Analysis generated by Lumina Catalyst RAG Engine • Confidence: 94.6% • Response time: 0.8s`
-        };
+      // Call the secure Catalyst backend
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || "/server/api_service";
+      const res = await fetch(`${baseUrl}/ai_chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          query: q,
+          history: chatHistory,
+          context: contextData
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch from backend");
       }
-      setMessages((prev) => [...prev, { role: "assistant", ...resp }]);
+
+      setMessages((prev) => [...prev, { 
+        role: "assistant", 
+        text: data.response,
+        footer: `Query processed securely via Catalyst Backend` 
+      }]);
+    } catch (error) {
+      setMessages((prev) => [...prev, { 
+        role: "assistant", 
+        text: `⚠️ **API Error:** ${error.message}` 
+      }]);
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const handleKey = (e) => {
