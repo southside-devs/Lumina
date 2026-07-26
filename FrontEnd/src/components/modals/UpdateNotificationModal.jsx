@@ -17,6 +17,11 @@ export default function UpdateNotificationModal({ onClose }) {
         setDownloading(false);
         setReadyToRestart(true);
       });
+      if (window.electronAPI.onDownloadProgress) {
+        window.electronAPI.onDownloadProgress((percent) => {
+          setDownloadProgress(percent);
+        });
+      }
     } else {
       // 2. Demo fallback info for preview/testing
       setUpdateInfo({

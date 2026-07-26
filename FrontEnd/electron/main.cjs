@@ -61,6 +61,12 @@ if (autoUpdater && !isDev) {
     }
   });
 
+  autoUpdater.on("download-progress", (progressObj) => {
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send("download-progress", progressObj.percent);
+    }
+  });
+
   autoUpdater.on("update-downloaded", (info) => {
     console.log("Update downloaded:", info.version);
     if (mainWindow && mainWindow.webContents) {

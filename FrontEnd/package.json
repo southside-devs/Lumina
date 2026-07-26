@@ -51,6 +51,7 @@
     "axios": "^1.11.0",
     "clsx": "^2.1.1",
     "cytoscape": "^3.33.1",
+    "electron-updater": "^6.8.9",
     "framer-motion": "^12.42.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.542.0",
