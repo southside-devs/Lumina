@@ -10,7 +10,7 @@ const DEMO_KEY = import.meta.env.VITE_DEMO_API_KEY || "lumina-demo-ksp-2026";
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
     "X-Lumina-Demo-Key": DEMO_KEY,

@@ -30,6 +30,7 @@ def process_chat(request):
         if not api_key:
             return server_error("Backend Configuration Error: GEMINI_API_KEY is not set in the Catalyst server environment variables.")
 
+        # Use a stable version of gemini flash
         genai.configure(api_key=api_key)
         model = genai.GenerativeModel('gemini-1.5-flash')
 

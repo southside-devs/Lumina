@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Bot, Send, Sparkles, Download, RotateCcw, Copy } from "lucide-react";
 import useDashboardStore from "../../store/dashboardStore";
+import apiClient from "../../api/client";
 
 const QUICK_PROMPTS = [
   "Show crime hotspots in Bengaluru Urban for last 30 days",
@@ -51,25 +52,14 @@ export default function AIAssistantModule() {
         text: m.text
       }));
 
-      // Call the secure Catalyst backend
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || "/server/api_service";
-      const res = await fetch(`${baseUrl}/ai_chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          query: q,
-          history: chatHistory,
-          context: contextData
-        })
+      // Call the secure Catalyst backend using apiClient
+      const res = await apiClient.post("/api/ai-chat", {
+        query: q,
+        history: chatHistory,
+        context: contextData
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to fetch from backend");
-      }
+      const data = res.data;
 
       setMessages((prev) => [...prev, { 
         role: "assistant", 

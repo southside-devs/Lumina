@@ -50,6 +50,14 @@ def handler(request: Request):
     Parses the URL path and dispatches to the appropriate resource handler.
     Expected path format: /api/<resource>[/<id>][/<action>]
     """
+    # ── Handle CORS Preflight ─────────────────────────────────────
+    if request.method == "OPTIONS":
+        response = make_response("", 204)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Demo-Key"
+        return response
+
     try:
         # Initialize Catalyst SDK
         try:
@@ -83,7 +91,23 @@ def handler(request: Request):
 
         # ── Dispatch to resource handler ────────────────────────────
         if resource in ROUTES:
-            return ROUTES[resource].handle(request, path_parts)
+            # Handle the resource request
+            response_data = ROUTES[resource].handle(request, path_parts)
+            
+            # Ensure we always return a valid Flask response object
+            if isinstance(response_data, tuple):
+                response = make_response(*response_data)
+            elif not hasattr(response_data, "headers"):
+                response = make_response(response_data)
+            else:
+                response = response_data
+                
+            # Add CORS headers to all responses
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Demo-Key"
+            
+            return response
         else:
             return make_response(jsonify({
                 "status": "error",
