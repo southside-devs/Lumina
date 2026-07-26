@@ -257,8 +257,8 @@ export default function FIRModule() {
                         {f.FIR_Number || `#${f.ROWID}`}
                       </span>
                     </td>
-                    <td style={{ color: "#cbd5e1" }}>{f.Crime_Group || "—"}</td>
-                    <td style={{ color: "#94a3b8", fontSize: "12px" }}>{f.Crime_Subgroup || "—"}</td>
+                    <td style={{ color: "#cbd5e1" }}>{f.Crime_Group ? String(f.Crime_Group).replace(/IPC/g, "BNS") : "—"}</td>
+                    <td style={{ color: "#94a3b8", fontSize: "12px" }}>{f.Crime_Subgroup ? String(f.Crime_Subgroup).replace(/IPC/g, "BNS") : "—"}</td>
                     <td style={{ color: "#64748b", fontFamily: "JetBrains Mono, monospace", fontSize: "12px" }}>{f.Station_ID || "—"}</td>
                     <td style={{ color: "#64748b", fontSize: "12px" }}>{f.Incident_Date || "—"}</td>
                     <td>
@@ -298,8 +298,8 @@ export default function FIRModule() {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
               {[
-                ["Crime Group", selected.Crime_Group],
-                ["Sub-Group", selected.Crime_Subgroup],
+                ["Crime Group", selected.Crime_Group ? String(selected.Crime_Group).replace(/IPC/g, "BNS") : "—"],
+                ["Sub-Group", selected.Crime_Subgroup ? String(selected.Crime_Subgroup).replace(/IPC/g, "BNS") : "—"],
                 ["Station ID", selected.Station_ID],
                 ["Incident Date", selected.Incident_Date],
                 ["Latitude", selected.Latitude],
