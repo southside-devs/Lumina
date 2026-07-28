@@ -1,0 +1,913 @@
+/* =======================================================
+   LUMINA — RESPONSIVE MEDIA QUERIES
+   Breakpoints: 575px | 775px | 1024px | 1280px | 1536px
+   Usage: <link rel="stylesheet" href="/src/styles/responsive.css" />
+   Place AFTER all other CSS imports in index.html
+======================================================= */
+
+/* =======================================================
+   SHARED RESPONSIVE UTILITIES
+======================================================= */
+.hide-mobile {
+    display: block;
+}
+
+.show-mobile {
+    display: none;
+}
+
+.hide-tablet {
+    display: block;
+}
+
+.show-tablet {
+    display: none;
+}
+
+/* =======================================================
+   1536px — LARGE DESKTOPS / 4K MONITORS
+   Widen layouts, increase spacing, larger type
+======================================================= */
+@media (min-width: 1536px) {
+
+    /* ── Layout Shell ──────────────────────────────────── */
+    .cy-sidebar {
+        width: 280px;
+        padding: 22px 18px;
+    }
+
+    .main-workspace {
+        padding: 32px 40px;
+    }
+
+    /* ── Topbar ────────────────────────────────────────── */
+    .topbar {
+        height: 72px;
+        padding: 0 40px;
+    }
+
+    .topbar-brand-text {
+        font-size: 22px;
+    }
+
+    .global-search {
+        max-width: 600px;
+    }
+
+    /* ── KPI Grid ──────────────────────────────────────── */
+    .kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 24px;
+    }
+
+    .kpi-value {
+        font-size: 34px;
+    }
+
+    .kpi-card {
+        padding: 24px;
+    }
+
+    /* ── Panel Cards ───────────────────────────────────── */
+    .panel-header {
+        padding: 20px 24px;
+    }
+
+    .panel-body {
+        padding: 24px;
+    }
+
+    /* ── Dashboard Grids ───────────────────────────────── */
+    .dashboard-grid-main {
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    .dashboard-grid-secondary {
+        gap: 24px;
+    }
+
+    /* ── Custom Table ──────────────────────────────────── */
+    .custom-table th,
+    .custom-table td {
+        padding: 16px 20px;
+        font-size: 14px;
+    }
+
+    /* ── Contextual Drawer ─────────────────────────────── */
+    .contextual-drawer.floating-dock {
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+    }
+
+    /* ── Notifications Popover ─────────────────────────── */
+    .notifications-popover {
+        width: 460px;
+    }
+
+    /* ── AI Assistant ──────────────────────────────────── */
+    .panel-card .panel-body textarea {
+        font-size: 14px;
+    }
+}
+
+/* =======================================================
+   1280px — STANDARD DESKTOP
+   Default styles (most components are designed for this)
+   Only minor adjustments needed
+======================================================= */
+@media (max-width: 1280px) {
+
+    /* ── Layout ────────────────────────────────────────── */
+    .cy-sidebar {
+        width: 220px;
+    }
+
+    .main-workspace {
+        padding: 20px 20px;
+    }
+
+    /* ── Topbar ────────────────────────────────────────── */
+    .global-search {
+        max-width: 380px;
+    }
+
+    .status-badge span {
+        display: none;
+    }
+
+    /* ── KPI Grid ──────────────────────────────────────── */
+    .kpi-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+    }
+
+    .kpi-value {
+        font-size: 24px;
+    }
+
+    /* ── Dashboard Grids ───────────────────────────────── */
+    .dashboard-grid-main {
+        grid-template-columns: 1.5fr 1fr;
+    }
+
+    /* ── Contextual Drawer ─────────────────────────────── */
+    .drawer-grid-filters {
+        grid-template-columns: repeat(2, 1fr) auto;
+        gap: 12px;
+    }
+
+    /* ── Analytics Grid ────────────────────────────────── */
+    .cy-metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+    }
+
+    /* ── Network Graph Module ──────────────────────────── */
+    .node-detail-body {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* =======================================================
+   1024px — SMALL DESKTOPS / LARGE TABLETS (LANDSCAPE)
+   Switch two-column layouts to single column
+   Collapse sidebar to icon-only mode
+======================================================= */
+@media (max-width: 1024px) {
+
+    /* ── Sidebar collapses to icon-only ────────────────── */
+    .cy-sidebar {
+        width: 72px;
+        padding: 18px 8px;
+    }
+
+    .cy-sidebar-brand .sidebar-section-title,
+    .cy-sidebar .cta-label,
+    .cy-sidebar .cy-nav-label,
+    .cy-nav-item .cy-nav-label,
+    .cy-sidebar-footer span,
+    .system-status-indicator,
+    .topbar-brand-hub-sub {
+        display: none;
+    }
+
+    .cy-btn-new-task {
+        justify-content: center;
+        padding: 10px;
+    }
+
+    .cy-nav-item {
+        justify-content: center;
+        padding: 12px;
+        border-left: none;
+    }
+
+    .cy-nav-item.active {
+        border-left: none !important;
+        border-bottom: 2px solid var(--accent-orange);
+    }
+
+    .cy-footer-link {
+        justify-content: center;
+    }
+
+    /* ── Topbar ────────────────────────────────────────── */
+    .topbar {
+        padding: 0 16px;
+    }
+
+    .global-search {
+        max-width: 280px;
+        min-width: 180px;
+    }
+
+    .global-search input {
+        font-size: 12px;
+    }
+
+    .officer-info {
+        display: none;
+    }
+
+    .topbar-brand-tag {
+        display: none;
+    }
+
+    /* ── Main Workspace ────────────────────────────────── */
+    .main-workspace {
+        padding: 16px 16px 120px 16px;
+    }
+
+    /* ── KPI Grid ──────────────────────────────────────── */
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px;
+    }
+
+    .kpi-value {
+        font-size: 22px;
+    }
+
+    /* ── Dashboard Grids ───────────────────────────────── */
+    .dashboard-grid-main {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .dashboard-grid-secondary {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    /* ── Dashboard Header ──────────────────────────────── */
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .header-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* ── Analytics Module ──────────────────────────────── */
+    .cy-header-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .cy-metrics-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* ── Network Graph ─────────────────────────────────── */
+    /* Switch to single column from 2-column */
+    [style*="gridTemplateColumns: \"1fr 360px\""] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── AI Assistant Module ───────────────────────────── */
+    [style*="gridTemplateColumns: \"1fr 280px\""] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── Contextual Drawer ─────────────────────────────── */
+    .drawer-grid-filters {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .contextual-drawer.floating-dock.open {
+        max-height: 360px;
+    }
+
+    /* ── Notification Popover ──────────────────────────── */
+    .notifications-popover {
+        width: 340px;
+        right: -40px;
+    }
+
+    /* ── RBAC Profile Menu ─────────────────────────────── */
+    .rbac-role-menu {
+        right: 0;
+        width: 220px;
+    }
+
+    /* ── Map Components ────────────────────────────────── */
+    .leaflet-container {
+        border-radius: 8px;
+    }
+
+    /* ── Modal overlays ────────────────────────────────── */
+    .modal-overlay {
+        padding: 12px;
+    }
+}
+
+/* =======================================================
+   775px — TABLETS / LARGE MOBILE (LANDSCAPE)
+   Single-column everything, hamburger or icon sidebar
+   Stack all side-by-side panels vertically
+======================================================= */
+@media (max-width: 775px) {
+
+    /* ── Hide Sidebar entirely — consider a slide-in drawer ── */
+    .cy-sidebar {
+        position: fixed;
+        left: -80px;
+        top: 0;
+        bottom: 0;
+        z-index: 200;
+        transition: left 0.25s ease;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.6);
+    }
+
+    .cy-sidebar.mobile-open {
+        left: 0;
+    }
+
+    /* ── App body takes full width ─────────────────────── */
+    .app-body {
+        flex-direction: column;
+    }
+
+    .main-content-wrapper {
+        width: 100%;
+    }
+
+    .main-workspace {
+        padding: 14px 12px 130px 12px;
+    }
+
+    /* ── Topbar ────────────────────────────────────────── */
+    .topbar {
+        height: 56px;
+        padding: 0 12px;
+        gap: 10px;
+    }
+
+    .topbar-brand-text {
+        font-size: 16px;
+    }
+
+    .global-search {
+        display: none;
+    }
+
+    .status-badge {
+        display: none;
+    }
+
+    .topbar-action-btn {
+        width: 34px;
+        height: 34px;
+    }
+
+    /* ── KPI Grid → 2 columns on tablet ───────────────── */
+    .kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .kpi-card {
+        padding: 14px;
+    }
+
+    .kpi-value {
+        font-size: 20px;
+    }
+
+    .kpi-label {
+        font-size: 12px;
+    }
+
+    .kpi-icon-wrapper {
+        width: 36px;
+        height: 36px;
+    }
+
+    /* ── Page Title ────────────────────────────────────── */
+    .dashboard-title-group h1,
+    .cy-page-title {
+        font-size: 18px;
+    }
+
+    .dashboard-title-group p {
+        font-size: 12px;
+    }
+
+    /* ── Panels ────────────────────────────────────────── */
+    .panel-header {
+        padding: 12px 16px;
+    }
+
+    .panel-body {
+        padding: 14px 16px;
+    }
+
+    .panel-title h3 {
+        font-size: 13px;
+    }
+
+    /* ── Tables ────────────────────────────────────────── */
+    .custom-table th,
+    .custom-table td {
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    /* Hide less important table columns */
+    .custom-table th:nth-child(3),
+    .custom-table td:nth-child(3),
+    .custom-table th:nth-child(4),
+    .custom-table td:nth-child(4) {
+        display: none;
+    }
+
+    /* ── Contextual Drawer ─────────────────────────────── */
+    .drawer-grid-filters {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .drawer-tabs {
+        display: none;
+    }
+
+    .drawer-title {
+        font-size: 10px;
+    }
+
+    /* ── Notifications ─────────────────────────────────── */
+    .notifications-popover {
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        width: 100%;
+        border-radius: 0 0 12px 12px;
+        max-height: 70vh;
+    }
+
+    /* ── Analytics Charts – stack vertically ──────────── */
+    .cy-view-tabs {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+    }
+
+    .cy-tab-pill {
+        white-space: nowrap;
+        font-size: 11px;
+        padding: 5px 10px;
+    }
+
+    /* ── Modal Dialogs ─────────────────────────────────── */
+    .modal-overlay {
+        padding: 8px;
+        align-items: flex-end;
+    }
+
+    .modal-overlay>div {
+        border-radius: 16px 16px 0 0 !important;
+        max-height: 88vh;
+        overflow-y: auto;
+    }
+
+    .lumina-modal {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 16px 16px 0 0;
+    }
+
+    /* ── Node Inspector (Network Graph) ───────────────── */
+    .node-detail-body {
+        grid-template-columns: 1fr;
+    }
+
+    /* ── Map Heights ───────────────────────────────────── */
+    .relative.w-full.h-\[680px\] {
+        height: 520px;
+    }
+
+    /* ── Activity Feed ─────────────────────────────────── */
+    .timeline-title {
+        font-size: 12px;
+    }
+
+    .timeline-desc {
+        font-size: 11px;
+    }
+
+    /* ── FIR Module status tabs ────────────────────────── */
+    .border-b.flex.gap-1 {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 0;
+    }
+
+    /* ── Update Modal ──────────────────────────────────── */
+    div[style*="maxWidth: \"560px\""] {
+        max-width: 100% !important;
+        margin: 0 !important;
+    }
+
+    /* ── Drawer Export Panel ───────────────────────────── */
+    .drawer-export-panel {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .export-btn-group {
+        width: 100%;
+        justify-content: stretch;
+    }
+
+    .btn-export-action {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* ── Settings Module ───────────────────────────────── */
+    [style*="gridTemplateColumns: \"220px 1fr\""] {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* ── Utility ───────────────────────────────────────── */
+    .hide-mobile {
+        display: none;
+    }
+
+    .show-mobile {
+        display: block;
+    }
+}
+
+/* =======================================================
+   575px — MOBILE PHONES
+   Compact everything, single-column, touch-friendly
+   Minimum viable experience on small screens
+======================================================= */
+@media (max-width: 575px) {
+
+    /* ── Root font sizing ──────────────────────────────── */
+    html {
+        font-size: 14px;
+    }
+
+    /* ── App layout ────────────────────────────────────── */
+    .app-shell-container {
+        overflow-y: auto;
+    }
+
+    .main-canvas-view {
+        padding: 12px 10px 140px 10px;
+    }
+
+    /* ── Topbar ────────────────────────────────────────── */
+    .topbar {
+        height: 52px;
+        padding: 0 10px;
+    }
+
+    .topbar-brand-text {
+        font-size: 14px;
+        letter-spacing: 0;
+    }
+
+    .officer-avatar {
+        width: 30px;
+        height: 30px;
+        font-size: 11px;
+    }
+
+    /* ── KPI Grid → single column on phone ────────────── */
+    .kpi-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .kpi-card {
+        padding: 12px;
+    }
+
+    .kpi-value {
+        font-size: 18px;
+    }
+
+    .kpi-label {
+        font-size: 11px;
+    }
+
+    .kpi-icon-wrapper {
+        display: none;
+    }
+
+    .kpi-trend {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .kpi-subtext {
+        font-size: 10px;
+        display: none;
+    }
+
+    /* ── Dashboard Header ──────────────────────────────── */
+    .dashboard-header {
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .dashboard-title-group h1,
+    .cy-page-title {
+        font-size: 16px;
+    }
+
+    .dashboard-title-group p {
+        font-size: 11px;
+    }
+
+    /* ── Header Controls ───────────────────────────────── */
+    .header-controls {
+        gap: 6px;
+    }
+
+    .control-select,
+    .control-btn {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+
+    .control-btn-primary span {
+        display: none;
+    }
+
+    /* ── Panel Cards ───────────────────────────────────── */
+    .panel-card {
+        border-radius: 10px;
+    }
+
+    .panel-header {
+        padding: 10px 14px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .panel-title h3 {
+        font-size: 12px;
+    }
+
+    .panel-body {
+        padding: 12px 14px;
+    }
+
+    /* ── Tables — aggressive hiding ───────────────────── */
+    .custom-table th,
+    .custom-table td {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
+    .custom-table th:nth-child(3),
+    .custom-table td:nth-child(3),
+    .custom-table th:nth-child(4),
+    .custom-table td:nth-child(4),
+    .custom-table th:nth-child(5),
+    .custom-table td:nth-child(5) {
+        display: none;
+    }
+
+    /* FIR Number mono text sizing */
+    .custom-table span[style*="JetBrains Mono"] {
+        font-size: 11px !important;
+    }
+
+    /* ── Alerts Panel ──────────────────────────────────── */
+    .panel-body div[style*="padding: \"14px\""] {
+        padding: 10px !important;
+    }
+
+    /* ── Timeline Feed ─────────────────────────────────── */
+    .timeline-list {
+        gap: 12px;
+    }
+
+    .timeline-icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .timeline-title {
+        font-size: 11px;
+    }
+
+    .timeline-time {
+        font-size: 10px;
+    }
+
+    .timeline-desc {
+        font-size: 11px;
+    }
+
+    /* ── Contextual Drawer ─────────────────────────────── */
+    .contextual-drawer.floating-dock {
+        bottom: 8px;
+        left: 8px;
+        right: 8px;
+        border-radius: 10px;
+    }
+
+    .drawer-header {
+        padding: 0 10px;
+        height: 40px;
+    }
+
+    .drawer-title {
+        font-size: 9px;
+        letter-spacing: 0.5px;
+    }
+
+    .drawer-content {
+        padding: 12px 14px;
+    }
+
+    .drawer-select {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    /* ── Notifications ─────────────────────────────────── */
+    .notifications-popover {
+        top: 52px;
+        border-radius: 0;
+        max-height: 80vh;
+    }
+
+    .notif-heading {
+        font-size: 13px;
+    }
+
+    .notif-card-title {
+        font-size: 12px;
+    }
+
+    .notif-card-desc {
+        font-size: 10px;
+    }
+
+    /* ── Network Graph Nodes ───────────────────────────── */
+    [style*="gridTemplateColumns: \"repeat(4, 1fr)\""] {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* ── AI Assistant ──────────────────────────────────── */
+    div[style*="height: \"calc(100vh - 120px)\""] {
+        height: calc(100vh - 90px) !important;
+    }
+
+    /* ── Update Modal ──────────────────────────────────── */
+    div[style*="padding: \"24px\""][style*="maxWidth"] {
+        padding: 16px !important;
+    }
+
+    /* ── Status Bar ────────────────────────────────────── */
+    footer[style*="height: \"28px\""] {
+        padding: 0 10px;
+        font-size: 9px;
+    }
+
+    footer[style*="height: \"28px\""] span {
+        display: none;
+    }
+
+    footer[style*="height: \"28px\""] span:last-child {
+        display: inline;
+    }
+
+    /* ── Map heights ───────────────────────────────────── */
+    .relative.w-full.h-\[680px\],
+    .spline-3d-container {
+        height: 380px;
+    }
+
+    /* ── Analytics KPI cards 2-col ─────────────────────── */
+    .cy-metrics-row {
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+
+    .cy-metric-val {
+        font-size: 20px !important;
+    }
+
+    /* ── Settings: hide sidebar tabs labels on mobile ─── */
+    .panel-card button[style*="display: \"flex\""] span:not(:first-child) {
+        display: none;
+    }
+
+    /* ── District Heatmap ──────────────────────────────── */
+    .district-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* ── Utility ───────────────────────────────────────── */
+    .hide-tablet {
+        display: none;
+    }
+
+    .show-tablet {
+        display: block;
+    }
+
+    /* ── Typography ────────────────────────────────────── */
+    h1 {
+        font-size: 18px !important;
+    }
+
+    h2 {
+        font-size: 16px !important;
+    }
+
+    h3 {
+        font-size: 14px !important;
+    }
+}
+
+/* =======================================================
+   PRINT STYLES — Bonus: clean printable reports
+======================================================= */
+@media print {
+
+    .cy-sidebar,
+    .topbar,
+    .contextual-drawer,
+    footer,
+    .topbar-action-btn,
+    .header-controls {
+        display: none !important;
+    }
+
+    .main-workspace {
+        padding: 0;
+    }
+
+    .panel-card,
+    .glass-panel {
+        border: 1px solid #ccc;
+        box-shadow: none;
+        break-inside: avoid;
+    }
+
+    body {
+        background: white;
+        color: black;
+    }
+}
+
+/* =======================================================
+   REDUCED MOTION — Accessibility
+======================================================= */
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .pulse-indicator,
+    .pulse-indicator-rose,
+    .spin,
+    .spin-slow {
+        animation: none !important;
+    }
+}
