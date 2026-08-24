@@ -15,31 +15,11 @@
   "build": {
     "appId": "com.ksp.lumina",
     "productName": "Lumina",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "southside-devs",
-        "repo": "Lumina"
-      }
-    ],
-    "directories": {
-      "output": "dist-electron"
-    },
-    "files": [
-      "dist/**/*",
-      "electron/**/*",
-      "package.json"
-    ],
-    "win": {
-      "target": [
-        "portable",
-        "nsis"
-      ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true
-    }
+    "publish": [{ "provider": "github", "owner": "southside-devs", "repo": "Lumina" }],
+    "directories": { "output": "dist-electron" },
+    "files": ["dist/**/*", "electron/**/*", "package.json"],
+    "win": { "target": ["portable", "nsis"] },
+    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
   },
   "dependencies": {
     "@deck.gl/aggregation-layers": "^9.3.7",

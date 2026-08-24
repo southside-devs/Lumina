@@ -1,1 +1,1 @@
-export const notificationService = {};  
+export const notificationService = {};

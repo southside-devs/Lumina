@@ -1,1 +1,1 @@
-export const evidenceService = {};  
+export const evidenceService = {};

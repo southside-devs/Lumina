@@ -1,1 +1,1 @@
-export const firService = {};  
+export const firService = {};

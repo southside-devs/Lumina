@@ -1,1 +1,1 @@
-export const crimeService = {};  
+export const crimeService = {};

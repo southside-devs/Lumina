@@ -1,9 +1,1 @@
-export const MENU = [
-    "File",
-    "View",
-    "Investigation",
-    "Analytics",
-    "AI",
-    "Tools",
-    "Help"
-];
+export const MENU = ["File","View","Investigation","Analytics","AI","Tools","Help"];

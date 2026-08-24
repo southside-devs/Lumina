@@ -1,9 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
       fontFamily: {
@@ -13,19 +10,10 @@ export default {
       },
       colors: {
         brand: {
-          orange: '#E85002',
-          black: '#000000',
-          white: '#F9F9F9',
-          lightgray: '#A7A7A7',
-          gray: '#646464',
-          darkgray: '#333333',
+          orange: '#E85002', black: '#000000', white: '#F9F9F9',
+          lightgray: '#A7A7A7', gray: '#646464', darkgray: '#333333',
         },
-        gradient: {
-          stop1: '#000000',
-          stop2: '#C10801',
-          stop3: '#F16001',
-          stop4: '#D9C3AB',
-        }
+        gradient: { stop1: '#000000', stop2: '#C10801', stop3: '#F16001', stop4: '#D9C3AB' }
       },
       backgroundImage: {
         'brand-gradient': 'linear-gradient(135deg, #000000 0%, #C10801 33%, #F16001 66%, #D9C3AB 100%)',
