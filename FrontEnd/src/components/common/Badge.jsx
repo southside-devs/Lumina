@@ -1,1 +1,0 @@
-// Badge — to be implemented

@@ -1,1 +1,0 @@
-// AlertsPanel — to be implemented

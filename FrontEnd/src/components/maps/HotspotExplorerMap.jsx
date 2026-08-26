@@ -1,1 +1,0 @@
-// HotspotExplorerMap — to be implemented

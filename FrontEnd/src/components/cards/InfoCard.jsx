@@ -1,1 +1,0 @@
-// InfoCard — to be implemented

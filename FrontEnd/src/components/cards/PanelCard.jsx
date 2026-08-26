@@ -1,1 +1,0 @@
-// PanelCard — to be implemented

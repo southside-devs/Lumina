@@ -1,1 +1,0 @@
-// KPIWidget — to be implemented
