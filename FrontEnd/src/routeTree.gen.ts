@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as RiskScoresRouteImport } from './routes/risk-scores'
+import { Route as NetworkRouteImport } from './routes/network'
+import { Route as AIChatbotRouteImport } from './routes/ai-chatbot'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +30,53 @@ const RiskScoresRoute = RiskScoresRouteImport.update({
   path: '/risk-scores',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NetworkRoute = NetworkRouteImport.update({
+  id: '/network',
+  path: '/network',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AIChatbotRoute = AIChatbotRouteImport.update({
+  id: '/ai-chatbot',
+  path: '/ai-chatbot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/overview': typeof OverviewRoute
   '/risk-scores': typeof RiskScoresRoute
+  '/network': typeof NetworkRoute
+  '/ai-chatbot': typeof AIChatbotRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/overview': typeof OverviewRoute
   '/risk-scores': typeof RiskScoresRoute
+  '/network': typeof NetworkRoute
+  '/ai-chatbot': typeof AIChatbotRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/overview': typeof OverviewRoute
   '/risk-scores': typeof RiskScoresRoute
+  '/network': typeof NetworkRoute
+  '/ai-chatbot': typeof AIChatbotRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/overview' | '/risk-scores'
+  fullPaths: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/overview' | '/risk-scores'
-  id: '__root__' | '/' | '/overview' | '/risk-scores'
+  to: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot'
+  id: '__root__' | '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   OverviewRoute: typeof OverviewRoute
   RiskScoresRoute: typeof RiskScoresRoute
+  NetworkRoute: typeof NetworkRoute
+  AIChatbotRoute: typeof AIChatbotRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +102,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RiskScoresRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/network': {
+      id: '/network'
+      path: '/network'
+      fullPath: '/network'
+      preLoaderRoute: typeof NetworkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ai-chatbot': {
+      id: '/ai-chatbot'
+      path: '/ai-chatbot'
+      fullPath: '/ai-chatbot'
+      preLoaderRoute: typeof AIChatbotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +123,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   OverviewRoute: OverviewRoute,
   RiskScoresRoute: RiskScoresRoute,
+  NetworkRoute: NetworkRoute,
+  AIChatbotRoute: AIChatbotRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

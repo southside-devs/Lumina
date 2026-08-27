@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 const statuses = [
   { dot: "bg-signal-ok", label: "Nodes", value: "124" },
   { dot: "bg-signal-warning", label: "Alerts", value: "3" },
@@ -59,6 +61,15 @@ export function TopBar() {
             keyboard_command_key
           </span>
         </div>
+
+        <Link
+          to="/network"
+          title="Network Topology (Share)"
+          aria-label="Network Topology"
+          className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <span className="material-symbols-outlined">share</span>
+        </Link>
 
         <button
           type="button"

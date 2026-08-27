@@ -3,13 +3,13 @@ import { Link } from "@tanstack/react-router";
 const primaryNav = [
   { icon: "grid_view", label: "Command Hub", to: "/" },
   { icon: "description", label: "Overview", to: "/overview" },
+  { icon: "share", label: "Network Topology", to: "/network" },
+  { icon: "auto_fix_high", label: "AI Chatbot", to: "/ai-chatbot" },
 ] as const;
 
 const staticNav = [
-  { icon: "share", label: "Network" },
-  { icon: "shield", label: "Security" },
-  { icon: "auto_fix_high", label: "Predictive" },
-  { icon: "assignment", label: "Reports" },
+  { icon: "shield", label: "Security & Access" },
+  { icon: "assignment", label: "Briefing Reports" },
 ];
 
 const secondaryNav = [
