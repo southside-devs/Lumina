@@ -1,20 +1,17 @@
 import { Link } from "@tanstack/react-router";
+import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
 
 const primaryNav = [
   { icon: "grid_view", label: "Command Hub", to: "/" },
   { icon: "description", label: "Overview", to: "/overview" },
+  { icon: "folder_open", label: "FIR Registry", to: "/fir-explorer" },
   { icon: "share", label: "Network Topology", to: "/network" },
   { icon: "auto_fix_high", label: "AI Chatbot", to: "/ai-chatbot" },
 ] as const;
 
-const staticNav = [
-  { icon: "shield", label: "Security & Access" },
-  { icon: "assignment", label: "Briefing Reports" },
-];
-
 const secondaryNav = [
-  { icon: "help", label: "Help" },
-  { icon: "settings", label: "Settings" },
+  { icon: "help", label: "Help & Docs" },
+  { icon: "settings", label: "System Config" },
   { icon: "logout", label: "Logout" },
 ];
 
@@ -29,9 +26,12 @@ export function SideRail() {
       aria-label="Primary"
       className="fixed left-0 top-0 z-50 flex h-full w-16 flex-col items-center gap-6 border-r border-hairline bg-rail/70 py-4 backdrop-blur-2xl"
     >
-      <div className="mb-2 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-signal-brand font-display text-xl font-bold text-primary-foreground shadow-[0_0_18px_color-mix(in_oklab,var(--signal-brand)_40%,transparent)] transition-transform hover:scale-110">
+      <Link
+        to="/"
+        className="mb-2 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-signal-brand font-display text-xl font-bold text-primary-foreground shadow-[0_0_18px_color-mix(in_oklab,var(--signal-brand)_40%,transparent)] transition-transform hover:scale-110"
+      >
         +
-      </div>
+      </Link>
 
       <div className="flex w-full flex-1 flex-col gap-3 px-2">
         {primaryNav.map((item) => (
@@ -47,17 +47,23 @@ export function SideRail() {
             <span className="material-symbols-outlined">{item.icon}</span>
           </Link>
         ))}
-        {staticNav.map((item) => (
-          <button
-            key={item.label}
-            type="button"
-            title={item.label}
-            aria-label={item.label}
-            className={idleClass}
-          >
-            <span className="material-symbols-outlined">{item.icon}</span>
-          </button>
-        ))}
+
+        <button
+          type="button"
+          onClick={() =>
+            generateIntelligenceBriefingPDF({
+              title: "KARNATAKA STATE POLICE — STRATEGIC INTELLIGENCE BRIEFING",
+              totalFirs: 5000,
+              repeatOffenders: 456,
+              criticalHotspots: 3,
+            })
+          }
+          title="Export SmartBrowz Briefing Report"
+          aria-label="Export Briefing Report"
+          className={idleClass}
+        >
+          <span className="material-symbols-outlined text-amber-400">assignment</span>
+        </button>
       </div>
 
       <div className="mt-auto flex w-full flex-col gap-3 px-2">

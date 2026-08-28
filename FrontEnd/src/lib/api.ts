@@ -30,6 +30,22 @@ export interface DistrictSummary {
   risk_level?: "High" | "Medium" | "Low";
 }
 
+export interface FIRItem {
+  ROWID: number;
+  ID?: number;
+  Station_ID: number;
+  FIR_Number: string;
+  Date: string;
+  Crime_Group: string;
+  Crime_Subgroup?: string;
+  Latitude: number;
+  Longitude: number;
+  Narrative: string;
+  Status: "Under Investigation" | "Chargesheeted" | "Closed" | "Convicted" | "Acquitted" | string;
+  District_Name?: string;
+  Station_Name?: string;
+}
+
 export interface RiskScoreItem {
   ROWID?: number;
   District_ID: number;
@@ -82,7 +98,6 @@ export const api = {
     if (data && typeof data.total_firs === "number") {
       return data;
     }
-    // Fallback data
     return {
       total_firs: 5000,
       total_accused: 3000,
@@ -111,7 +126,6 @@ export const api = {
     if (data && Array.isArray(data) && data.length > 0) {
       return data;
     }
-    // Fallback data
     return [
       { group: "Theft", count: 836 },
       { group: "Assault", count: 746 },
@@ -135,7 +149,6 @@ export const api = {
           d.total_firs > 300 ? "High" : d.total_firs > 150 ? "Medium" : "Low",
       }));
     }
-    // Fallback data
     return [
       {
         district_id: 1,
@@ -176,6 +189,116 @@ export const api = {
   },
 
   /**
+   * Fetch FIR records with optional filters
+   */
+  async getFirs(params?: {
+    limit?: number;
+    offset?: number;
+    crime_group?: string;
+    status?: string;
+    station_id?: number;
+  }): Promise<{ firs: FIRItem[]; total: number }> {
+    const queryParts: string[] = [];
+    if (params?.limit) queryParts.push(`limit=${params.limit}`);
+    if (params?.offset) queryParts.push(`offset=${params.offset}`);
+    if (params?.crime_group) queryParts.push(`crime_group=${encodeURIComponent(params.crime_group)}`);
+    if (params?.status) queryParts.push(`status=${encodeURIComponent(params.status)}`);
+    if (params?.station_id) queryParts.push(`station_id=${params.station_id}`);
+
+    const endpoint = `/firs${queryParts.length > 0 ? `?${queryParts.join("&")}` : ""}`;
+    const data = await fetchJson<{ firs: FIRItem[]; total: number } | FIRItem[]>(endpoint);
+
+    if (data) {
+      if (Array.isArray(data)) {
+        return { firs: data, total: data.length };
+      }
+      if (data.firs) {
+        return data;
+      }
+    }
+
+    // Fallback sample FIRs
+    return {
+      firs: [
+        {
+          ROWID: 1,
+          Station_ID: 139,
+          FIR_Number: "0001/2025",
+          Date: "2025-11-10",
+          Crime_Group: "Theft & Extortion",
+          Crime_Subgroup: "BNS 303 (Theft)",
+          Latitude: 12.9716,
+          Longitude: 77.5946,
+          Narrative: "Theft incident reported at Commercial Street, Mandya City. The victim sustained moderate losses. Suspect identified through CCTV.",
+          Status: "Chargesheeted",
+          District_Name: "Bengaluru Urban",
+          Station_Name: "Commercial Street PS",
+        },
+        {
+          ROWID: 2,
+          Station_ID: 195,
+          FIR_Number: "0002/2025",
+          Date: "2025-01-16",
+          Crime_Group: "Robbery",
+          Crime_Subgroup: "BNS 309 (Robbery)",
+          Latitude: 15.8497,
+          Longitude: 74.4977,
+          Narrative: "Robbery reported near Agricultural Market Yard, Mudhol. Accused fled towards bus stand. Under active investigation.",
+          Status: "Under Investigation",
+          District_Name: "Belagavi",
+          Station_Name: "Mudhol PS",
+        },
+        {
+          ROWID: 3,
+          Station_ID: 186,
+          FIR_Number: "0003/2025",
+          Date: "2025-03-06",
+          Crime_Group: "Cheating & Fraud",
+          Crime_Subgroup: "BNS 318 (Cheating)",
+          Latitude: 12.9141,
+          Longitude: 74.856,
+          Narrative: "Online banking scheme duped multiple local shopkeepers. Evidence logs collected.",
+          Status: "Closed",
+          District_Name: "Mangaluru (DK)",
+          Station_Name: "Mangaluru Town PS",
+        },
+        {
+          ROWID: 4,
+          Station_ID: 175,
+          FIR_Number: "0004/2025",
+          Date: "2025-03-24",
+          Crime_Group: "Cybercrime",
+          Crime_Subgroup: "IT Act 66C / BNS 336",
+          Latitude: 12.2958,
+          Longitude: 76.6394,
+          Narrative: "Corporate identity theft and unauthorized digital transfers. Suspect apprehended.",
+          Status: "Convicted",
+          District_Name: "Mysuru",
+          Station_Name: "Mysuru Cyber Crime PS",
+        },
+      ],
+      total: 5000,
+    };
+  },
+
+  /**
+   * Search FIR records
+   */
+  async searchFirs(query: string): Promise<FIRItem[]> {
+    const data = await fetchJson<FIRItem[]>(`/firs/search?q=${encodeURIComponent(query)}`);
+    if (data && Array.isArray(data)) {
+      return data;
+    }
+    const all = await this.getFirs({ limit: 50 });
+    return all.firs.filter(
+      (f) =>
+        f.FIR_Number.toLowerCase().includes(query.toLowerCase()) ||
+        f.Crime_Group.toLowerCase().includes(query.toLowerCase()) ||
+        f.Narrative.toLowerCase().includes(query.toLowerCase())
+    );
+  },
+
+  /**
    * Fetch district risk scores from Zia AutoML forecasting
    */
   async getRiskScores(districtId?: number): Promise<RiskScoreItem[]> {
@@ -210,7 +333,6 @@ export const api = {
       console.warn("AI Chat API call error:", e);
     }
 
-    // Dynamic contextual fallback if backend key is missing during local demo
     const lower = query.toLowerCase();
     if (lower.includes("hotspot") || lower.includes("indira") || lower.includes("mg road")) {
       return "⚡ [ST-DBSCAN Engine]: Identified 3 dense spatial-temporal crime clusters in Indira Nagar & MG Road corridor. Highest incident concentration between 22:00 - 02:00 IST.";
