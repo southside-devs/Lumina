@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix FrontEnd",
-    "build": "npm run build --prefix FrontEnd",
-    "preview": "npm run preview --prefix FrontEnd"
+    "dev": "cd FrontEnd && bun vite dev",
+    "build": "cd FrontEnd && bun vite build",
+    "preview": "cd FrontEnd && bun vite preview"
   }
 }
