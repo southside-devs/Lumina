@@ -4,7 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "npm run dev --prefix FrontEnd",
+    "dev:frontend": "npm run dev --prefix FrontEnd",
+    "dev:backend": "python BackEnd/functions/api_service/server.py",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build": "npm run build --prefix FrontEnd",
     "preview": "npm run preview --prefix FrontEnd"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

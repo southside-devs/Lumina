@@ -5,6 +5,7 @@
  */
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+const DEMO_KEY = "lumina-demo-ksp-2026";
 
 export interface DashboardOverview {
   total_firs: number;
@@ -49,6 +50,7 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       ...options,
       headers: {
         "Content-Type": "application/json",
+        "X-Lumina-Demo-Key": DEMO_KEY,
         ...options?.headers,
       },
     });
@@ -82,18 +84,18 @@ export const api = {
     }
     // Fallback data
     return {
-      total_firs: 1245,
-      total_accused: 480,
-      total_victims: 1190,
-      total_stations: 120,
+      total_firs: 5000,
+      total_accused: 3000,
+      total_victims: 6254,
+      total_stations: 209,
       total_districts: 31,
-      repeat_offenders: 4,
+      repeat_offenders: 456,
       status_breakdown: {
-        "Under Investigation": 520,
-        "Chargesheeted": 340,
-        "Closed": 180,
-        "Convicted": 125,
-        "Acquitted": 80,
+        "Under Investigation": 1673,
+        "Chargesheeted": 1275,
+        "Closed": 1039,
+        "Convicted": 607,
+        "Acquitted": 406,
       },
     };
   },
@@ -111,13 +113,13 @@ export const api = {
     }
     // Fallback data
     return [
-      { group: "Theft", count: 385 },
-      { group: "Assault", count: 240 },
-      { group: "Burglary", count: 195 },
-      { group: "Fraud & Cheating", count: 142 },
-      { group: "Cybercrime", count: 110 },
-      { group: "Robbery", count: 85 },
-      { group: "Narcotics (NDPS)", count: 62 },
+      { group: "Theft", count: 836 },
+      { group: "Assault", count: 746 },
+      { group: "Burglary", count: 577 },
+      { group: "Cheating & Fraud", count: 369 },
+      { group: "Cybercrime", count: 338 },
+      { group: "Kidnapping & Abduction", count: 296 },
+      { group: "Motor Vehicle Theft", count: 253 },
     ];
   },
 
@@ -130,7 +132,7 @@ export const api = {
       return data.map((d) => ({
         ...d,
         risk_level:
-          d.total_firs > 500 ? "High" : d.total_firs > 150 ? "Medium" : "Low",
+          d.total_firs > 300 ? "High" : d.total_firs > 150 ? "Medium" : "Low",
       }));
     }
     // Fallback data
@@ -138,37 +140,37 @@ export const api = {
       {
         district_id: 1,
         district_name: "Bengaluru Urban",
-        population: 9621551,
-        total_firs: 1245,
+        population: 12765000,
+        total_firs: 523,
         risk_level: "High",
       },
       {
-        district_id: 2,
-        district_name: "Mysuru",
-        population: 3001127,
-        total_firs: 412,
-        risk_level: "Medium",
-      },
-      {
-        district_id: 3,
-        district_name: "Dakshina Kannada",
-        population: 2089649,
-        total_firs: 298,
+        district_id: 6,
+        district_name: "Belagavi",
+        population: 4779000,
+        total_firs: 260,
         risk_level: "Medium",
       },
       {
         district_id: 4,
-        district_name: "Belagavi",
-        population: 4779661,
-        total_firs: 265,
+        district_name: "Mangaluru (DK)",
+        population: 2089000,
+        total_firs: 206,
         risk_level: "Medium",
       },
       {
-        district_id: 5,
-        district_name: "Udupi",
-        population: 1177361,
-        total_firs: 85,
-        risk_level: "Low",
+        district_id: 3,
+        district_name: "Mysuru",
+        population: 3152000,
+        total_firs: 204,
+        risk_level: "Medium",
+      },
+      {
+        district_id: 15,
+        district_name: "Uttara Kannada",
+        population: 1437000,
+        total_firs: 191,
+        risk_level: "Medium",
       },
     ];
   },
@@ -213,10 +215,10 @@ export const api = {
     if (lower.includes("hotspot") || lower.includes("indira") || lower.includes("mg road")) {
       return "⚡ [ST-DBSCAN Engine]: Identified 3 dense spatial-temporal crime clusters in Indira Nagar & MG Road corridor. Highest incident concentration between 22:00 - 02:00 IST.";
     } else if (lower.includes("repeat") || lower.includes("offender") || lower.includes("suspect")) {
-      return "👤 [Zia AutoML Analysis]: 4 high-priority repeat offenders flagged. Suspect S. Kumar (CR-2026-8921) shows 94% threat score linked to 5 active fraud syndicates.";
+      return "👤 [Zia AutoML Analysis]: 456 high-priority repeat offenders flagged across Karnataka records. Top suspect clusters identified in Bengaluru Urban & Mysuru.";
     } else if (lower.includes("risk") || lower.includes("district") || lower.includes("bengaluru")) {
-      return "📊 [LUMINA Strategic Intel]: Bengaluru Urban leads statewide FIR density (Risk Index: 88/100), followed by Mysuru (72/100) and Mangaluru (65/100). Theft and cybercrime represent 64% of volume.";
+      return "📊 [LUMINA Strategic Intel]: Bengaluru Urban leads statewide FIR density (523 active FIRs), followed by Belagavi (260) and Mangaluru (206). Theft and Assault represent 31% of total volume.";
     }
-    return `📊 [LUMINA AI Copilot]: Processed statewide records across 155 mapped police stations. All intelligence feeds are operational and synchronizing with Catalyst Data Store.`;
+    return `📊 [LUMINA AI Copilot]: Processed 5,000 statewide records across 209 mapped police stations. All intelligence feeds are live and operational.`;
   },
 };
