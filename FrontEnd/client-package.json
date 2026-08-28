@@ -1,8 +1,4 @@
 {
-  "name": "lumina-client",
-  "version": "1.0.0",
-  "description": "Lumina Web Client Bundle",
-  "main": "index.html",
-  "dependencies": {},
-  "homepage": "https://lumina-60078984780.development.catalystserverless.in/app/index.html"
+  "name": "FrontEnd",
+  "client": { "output_directory": "dist" }
 }
