@@ -3,7 +3,7 @@ import { useState } from "react";
 
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
-import { TacticalMap } from "@/components/lumina/TacticalMap";
+import { TacticalMap, KARNATAKA_HOTSPOTS, type TacticalHotspot } from "@/components/lumina/TacticalMap";
 import { Compass } from "@/components/lumina/Compass";
 import { IncidentCard } from "@/components/lumina/IncidentCard";
 import { MapToolbar } from "@/components/lumina/MapToolbar";
@@ -27,16 +27,22 @@ export const Route = createFileRoute("/")({
 });
 
 const filters: { label: string; count: number }[] = [
-  { label: "All", count: 24 },
-  { label: "Critical", count: 3 },
-  { label: "Monitoring", count: 8 },
+  { label: "All Sectors", count: 7 },
+  { label: "Critical Threat", count: 3 },
+  { label: "Active Patrols", count: 4 },
 ];
 
 function IntelligenceHub() {
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [activeFilter, setActiveFilter] = useState("All Sectors");
   const [showHotspots, setShowHotspots] = useState(true);
   const [showPatrols, setShowPatrols] = useState(true);
   const [cardOpen, setCardOpen] = useState(true);
+  const [selectedSpot, setSelectedSpot] = useState<TacticalHotspot>(KARNATAKA_HOTSPOTS[0]);
+
+  const handleSelectSpot = (spot: TacticalHotspot) => {
+    setSelectedSpot(spot);
+    setCardOpen(true);
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-shell text-foreground">
@@ -46,19 +52,24 @@ function IntelligenceHub() {
         <TopBar />
 
         <main className="relative mt-14 flex-1 overflow-hidden">
-          <TacticalMap showHotspots={showHotspots} />
+          <TacticalMap
+            showHotspots={showHotspots}
+            showPatrols={showPatrols}
+            activeSpot={selectedSpot}
+            onSelectSpot={handleSelectSpot}
+          />
 
-          <div className="relative z-10 flex h-full flex-col p-6">
-            <header>
+          <div className="relative z-10 flex h-full flex-col p-6 pointer-events-none">
+            <header className="pointer-events-auto">
               <h1 className="font-display text-headline-lg tracking-tight">
                 Strategic Intelligence Hub
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Lumina Ops • Real-time Threat Assessment
+                Lumina Ops • Real-time Threat Assessment across 209 Karnataka Police Stations
               </p>
             </header>
 
-            <div className="mt-5 flex items-center gap-3">
+            <div className="mt-5 flex items-center gap-3 pointer-events-auto">
               <div
                 role="tablist"
                 aria-label="Incident filters"
@@ -90,22 +101,18 @@ function IntelligenceHub() {
                   </button>
                 ))}
               </div>
-              <button
-                type="button"
-                aria-label="Advanced filters"
-                className="glass-panel flex size-9 items-center justify-center rounded-full bg-surface-1/70 text-muted-foreground backdrop-blur-xl transition-colors hover:text-foreground"
-              >
-                <span className="material-symbols-outlined filled text-base">filter_alt</span>
-              </button>
             </div>
 
             {cardOpen && (
               <div className="pointer-events-auto absolute top-6 right-6 z-20">
-                <IncidentCard onClose={() => setCardOpen(false)} />
+                <IncidentCard
+                  spot={selectedSpot}
+                  onClose={() => setCardOpen(false)}
+                />
               </div>
             )}
 
-            <div className="mt-auto flex items-end justify-between gap-4">
+            <div className="mt-auto flex items-end justify-between gap-4 pointer-events-auto">
               <Compass />
               <MapToolbar
                 showHotspots={showHotspots}
@@ -116,10 +123,10 @@ function IntelligenceHub() {
               <div className="hidden w-[88px] lg:block" />
             </div>
 
-            <div className="mt-3 flex items-center justify-between font-mono text-label-sm text-muted-foreground/70">
-              <span>Space + Drag to pan • Scroll to zoom</span>
+            <div className="mt-3 flex items-center justify-between font-mono text-label-sm text-muted-foreground/70 pointer-events-auto">
+              <span>Click any node on map to inspect sector telemetry • Coordinate System: WGS84</span>
               <span className="hidden md:inline">
-                Map updates every 30 seconds • Coordinate System: WGS84
+                Live Telemetry: 5,000 FIR Records Indexed • Zoho Catalyst Native
               </span>
             </div>
           </div>
