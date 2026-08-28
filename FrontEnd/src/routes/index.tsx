@@ -4,7 +4,6 @@ import { useState } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { TacticalMap, KARNATAKA_HOTSPOTS, type TacticalHotspot } from "@/components/lumina/TacticalMap";
-import { Compass } from "@/components/lumina/Compass";
 import { IncidentCard } from "@/components/lumina/IncidentCard";
 import { MapToolbar } from "@/components/lumina/MapToolbar";
 
@@ -113,7 +112,7 @@ function IntelligenceHub() {
             )}
 
             <div className="mt-auto flex items-end justify-between gap-4 pointer-events-auto">
-              <Compass />
+              <div className="hidden w-[88px] lg:block" />
               <MapToolbar
                 showHotspots={showHotspots}
                 onToggleHotspots={() => setShowHotspots((v) => !v)}
