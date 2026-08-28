@@ -150,15 +150,15 @@ export function TacticalMap({
       center: [14.8, 76.0],
       zoom: 7,
       minZoom: 6,
-      maxZoom: 16,
+      maxZoom: 17,
       zoomControl: false,
       attributionControl: false,
     });
 
-    // Dark CartoDB basemap layer (sleek, high contrast, perfect for Lumina UI)
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      subdomains: "abcd",
+    // Clean OpenStreetMap tiles styled with high-contrast tactical dark matrix filter
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
+      className: "tactical-dark-tiles",
     }).addTo(map);
 
     // Zoom control at bottom right
@@ -197,7 +197,7 @@ export function TacticalMap({
         L.polyline([route.from as [number, number], route.to as [number, number]], {
           color: route.color,
           weight: 2,
-          opacity: 0.6,
+          opacity: 0.7,
           dashArray: "6, 8",
         }).addTo(layerGroup);
       });
@@ -215,8 +215,8 @@ export function TacticalMap({
           radius: isSelected ? 35000 : 25000,
           color: color,
           fillColor: color,
-          fillOpacity: isSelected ? 0.22 : 0.12,
-          weight: 1,
+          fillOpacity: isSelected ? 0.25 : 0.14,
+          weight: 1.5,
         }).addTo(layerGroup);
       }
 
@@ -225,12 +225,12 @@ export function TacticalMap({
         className: "custom-tactical-marker",
         html: `
           <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
-            <div class="absolute -inset-2 rounded-full border opacity-70 animate-ping" style="border-color: ${color}"></div>
-            <div class="flex items-center justify-center rounded-full border bg-zinc-950/90 shadow-2xl transition-transform duration-300 ${
+            <div class="absolute -inset-2 rounded-full border opacity-75 animate-ping" style="border-color: ${color}"></div>
+            <div class="flex items-center justify-center rounded-full border bg-zinc-950/95 shadow-2xl transition-transform duration-300 ${
               isSelected ? "scale-125" : "hover:scale-110"
-            }" style="width: ${isSelected ? "38px" : "30px"}; height: ${
-          isSelected ? "38px" : "30px"
-        }; border-color: ${color}; box-shadow: 0 0 16px ${color};">
+            }" style="width: ${isSelected ? "40px" : "32px"}; height: ${
+          isSelected ? "40px" : "32px"
+        }; border-color: ${color}; box-shadow: 0 0 18px ${color};">
               <span class="font-mono text-[10px] font-bold" style="color: ${color};">${spot.code}</span>
             </div>
             <div class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-zinc-800 bg-zinc-950/95 px-2 py-0.5 font-mono text-[9px] text-zinc-300 shadow-xl backdrop-blur-md">
@@ -254,13 +254,13 @@ export function TacticalMap({
       {/* Real Geographic Map Tile Container */}
       <div ref={mapContainerRef} className="absolute inset-0 h-full w-full z-0" />
 
-      {/* Subtle Tactical HUD Grid Lines Overlay */}
+      {/* Subtle Tactical HUD Grid Overlay */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-25 z-10"
+        className="pointer-events-none absolute inset-0 opacity-20 z-10"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.05) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
         }}
       />
