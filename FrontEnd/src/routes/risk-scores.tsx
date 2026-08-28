@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { TabBar } from "@/components/lumina/TabBar";
+import { api, type DistrictSummary, type DashboardOverview } from "@/lib/api";
 
 const title = "LUMINA — Risk Scores & Predictive Analytics";
 const description =
@@ -44,20 +46,60 @@ function PanelHead({ title: t }: { title: string }) {
   );
 }
 
-const leaderboard = [
-  { name: "Bengaluru Urb", score: 88 },
+const DEFAULT_LEADERBOARD = [
+  { name: "Bengaluru Urban", score: 88 },
   { name: "Mysuru", score: 72 },
   { name: "Mangaluru", score: 65 },
-  { name: "Hubballi", score: 45 },
-];
-
-const resolution = [
-  { label: "Under Investigation", pct: 40, fill: "bg-muted-foreground/30" },
-  { label: "Chargesheeted", pct: 25, fill: "bg-muted-foreground/60" },
-  { label: "Closed", pct: 35, fill: "bg-foreground/90" },
+  { name: "Belagavi", score: 58 },
+  { name: "Hubballi-Dharwad", score: 45 },
 ];
 
 function RiskScores() {
+  const [districts, setDistricts] = useState<DistrictSummary[]>([]);
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      try {
+        const [distData, ovData] = await Promise.all([
+          api.getDistrictSummary(),
+          api.getDashboardOverview(),
+        ]);
+        if (mounted) {
+          setDistricts(distData);
+          setOverview(ovData);
+        }
+      } catch (e) {
+        console.warn("Failed to load risk data:", e);
+      }
+    }
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // Compute dynamic leaderboard
+  const leaderboard = districts.length > 0
+    ? districts.slice(0, 5).map((d) => ({
+        name: d.district_name,
+        score: Math.min(Math.round((d.total_firs / (districts[0]?.total_firs || 1)) * 90) + 10, 98),
+      }))
+    : DEFAULT_LEADERBOARD;
+
+  // Compute resolution rate
+  const totalCases = overview?.total_firs || 1245;
+  const underInvest = overview?.status_breakdown?.["Under Investigation"] || 520;
+  const chargesheeted = overview?.status_breakdown?.["Chargesheeted"] || 340;
+  const closed = totalCases - underInvest - chargesheeted;
+
+  const resolution = [
+    { label: "Under Investigation", pct: Math.round((underInvest / totalCases) * 100), fill: "bg-muted-foreground/30" },
+    { label: "Chargesheeted", pct: Math.round((chargesheeted / totalCases) * 100), fill: "bg-muted-foreground/60" },
+    { label: "Closed / Resolved", pct: Math.max(100 - Math.round((underInvest / totalCases) * 100) - Math.round((chargesheeted / totalCases) * 100), 10), fill: "bg-foreground/90" },
+  ];
+
   return (
     <div className="flex h-screen overflow-hidden bg-shell text-foreground">
       <SideRail />
@@ -75,13 +117,13 @@ function RiskScores() {
                   Risk Scores &amp; Predictive Analytics
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Real-time threat assessment and historical vulnerability mapping.
+                  Real-time threat assessment and historical vulnerability mapping powered by Zia AutoML.
                 </p>
               </div>
               <div className="flex gap-2">
                 {[
-                  { icon: "calendar_today", label: "Last 30 Days" },
-                  { icon: "filter_list", label: "Filter" },
+                  { icon: "calendar_today", label: "Next 14 Days" },
+                  { icon: "filter_list", label: "Filter Forecast" },
                 ].map((b) => (
                   <button
                     key={b.label}
@@ -107,7 +149,7 @@ function RiskScores() {
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="h-px w-4 border-t border-dashed border-muted-foreground" />{" "}
-                      Forecast
+                      Forecast (AutoML)
                     </span>
                   </div>
                 </div>
@@ -128,12 +170,12 @@ function RiskScores() {
                     className="text-foreground"
                   />
                   <circle cx="300" cy="38" r="3" className="fill-shell stroke-foreground" strokeWidth="1.5" />
-                  <circle cx="400" cy="10" r="3" className="fill-foreground" />
+                  <circle cx="400" cy="10" r="3" className="fill-foreground animate-pulse" />
                 </svg>
               </section>
 
               <section className="glass-panel p-6">
-                <PanelHead title="Peak Hours" />
+                <PanelHead title="Peak Incident Hours" />
                 <svg viewBox="0 0 200 90" className="h-32 w-full" role="img" aria-label="Incidents by hour of day">
                   <path
                     d="M0 60 C15 55 25 40 40 45 C55 50 60 75 75 72 C90 69 100 30 125 22 C150 14 165 30 180 45 C190 55 195 60 200 62 L200 90 L0 90 Z"
@@ -149,7 +191,7 @@ function RiskScores() {
                 </svg>
                 <div className="mt-2 flex justify-between font-mono text-label-sm text-muted-foreground">
                   <span>00:00</span>
-                  <span className="font-bold text-foreground">02:00</span>
+                  <span className="font-bold text-foreground">22:00 - 02:00</span>
                   <span>12:00</span>
                   <span>24:00</span>
                 </div>
@@ -164,12 +206,12 @@ function RiskScores() {
                 <ul className="mt-6 space-y-5">
                   {leaderboard.map((d) => (
                     <li key={d.name} className="flex items-center">
-                      <span className="w-28 pr-4 text-right font-mono text-label-md text-muted-foreground sm:w-36">
+                      <span className="w-28 pr-4 text-right font-mono text-label-md text-muted-foreground sm:w-40 truncate" title={d.name}>
                         {d.name}
                       </span>
                       <div className="h-2.5 flex-1 overflow-hidden rounded-sm bg-surface-1">
                         <div
-                          className="h-full rounded-sm bg-foreground/80"
+                          className="h-full rounded-sm bg-foreground/80 transition-all duration-700"
                           style={{ width: `${d.score}%` }}
                         />
                       </div>

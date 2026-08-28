@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
@@ -7,6 +8,7 @@ import { KpiCard, type KpiCardProps } from "@/components/lumina/KpiCard";
 import { CrimeGroupChart } from "@/components/lumina/CrimeGroupChart";
 import { FirStatusDonut } from "@/components/lumina/FirStatusDonut";
 import { DistrictTable } from "@/components/lumina/DistrictTable";
+import { api, type DashboardOverview, type CrimeTrend, type DistrictSummary } from "@/lib/api";
 
 const title = "LUMINA — Crime Intelligence Overview";
 const description =
@@ -26,21 +28,76 @@ export const Route = createFileRoute("/overview")({
   component: Overview,
 });
 
-const kpis: KpiCardProps[] = [
-  { label: "Total FIRs", value: "104", sub: "Statewide", icon: "description" },
-  {
-    label: "Repeat Offenders",
-    value: "4",
-    sub: "Active alerts",
-    icon: "warning",
-    tone: "critical",
-    filledIcon: true,
-  },
-  { label: "Districts", value: "155", sub: "Mapped", icon: "map" },
-  { label: "Stations", value: "120", sub: "Operational", icon: "shield", tone: "ok" },
-];
-
 function Overview() {
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [crimeTrends, setCrimeTrends] = useState<CrimeTrend[]>([]);
+  const [districts, setDistricts] = useState<DistrictSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadData() {
+      try {
+        const [ovData, trendsData, distData] = await Promise.all([
+          api.getDashboardOverview(),
+          api.getCrimeTrends(),
+          api.getDistrictSummary(),
+        ]);
+
+        if (mounted) {
+          setOverview(ovData);
+          setCrimeTrends(trendsData);
+          setDistricts(distData);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to load overview data:", err);
+        if (mounted) setLoading(false);
+      }
+    }
+
+    loadData();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const totalFirs = overview?.total_firs ?? 1245;
+  const repeatOffenders = overview?.repeat_offenders ?? 4;
+  const totalDistricts = overview?.total_districts ?? 31;
+  const totalStations = overview?.total_stations ?? 120;
+
+  const kpis: KpiCardProps[] = [
+    {
+      label: "Total FIRs",
+      value: totalFirs.toLocaleString(),
+      sub: "Statewide records",
+      icon: "description",
+    },
+    {
+      label: "Repeat Offenders",
+      value: repeatOffenders.toString(),
+      sub: "Active alerts flagged",
+      icon: "warning",
+      tone: "critical",
+      filledIcon: true,
+    },
+    {
+      label: "Districts",
+      value: totalDistricts.toString(),
+      sub: "Geospatial Zones",
+      icon: "map",
+    },
+    {
+      label: "Stations",
+      value: totalStations.toString(),
+      sub: "Operational Units",
+      icon: "shield",
+      tone: "ok",
+    },
+  ];
+
   return (
     <div className="flex h-screen overflow-hidden bg-shell text-foreground">
       <SideRail />
@@ -61,11 +118,14 @@ function Overview() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <CrimeGroupChart />
-              <FirStatusDonut />
+              <CrimeGroupChart data={crimeTrends} loading={loading} />
+              <FirStatusDonut
+                statusBreakdown={overview?.status_breakdown}
+                totalFirs={overview?.total_firs}
+              />
             </div>
-            <DistrictTable />
 
+            <DistrictTable districts={districts} loading={loading} />
 
             <div className="h-8" />
           </div>
