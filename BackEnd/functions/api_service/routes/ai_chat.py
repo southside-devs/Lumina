@@ -75,9 +75,19 @@ def clean_ai_response(response):
 
 
 def get_model_candidates(api_key):
-    """Retrieve available Gemini models that support generateContent, with standard fallbacks."""
+    """Retrieve available Gemini models that support generateContent, prioritized by latest stable versions."""
+    defaults = [
+        'gemini-3.6-flash',
+        'gemini-3.7-flash',
+        'gemini-3.5-flash',
+        'gemini-flash-latest',
+        'gemini-2.5-pro',
+        'gemini-pro-latest',
+    ]
+
     if not HAS_GENAI:
-        return []
+        return defaults
+
     genai.configure(api_key=api_key)
     candidates = []
     
@@ -91,110 +101,16 @@ def get_model_candidates(api_key):
     except Exception as e:
         print(f"Warning listing genai models: {e}")
 
-    defaults = [
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-latest',
-        'gemini-2.0-flash',
-        'gemini-2.5-flash',
-        'gemini-1.5-pro',
-        'gemini-1.5-pro-latest',
-        'gemini-pro',
-    ]
+    # Ensure top working models are first in order
+    sorted_candidates = []
     for d in defaults:
-        if d not in candidates:
-            candidates.append(d)
+        if d in candidates and d not in sorted_candidates:
+            sorted_candidates.append(d)
+    for c in candidates:
+        if c not in sorted_candidates:
+            sorted_candidates.append(c)
 
-    return candidates
-
-
-def generate_local_copilot_response(query, db, context_data=""):
-    """
-    Comprehensive Karnataka State Police Intelligence Engine.
-    Emits structured, professional intelligence briefings based on live system datasets.
-    """
-    qLower = query.strip().lower()
-
-    # 1. Casual Greetings
-    if ["hi", "hello", "hey", "namaskara", "namaste", "good morning", "good evening", "greetings"].count(qLower) > 0 or len(qLower) <= 3:
-        return "Namaskara! I am **Lumina AI**, your Karnataka State Police intelligence assistant powered by Zoho Catalyst. I can analyze crime patterns, query FIR databases, generate district risk reports, predict hotspot clusters, and cross-reference criminal network links. How can I assist your investigation today?"
-
-    # 2. Hotspots & Spatial Risk Analysis
-    if any(k in qLower for k in ["hotspot", "bengaluru", "mysuru", "cluster", "spatial", "corridor"]):
-        return (
-            "### 🗺️ Crime Hotspot & Spatial Risk Analysis\n\n"
-            "Based on real-time spatial analysis of registered crime records:\n\n"
-            "- **Active Hotspot Clusters**: **4 critical locations** flagged for priority surveillance (including **Bengaluru Urban (523 active FIRs)**, **Belagavi Division (260 FIRs)**, and **Mysuru City (204 FIRs)**).\n"
-            "- **Temporal Concentration**: Peak incident density observed between **21:00 – 03:00 HRS** (Property Offenses & Street Crimes).\n"
-            "- **Tactical Patrol Telemetry**: Active Patrol Unit *Alpha-4* is currently deployed along the MG Road → Indiranagar corridor (ETA ~6m).\n"
-            "- **Tactical Recommendation**: Increase high-visibility beat patrols and establish joint check-posts along primary transit corridors."
-        )
-
-    # 3. NDPS & Narcotics Enforcement
-    if any(k in qLower for k in ["narcotic", "seizure", "drug", "ndps", "contraband"]):
-        return (
-            "### 💊 NDPS & Narcotics Enforcement Intelligence\n\n"
-            "Analysis of NDPS enforcement reports across Karnataka districts:\n\n"
-            "- **Total Recorded Cases**: **318 FIRs** logged statewide across border and coastal corridors.\n"
-            "- **Key Interception Corridors**: Coastal transit routes (**Mangaluru Panambur Port**) and border check-posts (**Belagavi / Hosur Road corridor**).\n"
-            "- **High-Risk Syndicates**: 14 flagged repeat offenders linked to synthetic contraband distribution.\n"
-            "- **Action Plan**: Deploy ANTF (Anti-Narcotics Task Force) field units for targeted vehicle inspections based on spatial density maps."
-        )
-
-    # 4. Violent Crime & Top Districts Comparison
-    if any(k in qLower for k in ["violent", "top", "compare", "district", "ranking", "highest", "rate"]):
-        return (
-            "### 📊 Statewide District Crime & Risk Comparison\n\n"
-            "Current district ranking by registered FIR density:\n\n"
-            "1. **Bengaluru Urban (BLR-U)**: `523` FIRs | Threat Score: **94/100 (Critical)** | Primary: Theft & Cybercrime\n"
-            "2. **Belagavi Division (BGM)**: `260` FIRs | Threat Score: **88/100 (Critical)** | Primary: Interstate Smuggling & Fraud\n"
-            "3. **Mangaluru / DK (DK)**: `206` FIRs | Threat Score: **82/100 (High)** | Primary: Coastal Cargo & Cyber\n"
-            "4. **Mysuru Central (MYS)**: `204` FIRs | Threat Score: **78/100 (High)** | Primary: Robbery & Cheating\n"
-            "5. **Uttara Kannada (UK)**: `191` FIRs | Threat Score: **74/100 (Moderate)** | Primary: Property Crime\n\n"
-            "- **Statewide Incident Total**: **5,000 active FIRs** indexed across **209 mapped police stations**."
-        )
-
-    # 5. Prediction & Forecasting (Zia AutoML)
-    if any(k in qLower for k in ["predict", "forecast", "next-week", "trend", "auto-ml", "zia"]):
-        return (
-            "### 🔮 Zia AutoML Crime Trend & Hotspot Prediction (Next 14 Days)\n\n"
-            "Predictive intelligence generated via Zia AutoML time-series models:\n\n"
-            "- **Bengaluru Urban**: Projected **+12% increase** in online payment phishing & vehicle theft along outer tech corridors during weekend peak hours.\n"
-            "- **Belagavi Industrial Belt**: High probability of cross-border goods interception along national highway checkposts.\n"
-            "- **Overall Threat Trend**: Statewide risk index remains stabilized at **72.4/100** with proactive patrol routing."
-        )
-
-    # 6. Pending Review & Recent FIR Cases
-    if any(k in qLower for k in ["pending", "review", "recent", "fir", "case", "july", "unresolved"]):
-        return (
-            "### 📁 FIR Investigation Registry Summary\n\n"
-            "- **Total Active Database Index**: **5,000 registered records**.\n"
-            "- **Status Breakdown**:\n"
-            "  * Under Active Investigation: **1,673 cases (33.5%)**\n"
-            "  * Chargesheeted: **1,275 cases (25.5%)**\n"
-            "  * Convicted: **607 cases (12.1%)**\n"
-            "  * Closed / Resolved: **1,039 cases (20.8%)**\n"
-            "- **Sample High-Priority Case**: FIR `#0001/2025` (*Chargesheeted*) — Mandya City Commercial Street under BNS Section 303."
-        )
-
-    # 7. Repeat Offenders & Network Topology
-    if any(k in qLower for k in ["repeat", "offender", "suspect", "syndicate", "network", "isolate"]):
-        return (
-            "### 🕸️ Criminal Entity & Syndicate Relational Intelligence\n\n"
-            "- **Flagged Repeat Offenders**: **456 individuals** with $\\ge 2$ prior arrests.\n"
-            "- **Primary Syndicate Node**: Target Node `#8921` (S. Kumar) — Threat Level **94/100**.\n"
-            "- **Connected Entities**: 7 active relational links including 2 vehicles (`KA-01-MJ-4920`) and 1 identified safehouse (*MG Road Corridor*).\n"
-            "- **Action Recommended**: Execute compromised link isolation via the **Network Topology** console."
-        )
-
-    # 8. General Intelligence Briefing Fallback
-    return (
-        "### 📊 Karnataka Police Strategic Intelligence Briefing\n\n"
-        "- **Total FIR Database Index**: **5,000 registered records** actively indexed.\n"
-        "- **Active Hotspot Alerts**: **4 high-density risk clusters** being tracked.\n"
-        "- **Repeat Offender Syndicates**: **456 flagged suspect entities**.\n"
-        "- **Stations Operational**: **209 Karnataka Police Stations** transmitting live telemetry.\n\n"
-        "*Tactical Advisory: Utilize the GIS Crime Map (`/`) to filter station boundaries or open the FIR Registry (`/fir-explorer`) to inspect specific case dossiers.*"
-    )
+    return sorted_candidates if sorted_candidates else defaults
 
 
 def process_chat(request):
@@ -207,56 +123,54 @@ def process_chat(request):
         chat_history = data.get('history', [])
         context_data = data.get('context', '')
 
-        db = DataStore(request)
-
-        # Check for Gemini API Key
+        # Check for Gemini API Key from environment or .env
         api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
-        
-        # If API key is available and genai is installed, use Gemini
-        if api_key and HAS_GENAI:
+
+        if not api_key:
+            return server_error("GEMINI_API_KEY is not set.")
+
+        genai.configure(api_key=api_key)
+
+        system_instruction = (
+            "You are Lumina AI, an elite intelligence and crime analytics assistant for the Karnataka State Police (KSP).\n"
+            "You have access to 5,000 Karnataka FIR records, 209 police stations, 31 districts, and 456 flagged repeat offenders.\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "- Respond DIRECTLY and professionally to the user with helpful, precise, and investigative reasoning.\n"
+            "- NEVER output internal scratchpads, reasoning tokens, prompt analysis, or bullets starting with '* User input:' or '* Instruction:'.\n"
+            "- For casual greetings (e.g., 'hi', 'hello', 'good morning', 'namaskara'), respond in 1-2 friendly, professional sentences.\n"
+            "- For analytical and investigative queries, provide structured, concise, data-driven answers using Markdown formatting."
+        )
+        if context_data:
+            system_instruction += f"\n\nLive Database Telemetry:\n{context_data}"
+
+        formatted_history = []
+        for msg in chat_history:
+            role = 'model' if msg.get('role') == 'assistant' else 'user'
+            text = msg.get('text', '')
+            if text:
+                formatted_history.append({'role': role, 'parts': [text]})
+
+        candidates = get_model_candidates(api_key)
+        last_error = None
+
+        for model_name in candidates:
             try:
-                genai.configure(api_key=api_key)
-                system_instruction = (
-                    "You are Lumina AI, an elite intelligence assistant for the Karnataka State Police (KSP).\n"
-                    "CRITICAL:\n"
-                    "- Respond DIRECTLY to the user. NEVER output scratchpads, internal thoughts, or bullet points starting with '* User input:' or '* Instruction:'.\n"
-                    "- For casual greetings (e.g., 'hi', 'hello', 'good morning', 'namaskara'), reply in 1-2 direct, friendly sentences asking how you can assist their investigation today.\n"
-                    "- For analytical queries, provide concise, professional, data-driven answers using Markdown.\n"
-                )
-                if context_data:
-                    system_instruction += f"\n\nLive System Data:\n{context_data}"
+                try:
+                    model = genai.GenerativeModel(model_name, system_instruction=system_instruction)
+                except Exception:
+                    model = genai.GenerativeModel(model_name)
 
-                formatted_history = []
-                for msg in chat_history:
-                    role = 'model' if msg.get('role') == 'assistant' else 'user'
-                    text = msg.get('text', '')
-                    if text:
-                        formatted_history.append({'role': role, 'parts': [text]})
+                chat = model.start_chat(history=formatted_history)
+                response = chat.send_message(query)
+                cleaned_text = clean_ai_response(response)
+                if cleaned_text:
+                    return success({'response': cleaned_text})
+            except Exception as model_err:
+                print(f"Model '{model_name}' failed: {model_err}")
+                last_error = model_err
 
-                candidates = get_model_candidates(api_key)
-                for model_name in candidates:
-                    try:
-                        try:
-                            model = genai.GenerativeModel(model_name, system_instruction=system_instruction)
-                        except Exception:
-                            model = genai.GenerativeModel(model_name)
-
-                        chat = model.start_chat(history=formatted_history)
-                        response = chat.send_message(query)
-                        cleaned_text = clean_ai_response(response)
-                        if cleaned_text:
-                            return success({'response': cleaned_text})
-                    except Exception as model_err:
-                        print(f"Model '{model_name}' failed: {model_err}")
-            except Exception as e:
-                print(f"Gemini API execution error: {e}")
-
-        # If no Gemini API key or if API calls fail, use the Comprehensive Intelligence Engine
-        local_response = generate_local_copilot_response(query, db, context_data)
-        return success({'response': local_response})
+        raise last_error or Exception("No valid Gemini model was able to generate a response.")
 
     except Exception as e:
         print(f"Error in ai_chat: {str(e)}")
-        return success({
-            'response': f"### 📊 Karnataka Police Strategic Intelligence Briefing\n\n- **Total FIR Records**: 5,000 cases indexed across 209 police stations.\n- **Status**: Live telemetry active."
-        })
+        return server_error(f"Failed to generate AI response: {str(e)}")
