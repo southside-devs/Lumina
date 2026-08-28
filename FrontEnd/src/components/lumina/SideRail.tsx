@@ -26,9 +26,11 @@ export function SideRail() {
       aria-label="Primary"
       className="fixed left-0 top-0 z-50 flex h-full w-16 flex-col items-center gap-6 border-r border-hairline bg-rail/70 py-4 backdrop-blur-2xl"
     >
+      {/* Top command trigger button (restored to iconic yellow/amber) */}
       <Link
         to="/"
-        className="mb-2 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-signal-brand font-display text-xl font-bold text-primary-foreground shadow-[0_0_18px_color-mix(in_oklab,var(--signal-brand)_40%,transparent)] transition-transform hover:scale-110"
+        title="Lumina Command Center"
+        className="mb-2 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-[#f59e0b] font-display text-xl font-bold text-black shadow-[0_0_18px_rgba(245,158,11,0.4)] transition-transform hover:scale-110"
       >
         +
       </Link>
