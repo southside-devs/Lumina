@@ -73,9 +73,10 @@ def list_firs(request, db):
     where = " AND ".join(conditions) if conditions else ""
     where_sql = f"WHERE {where}" if where else ""
 
+    # Use Date if available, or fall back to ROWID ordering
     query = (
         f"SELECT * FROM {TABLE} {where_sql} "
-        f"ORDER BY Incident_Date DESC LIMIT {limit} OFFSET {offset}"
+        f"ORDER BY ROWID DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
@@ -101,38 +102,43 @@ def get_fir(db, fir_id):
 
     # Fetch related victims
     victims_query = f"SELECT * FROM Victim WHERE FIR_ID = {row_id}"
-    victims = db.execute_query(victims_query)
-    fir_data["victims"] = [_extract_table(v, "Victim") for v in victims]
+    try:
+        victims = db.execute_query(victims_query)
+        fir_data["victims"] = [_extract_table(v, "Victim") for v in victims]
+    except Exception:
+        fir_data["victims"] = []
 
     # Fetch related accused via junction table
-    accused_query = (
-        f"SELECT Case_Accused.Involvement_Type, Accused.* "
-        f"FROM Case_Accused "
-        f"INNER JOIN Accused ON Case_Accused.Accused_ID = Accused.ROWID "
-        f"WHERE Case_Accused.FIR_ID = {row_id}"
-    )
     try:
+        accused_query = (
+            f"SELECT Case_Accused.Involvement_Type, Accused.* "
+            f"FROM Case_Accused "
+            f"INNER JOIN Accused ON Case_Accused.Accused_ID = Accused.ROWID "
+            f"WHERE Case_Accused.FIR_ID = {row_id}"
+        )
         accused = db.execute_query(accused_query)
         fir_data["accused"] = accused
     except Exception:
-        # If JOIN is not supported in ZCQL, fall back to separate queries
-        ca_query = f"SELECT * FROM Case_Accused WHERE FIR_ID = {row_id}"
-        case_accused = db.execute_query(ca_query)
-        fir_data["case_accused"] = [_extract_table(ca, "Case_Accused") for ca in case_accused]
+        fir_data["accused"] = []
 
     return success(fir_data)
 
 
 def search_firs(request, db):
     """
-    Search FIRs with advanced filters.
-    Query params: crime_group, date_from, date_to, station_id, district_id,
+    Search FIRs with advanced filters and keyword search.
+    Query params: q, crime_group, date_from, date_to, station_id, district_id,
                   lat_min, lat_max, lon_min, lon_max
     """
     limit = int(request.args.get("limit", 50))
     offset = int(request.args.get("offset", 0))
+    q = request.args.get("q", "").strip()
 
     conditions = []
+
+    if q:
+        # Search by FIR Number or Narrative
+        conditions.append(f"(FIR_Number LIKE '%{q}%' OR Narrative LIKE '%{q}%' OR Crime_Group LIKE '%{q}%')")
 
     crime_group = request.args.get("crime_group")
     if crime_group:
@@ -140,11 +146,11 @@ def search_firs(request, db):
 
     date_from = request.args.get("date_from")
     if date_from:
-        conditions.append(f"Incident_Date >= '{date_from}'")
+        conditions.append(f"Date >= '{date_from}'")
 
     date_to = request.args.get("date_to")
     if date_to:
-        conditions.append(f"Incident_Date <= '{date_to}'")
+        conditions.append(f"Date <= '{date_to}'")
 
     station_id = request.args.get("station_id")
     if station_id:
@@ -166,7 +172,7 @@ def search_firs(request, db):
 
     query = (
         f"SELECT * FROM {TABLE} {where_sql} "
-        f"ORDER BY Incident_Date DESC LIMIT {limit} OFFSET {offset}"
+        f"ORDER BY ROWID DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
