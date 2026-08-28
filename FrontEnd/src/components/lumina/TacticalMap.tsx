@@ -140,7 +140,7 @@ export function TacticalMap({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
 
-  // Initialize Leaflet Map
+  // Initialize Leaflet Map with Esri World Dark Gray Canvas
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
@@ -150,16 +150,28 @@ export function TacticalMap({
       center: [14.8, 76.0],
       zoom: 7,
       minZoom: 6,
-      maxZoom: 17,
+      maxZoom: 16,
       zoomControl: false,
       attributionControl: false,
     });
 
-    // Clean OpenStreetMap tiles styled with high-contrast tactical dark matrix filter
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      className: "tactical-dark-tiles",
-    }).addTo(map);
+    // 1. Official Esri Dark Gray Base Map Layer (100% Native Dark Military GIS)
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 16,
+        className: "esri-dark-tiles",
+      }
+    ).addTo(map);
+
+    // 2. Official Esri Dark Reference Labels & Boundaries Overlay Layer
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 16,
+        className: "esri-dark-labels",
+      }
+    ).addTo(map);
 
     // Zoom control at bottom right
     L.control.zoom({ position: "bottomright" }).addTo(map);
@@ -197,7 +209,7 @@ export function TacticalMap({
         L.polyline([route.from as [number, number], route.to as [number, number]], {
           color: route.color,
           weight: 2,
-          opacity: 0.7,
+          opacity: 0.8,
           dashArray: "6, 8",
         }).addTo(layerGroup);
       });
@@ -215,7 +227,7 @@ export function TacticalMap({
           radius: isSelected ? 35000 : 25000,
           color: color,
           fillColor: color,
-          fillOpacity: isSelected ? 0.25 : 0.14,
+          fillOpacity: isSelected ? 0.3 : 0.18,
           weight: 1.5,
         }).addTo(layerGroup);
       }
@@ -225,7 +237,7 @@ export function TacticalMap({
         className: "custom-tactical-marker",
         html: `
           <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
-            <div class="absolute -inset-2 rounded-full border opacity-75 animate-ping" style="border-color: ${color}"></div>
+            <div class="absolute -inset-2 rounded-full border opacity-80 animate-ping" style="border-color: ${color}"></div>
             <div class="flex items-center justify-center rounded-full border bg-zinc-950/95 shadow-2xl transition-transform duration-300 ${
               isSelected ? "scale-125" : "hover:scale-110"
             }" style="width: ${isSelected ? "40px" : "32px"}; height: ${
@@ -257,10 +269,10 @@ export function TacticalMap({
       {/* Subtle Tactical HUD Grid Overlay */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-20 z-10"
+        className="pointer-events-none absolute inset-0 opacity-25 z-10"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
         }}
       />
