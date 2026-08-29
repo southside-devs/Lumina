@@ -8,6 +8,7 @@ Supports dual-mode execution:
 
 import os
 import sqlite3
+import threading
 import pandas as pd
 import logging
 
@@ -22,6 +23,7 @@ DATA_DIR_CANDIDATES = [
 ]
 
 _LOCAL_DB_CONN = None
+_LOCAL_DB_LOCK = threading.Lock()
 
 
 def _get_local_sqlite_connection():
@@ -116,20 +118,13 @@ class DataStore:
     def _execute_local_sqlite(self, query):
         """Translate and execute ZCQL-compatible SQL in local SQLite."""
         conn = _get_local_sqlite_connection()
-        cursor = conn.cursor()
-        
-        # Normalize basic ZCQL differences
         normalized_query = query.replace("\\'", "''")
-        
-        cursor.execute(normalized_query)
-        if normalized_query.strip().upper().startswith("SELECT"):
-            rows = cursor.fetchall()
-            results = []
-            for row in rows:
-                row_dict = dict(row)
-                results.append(row_dict)
-            return results
-        else:
+        with _LOCAL_DB_LOCK:
+            cursor = conn.cursor()
+            cursor.execute(normalized_query)
+            if normalized_query.strip().upper().startswith("SELECT"):
+                rows = cursor.fetchall()
+                return [dict(row) for row in rows]
             conn.commit()
             return [{"status": "success", "rows_affected": cursor.rowcount}]
 
