@@ -4,14 +4,13 @@ import { ReportModal } from "./ReportModal";
 
 const primaryNav = [
   { icon: "grid_view", label: "Command Hub", to: "/" },
-  { icon: "description", label: "Overview", to: "/overview" },
-  { icon: "share", label: "Network Topology", to: "/network" },
-  { icon: "auto_fix_high", label: "AI Chatbot", to: "/ai-chatbot" },
+  { icon: "assessment", label: "Overview", to: "/overview" },
+  { icon: "hub", label: "Network Topology", to: "/network" },
+  { icon: "auto_awesome", label: "AI Chatbot", to: "/ai-chatbot" },
 ] as const;
 
 const staticNav = [
-  { icon: "shield", label: "Security & Access" },
-  { icon: "assignment", label: "Briefing Reports" },
+  { icon: "description", label: "Briefing Reports" },
 ];
 
 const secondaryNav = [
