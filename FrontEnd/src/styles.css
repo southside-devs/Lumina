@@ -110,19 +110,87 @@
   --input: oklch(0.22 0.01 240);
   --ring: oklch(0.8 0.01 240);
 
-  --shell: #07080c;
-  --rail: #0b0c10;
-  --topbar: #0b0c10;
-  --surface-1: #111318;
-  --surface-2: #161920;
-  --surface-3: #1d212b;
-  --hairline: rgba(255, 255, 255, 0.08);
+  /* ── Surfaces ── */
+  --shell:   #0d0d0d;   /* Pure black base — everything is carved from this */
+  --rail:    #0f0f0f;
+  --topbar:  #0f0f0f;
+  --surface-1: #141414;
+  --surface-2: #1a1a1a;
+  --surface-3: #202020;
+  --hairline: rgba(255, 255, 255, 0.06);
 
-  --signal-brand: #3b82f6;
+  /* ── Dark Neumorphism shadow palette ── */
+  /* Physics: top-left highlight (white, barely visible) + bottom-right dark recession */
+  --neu-shadow-dark:  rgba(0, 0, 0, 0.75);
+  --neu-shadow-light: rgba(255, 255, 255, 0.04);
+  --neu-shadow-dark-strong:  rgba(0, 0, 0, 0.85);
+  --neu-shadow-light-strong: rgba(255, 255, 255, 0.055);
+
+  /* ── Signal accents ── */
+  --signal-brand:    #3b82f6;
   --signal-critical: #ef4444;
-  --signal-warning: #f59e0b;
-  --signal-ok: #10b981;
-  --signal-agent: #6366f1;
+  --signal-warning:  #f59e0b;
+  --signal-ok:       #10b981;
+  --signal-agent:    #6366f1;
+}
+
+
+/* ─── Custom cursor — hide system pointer, show Lumina crosshair ─── */
+*, *::before, *::after {
+  cursor: none !important;
+}
+
+/* Cursor elements are created by the CustomCursor React component */
+.lumina-cursor-dot,
+.lumina-cursor-ring {
+  pointer-events: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 99999;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  will-change: transform, opacity;
+  transition: opacity 0.2s ease;
+}
+
+/* Green centre dot */
+.lumina-cursor-dot {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+/* Red outer ring */
+.lumina-cursor-ring {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid rgba(239, 68, 68, 0.75);
+  background: transparent;
+  /* slight lag for a smooth follow feel */
+  transition: left 0.06s ease-out, top 0.06s ease-out, transform 0.06s ease-out, opacity 0.2s ease, width 0.15s ease, height 0.15s ease, border-color 0.15s ease;
+}
+
+/* Hover state: ring expands on interactive elements */
+.lumina-cursor-ring.hovered {
+  width: 40px;
+  height: 40px;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* Click state */
+.lumina-cursor-dot.clicking {
+  background: #ef4444;
+  box-shadow: 0 0 10px #ef4444;
+  transform: translate(-50%, -50%) scale(1.5);
+}
+
+/* ─── Page load reveal animation ─── */
+@keyframes lumina-boot {
+  0%   { opacity: 0; transform: scale(0.98); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 body {
@@ -131,6 +199,7 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  animation: lumina-boot 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* Glass panel utility */
@@ -216,3 +285,4 @@ body {
   background: rgba(255, 255, 255, 0.1) !important;
   color: #ffffff !important;
 }
+
