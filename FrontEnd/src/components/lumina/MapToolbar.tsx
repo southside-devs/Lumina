@@ -19,10 +19,10 @@ function Toggle({
     >
       <span>{label}</span>
       <span
-        className={`relative h-4 w-8 rounded-full transition-colors ${on ? "bg-signal-ok" : "bg-surface-3"}`}
+        className={`relative h-4 w-8 rounded-full transition-colors ${on ? "bg-slate-400" : "bg-surface-3"}`}
       >
         <span
-          className={`absolute top-0.5 size-3 rounded-full bg-foreground transition-all ${on ? "left-4" : "left-0.5"}`}
+          className={`absolute top-0.5 size-3 rounded-full transition-all ${on ? "left-4 bg-slate-900" : "left-0.5 bg-foreground"}`}
         />
       </span>
     </button>
@@ -94,7 +94,7 @@ export function MapToolbar({
               step="0.5"
               value={epsSpatial}
               onChange={(e) => handleUpdate(Number(e.target.value), epsTemporal, minPts)}
-              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-sky-400"
+              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
             />
           </div>
 
@@ -111,7 +111,7 @@ export function MapToolbar({
               step="1"
               value={epsTemporal}
               onChange={(e) => handleUpdate(epsSpatial, Number(e.target.value), minPts)}
-              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-amber-400"
+              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
             />
           </div>
 
@@ -128,7 +128,7 @@ export function MapToolbar({
               step="1"
               value={minPts}
               onChange={(e) => handleUpdate(epsSpatial, epsTemporal, Number(e.target.value))}
-              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-red-400"
+              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
             />
           </div>
 
@@ -155,7 +155,7 @@ export function MapToolbar({
           title="Tune ST-DBSCAN Parameters"
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs transition-colors cursor-pointer ${
             showConfig
-              ? "bg-sky-500/20 text-sky-400 border border-sky-500/40"
+              ? "bg-slate-400/15 text-slate-200 border border-slate-400/30"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
           }`}
         >
@@ -179,3 +179,6 @@ export function MapToolbar({
     </div>
   );
 }
+
+
+

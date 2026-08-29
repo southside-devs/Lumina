@@ -154,7 +154,7 @@ export function IncidentCard({ onClose, spot, fir }: IncidentCardProps) {
 
       {/* Threat Index & Active FIRs */}
       <div className="mt-3 grid grid-cols-2 gap-3">
-        {/* Threat Index Gauge */}
+        {/* Threat Index Gauge — monochromatic arc */}
         <div className="rounded-xl border border-hairline bg-surface-2/60 p-3">
           <div className="flex items-start justify-between">
             <span className="font-mono text-label-sm uppercase text-muted-foreground">Threat</span>

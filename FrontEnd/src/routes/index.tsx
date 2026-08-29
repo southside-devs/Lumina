@@ -170,7 +170,7 @@ export function IntelligenceHub() {
                     onClick={() => setActiveFilter(f.label)}
                     className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-colors cursor-pointer ${
                       activeFilter === f.label
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-slate-200 text-slate-900"
                         : "text-muted-foreground hover:bg-accent hover:text-foreground"
                     }`}
                   >
@@ -178,7 +178,7 @@ export function IntelligenceHub() {
                     <span
                       className={`rounded px-1.5 font-mono text-label-sm ${
                         activeFilter === f.label
-                          ? "bg-primary-foreground/10 text-primary-foreground"
+                          ? "bg-slate-900/15 text-slate-700"
                           : "bg-surface-2 text-muted-foreground"
                       }`}
                     >
