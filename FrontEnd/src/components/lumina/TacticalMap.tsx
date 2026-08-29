@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import type { FIRItem } from "@/lib/api";
 
 export interface TacticalHotspot {
   id: string;
@@ -124,17 +125,27 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
 ];
 
 interface TacticalMapProps {
+  firs?: FIRItem[];
+  showIncidents?: boolean;
   showHotspots: boolean;
   showPatrols?: boolean;
-  activeSpot?: TacticalHotspot;
+  activeSpot?: TacticalHotspot | null;
+  selectedFIR?: FIRItem | null;
   onSelectSpot?: (spot: TacticalHotspot) => void;
+  onSelectFIR?: (fir: FIRItem) => void;
+  mapRef?: React.MutableRefObject<L.Map | null>;
 }
 
 export function TacticalMap({
-  showHotspots,
+  firs = [],
+  showIncidents = true,
+  showHotspots = true,
   showPatrols = true,
   activeSpot,
+  selectedFIR,
   onSelectSpot,
+  onSelectFIR,
+  mapRef,
 }: TacticalMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -180,14 +191,19 @@ export function TacticalMap({
     mapInstanceRef.current = map;
     layerGroupRef.current = layers;
 
+    if (mapRef) {
+      mapRef.current = map;
+    }
+
     return () => {
       map.remove();
       mapInstanceRef.current = null;
       layerGroupRef.current = null;
+      if (mapRef) mapRef.current = null;
     };
-  }, []);
+  }, [mapRef]);
 
-  // Update Layers (Markers, Hotspot Circles, Patrol Routes)
+  // Update Layers (Live FIRs, Markers, Hotspot Circles, Patrol Routes)
   useEffect(() => {
     const map = mapInstanceRef.current;
     const layerGroup = layerGroupRef.current;
@@ -209,57 +225,117 @@ export function TacticalMap({
         L.polyline([route.from as [number, number], route.to as [number, number]], {
           color: route.color,
           weight: 2,
-          opacity: 0.8,
+          opacity: 0.75,
           dashArray: "6, 8",
         }).addTo(layerGroup);
       });
     }
 
     // 2. Draw Hotspot Heat Circles & Pulse Markers
-    KARNATAKA_HOTSPOTS.forEach((spot) => {
-      const isSelected = activeSpot?.id === spot.id;
-      const isCritical = spot.threatScore >= 85;
-      const color = isCritical ? "#ef4444" : "#eab308";
+    if (showHotspots) {
+      KARNATAKA_HOTSPOTS.forEach((spot) => {
+        const isSelected = activeSpot?.id === spot.id;
+        const isCritical = spot.threatScore >= 85;
+        const color = isCritical ? "#ef4444" : "#eab308";
 
-      // Ambient Hotspot Heat Circle
-      if (showHotspots) {
+        // Ambient Hotspot Heat Circle
         L.circle([spot.lat, spot.lng], {
           radius: isSelected ? 35000 : 25000,
           color: color,
           fillColor: color,
-          fillOpacity: isSelected ? 0.3 : 0.18,
+          fillOpacity: isSelected ? 0.28 : 0.14,
           weight: 1.5,
         }).addTo(layerGroup);
-      }
 
-      // Custom Glowing Tactical Node Marker
-      const customIcon = L.divIcon({
-        className: "custom-tactical-marker",
-        html: `
-          <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
-            <div class="absolute -inset-2 rounded-full border opacity-80 animate-ping" style="border-color: ${color}"></div>
-            <div class="flex items-center justify-center rounded-full border bg-zinc-950/95 shadow-2xl transition-transform duration-300 ${
-              isSelected ? "scale-125" : "hover:scale-110"
-            }" style="width: ${isSelected ? "40px" : "32px"}; height: ${
-          isSelected ? "40px" : "32px"
-        }; border-color: ${color}; box-shadow: 0 0 18px ${color};">
-              <span class="font-mono text-[10px] font-bold" style="color: ${color};">${spot.code}</span>
+        // Custom Glowing Tactical Node Marker
+        const customIcon = L.divIcon({
+          className: "custom-tactical-marker",
+          html: `
+            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
+              <div class="absolute -inset-2 rounded-full border opacity-70 animate-ping" style="border-color: ${color}"></div>
+              <div class="flex items-center justify-center rounded-full border bg-zinc-950/95 shadow-2xl transition-transform duration-300 ${
+                isSelected ? "scale-125 ring-2 ring-white" : "hover:scale-110"
+              }" style="width: ${isSelected ? "38px" : "30px"}; height: ${
+            isSelected ? "38px" : "30px"
+          }; border-color: ${color}; box-shadow: 0 0 16px ${color};">
+                <span class="font-mono text-[10px] font-bold" style="color: ${color};">${spot.code}</span>
+              </div>
+              <div class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-zinc-800 bg-zinc-950/95 px-2 py-0.5 font-mono text-[9px] text-zinc-300 shadow-xl backdrop-blur-md">
+                <span class="font-semibold text-white">${spot.name}</span>
+                <span class="ml-1 font-bold" style="color: ${color};">${spot.threatScore}</span>
+              </div>
             </div>
-            <div class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-zinc-800 bg-zinc-950/95 px-2 py-0.5 font-mono text-[9px] text-zinc-300 shadow-xl backdrop-blur-md">
-              <span class="font-semibold text-white">${spot.name}</span>
-              <span class="ml-1.5 font-bold" style="color: ${color};">${spot.threatScore}</span>
-            </div>
-          </div>
-        `,
-        iconSize: [0, 0],
-      });
+          `,
+          iconSize: [0, 0],
+        });
 
-      const marker = L.marker([spot.lat, spot.lng], { icon: customIcon }).addTo(layerGroup);
-      marker.on("click", () => {
-        onSelectSpot?.(spot);
+        const marker = L.marker([spot.lat, spot.lng], { icon: customIcon }).addTo(layerGroup);
+        marker.on("click", () => {
+          onSelectSpot?.(spot);
+        });
       });
-    });
-  }, [showHotspots, showPatrols, activeSpot, onSelectSpot]);
+    }
+
+    // 3. Draw Live Database Incident Markers (Color-coded by Crime Group)
+    if (showIncidents && firs && firs.length > 0) {
+      firs.forEach((fir, idx) => {
+        const lat = Number(fir.Latitude);
+        const lng = Number(fir.Longitude);
+
+        // Validate coordinates
+        if (isNaN(lat) || isNaN(lng) || lat < 11 || lat > 19 || lng < 74 || lng > 79) {
+          return;
+        }
+
+        const isSelected = selectedFIR?.ROWID === fir.ROWID;
+        const isRecent2026 = fir.Date?.includes("2026") || fir.FIR_Number?.includes("2026") || idx < 5;
+        const group = fir.Crime_Group?.toLowerCase() || "";
+
+        let pinColor = "#0ea5e9"; // default sky blue
+        let pinIcon = "priority_high";
+
+        if (group.includes("theft") || group.includes("burglary")) {
+          pinColor = "#f59e0b"; // amber
+          pinIcon = "shield";
+        } else if (group.includes("assault") || group.includes("murder") || group.includes("robbery") || group.includes("arson")) {
+          pinColor = "#ef4444"; // red
+          pinIcon = "warning";
+        } else if (group.includes("cyber")) {
+          pinColor = "#a855f7"; // purple
+          pinIcon = "terminal";
+        } else if (group.includes("cheating") || group.includes("fraud")) {
+          pinColor = "#06b6d4"; // cyan
+          pinIcon = "gavel";
+        }
+
+        const incidentIcon = L.divIcon({
+          className: "custom-fir-incident-pin",
+          html: `
+            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group">
+              ${
+                isRecent2026
+                  ? `<div class="absolute -inset-1.5 rounded-full border opacity-75 animate-ping" style="border-color: ${pinColor}"></div>`
+                  : ""
+              }
+              <div class="flex items-center justify-center rounded-full border bg-zinc-950/90 shadow-lg transition-transform duration-200 ${
+                isSelected ? "scale-135 ring-2 ring-white" : "hover:scale-125"
+              }" style="width: ${isSelected ? "22px" : "16px"}; height: ${
+            isSelected ? "22px" : "16px"
+          }; border-color: ${pinColor}; box-shadow: 0 0 10px ${pinColor};">
+                <span class="size-1.5 rounded-full" style="background-color: ${pinColor};"></span>
+              </div>
+            </div>
+          `,
+          iconSize: [0, 0],
+        });
+
+        const incidentMarker = L.marker([lat, lng], { icon: incidentIcon }).addTo(layerGroup);
+        incidentMarker.on("click", () => {
+          onSelectFIR?.(fir);
+        });
+      });
+    }
+  }, [showIncidents, showHotspots, showPatrols, activeSpot, selectedFIR, firs, onSelectSpot, onSelectFIR]);
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#07080c]">
@@ -269,10 +345,10 @@ export function TacticalMap({
       {/* Subtle Tactical HUD Grid Overlay */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-25 z-10"
+        className="pointer-events-none absolute inset-0 opacity-20 z-10"
         style={{
           backgroundImage:
-            "linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px)",
+            "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)",
           backgroundSize: "64px 64px",
         }}
       />

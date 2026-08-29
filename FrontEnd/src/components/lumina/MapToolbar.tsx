@@ -30,18 +30,24 @@ function Toggle({
 }
 
 export type MapToolbarProps = {
+  showIncidents?: boolean;
+  onToggleIncidents?: () => void;
   showHotspots: boolean;
   onToggleHotspots: () => void;
   showPatrols: boolean;
   onTogglePatrols: () => void;
+  onResetView?: () => void;
   onClusterTuned?: (params: { epsSpatial: number; epsTemporal: number; minPts: number }) => void;
 };
 
 export function MapToolbar({
+  showIncidents = true,
+  onToggleIncidents,
   showHotspots,
   onToggleHotspots,
   showPatrols,
   onTogglePatrols,
+  onResetView,
   onClusterTuned,
 }: MapToolbarProps) {
   const [showConfig, setShowConfig] = useState(false);
@@ -69,7 +75,7 @@ export function MapToolbar({
             <button
               type="button"
               onClick={() => setShowConfig(false)}
-              className="text-zinc-400 hover:text-white p-0.5"
+              className="text-zinc-400 hover:text-white p-0.5 cursor-pointer"
             >
               ✕
             </button>
@@ -134,25 +140,41 @@ export function MapToolbar({
       )}
 
       {/* Main Bar */}
-      <div className="glass-panel flex flex-wrap items-center gap-4 bg-surface-1/80 px-4 py-2 backdrop-blur-xl">
-        <Toggle label="Show Hotspots" on={showHotspots} onToggle={onToggleHotspots} />
+      <div className="glass-panel flex flex-wrap items-center gap-4 bg-surface-1/80 px-4 py-2 backdrop-blur-xl rounded-full border border-hairline shadow-2xl">
+        {onToggleIncidents && (
+          <Toggle label="Live Incidents" on={showIncidents} onToggle={onToggleIncidents} />
+        )}
+        <Toggle label="Hotspot Zones" on={showHotspots} onToggle={onToggleHotspots} />
         <Toggle label="Patrol Units" on={showPatrols} onToggle={onTogglePatrols} />
         <span className="h-5 w-px bg-hairline" />
-        
+
         {/* ST-DBSCAN Parameters CTA */}
         <button
           type="button"
           onClick={() => setShowConfig(!showConfig)}
           title="Tune ST-DBSCAN Parameters"
-          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs transition-colors ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs transition-colors cursor-pointer ${
             showConfig
               ? "bg-sky-500/20 text-sky-400 border border-sky-500/40"
               : "text-muted-foreground hover:bg-accent hover:text-foreground"
           }`}
         >
           <span className="material-symbols-outlined text-sm">tune</span>
-          <span>ST-DBSCAN (ε)</span>
+          <span>ST-DBSCAN</span>
         </button>
+
+        {/* Reset View Button */}
+        {onResetView && (
+          <button
+            type="button"
+            onClick={onResetView}
+            title="Reset Map View to Karnataka State"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">center_focus_strong</span>
+            <span>Reset</span>
+          </button>
+        )}
       </div>
     </div>
   );
