@@ -9,6 +9,7 @@ import { CrimeGroupChart } from "@/components/lumina/CrimeGroupChart";
 import { FirStatusDonut } from "@/components/lumina/FirStatusDonut";
 import { DistrictTable } from "@/components/lumina/DistrictTable";
 import { api, type DashboardOverview, type CrimeTrend, type DistrictSummary } from "@/lib/api";
+import { useFIREvents } from "@/lib/fir-events";
 
 const title = "LUMINA — Crime Intelligence Overview";
 const description =
@@ -33,6 +34,7 @@ function Overview() {
   const [crimeTrends, setCrimeTrends] = useState<CrimeTrend[]>([]);
   const [districts, setDistricts] = useState<DistrictSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const { firCreatedCount } = useFIREvents();
 
   useEffect(() => {
     let mounted = true;
@@ -61,7 +63,7 @@ function Overview() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [firCreatedCount]); // refetch whenever a new FIR is created
 
   const totalFirs = overview?.total_firs ?? 1245;
   const repeatOffenders = overview?.repeat_offenders ?? 4;

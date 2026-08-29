@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { toast } from "sonner";
 import { api, type CreateFIRResult } from "@/lib/api";
+import { useFIREvents } from "@/lib/fir-events";
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface ReportModalProps {
 }
 
 export function ReportModal({ isOpen, onClose }: ReportModalProps) {
+  const { notifyFIRCreated } = useFIREvents();
   const [complainantName, setComplainantName] = useState("");
   const [contactInfo, setContactInfo] = useState("");
   const [incidentType, setIncidentType] = useState("");
@@ -90,6 +92,7 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
       setCreatedFIR(result);
       setIsSubmitting(false);
       setIsSubmitted(true);
+      notifyFIRCreated(); // broadcast to Overview, FIR Explorer, etc.
       toast.success(`FIR ${result.FIR_Number} filed successfully!`);
     } catch (err) {
       console.error("Failed to create FIR:", err);

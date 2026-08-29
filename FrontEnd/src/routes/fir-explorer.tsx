@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { api, type FIRItem } from "@/lib/api";
+import { useFIREvents } from "@/lib/fir-events";
 
 const title = "LUMINA — FIR Investigation & Case Explorer";
 const description =
@@ -51,6 +52,7 @@ function FIRExplorerView() {
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [selectedCrimeGroup, setSelectedCrimeGroup] = useState("All Crime Types");
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
+  const { firCreatedCount } = useFIREvents();
 
   useEffect(() => {
     let mounted = true;
@@ -75,7 +77,7 @@ function FIRExplorerView() {
     return () => {
       mounted = false;
     };
-  }, [selectedStatus, selectedCrimeGroup]);
+  }, [selectedStatus, selectedCrimeGroup, firCreatedCount]); // also refetch on new FIR
 
   // Client-side instant text search
   const filteredFirs = firs.filter((f) => {
