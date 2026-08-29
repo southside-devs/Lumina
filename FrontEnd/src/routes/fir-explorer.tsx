@@ -5,6 +5,8 @@ import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { api, type FIRItem } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
+import { generateOfficialFIRPDF } from "@/lib/pdf-generator";
+
 
 const title = "LUMINA — FIR Investigation & Case Explorer";
 const description =
@@ -353,17 +355,26 @@ function FIRExplorerView() {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 border-t border-zinc-800 pt-4 font-sans text-xs">
+            <div className="flex flex-wrap items-center justify-end gap-2.5 border-t border-zinc-800 pt-4 font-sans text-xs">
               <button
                 type="button"
                 onClick={() => {
                   setSelectedFir(null);
                   navigate({ to: "/network" });
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 font-medium text-zinc-200 hover:bg-zinc-800 cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 font-medium text-zinc-200 hover:bg-zinc-800 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm">share</span>
-                <span>Inspect in Network Graph</span>
+                <span className="material-symbols-outlined text-sm">hub</span>
+                <span>Inspect in Graph</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => generateOfficialFIRPDF(selectedFir)}
+                className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 font-semibold text-sky-300 hover:bg-sky-500/20 hover:border-sky-500/60 shadow-md cursor-pointer transition-all"
+              >
+                <span className="material-symbols-outlined text-sm">description</span>
+                <span>Export FIR (PDF)</span>
               </button>
 
               <button
@@ -384,6 +395,7 @@ function FIRExplorerView() {
                 <span>Ask AI Copilot</span>
               </button>
             </div>
+
           </div>
         </div>
       )}
