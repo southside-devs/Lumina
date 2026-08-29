@@ -1,60 +1,32 @@
-import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 
 const tabs = [
-  { label: "Overview", to: "/overview", icon: "assessment" },
-  { label: "Risk Scores", to: "/risk-scores", icon: "analytics" },
+  { label: "Overview", to: "/overview", icon: "leaderboard" },
+  { label: "Risk Scores", to: "/risk-scores", icon: "query_stats" },
 ] as const;
 
 export function TabBar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [indicatorStyle, setIndicatorStyle] = useState<{
-    left: number;
-    width: number;
-    opacity: number;
-  }>({
-    left: 0,
-    width: 0,
-    opacity: 0,
-  });
-
-  const activeIndex = tabs.findIndex((t) => t.to === pathname);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const buttons = containerRef.current.querySelectorAll<HTMLAnchorElement>("a[role='tab']");
-    const targetIdx = activeIndex >= 0 ? activeIndex : 0;
-    const activeEl = buttons[targetIdx];
-
-    if (activeEl) {
-      setIndicatorStyle({
-        left: activeEl.offsetLeft,
-        width: activeEl.offsetWidth,
-        opacity: activeIndex >= 0 ? 1 : 0,
-      });
-    }
-  }, [pathname, activeIndex]);
+  const isRiskScores = pathname === "/risk-scores";
 
   return (
     <div className="mb-8 flex justify-center ui-no-select">
+      {/* 1. Outer Glassmorphic Track Container */}
       <div
-        ref={containerRef}
         role="tablist"
         aria-label="Intelligence views"
-        className="relative flex items-center gap-1.5 rounded-full border border-white/[0.12] bg-[#07090e]/85 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_12px_36px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
+        className="relative inline-flex w-[340px] p-[6px] rounded-full border border-white/[0.15] bg-white/[0.06] backdrop-blur-[20px] backdrop-saturate-[180%] shadow-[0_20px_40px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.25)]"
       >
-        {/* Animated Sliding Glass Indicator */}
-        <span
+        {/* 2. Absolute Sliding Highlight Pill (Active State) */}
+        <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-1.5 bottom-1.5 rounded-full border border-white/25 bg-gradient-to-b from-white/[0.18] to-white/[0.04] shadow-[inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-1px_3px_rgba(0,0,0,0.6),0_4px_16px_rgba(0,0,0,0.45),0_0_18px_rgba(0,122,255,0.22)] backdrop-blur-xl transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+          className="pointer-events-none absolute top-[6px] bottom-[6px] left-[6px] w-[calc(50%-6px)] rounded-full border border-white/[0.18] bg-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_4px_16px_rgba(0,0,0,0.25)] transition-transform duration-[350ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
           style={{
-            left: `${indicatorStyle.left}px`,
-            width: `${indicatorStyle.width}px`,
-            opacity: indicatorStyle.opacity,
+            transform: isRiskScores ? "translateX(100%)" : "translateX(0%)",
           }}
         />
 
+        {/* 3. Transparent Navigation Links */}
         {tabs.map((tab) => {
           const isActive = pathname === tab.to;
           return (
@@ -63,18 +35,22 @@ export function TabBar() {
               to={tab.to}
               role="tab"
               aria-selected={isActive}
-              className={`relative z-10 flex items-center gap-2 rounded-full px-6 py-2 font-mono text-sm font-semibold transition-all duration-200 cursor-pointer ${
+              className={`relative z-10 flex flex-1 items-center justify-center gap-2.5 py-2.5 font-mono text-sm font-semibold transition-colors duration-200 cursor-pointer ${
                 isActive
                   ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04]"
+                  : "text-[#94A3B8] hover:text-white"
               }`}
             >
               <span
-                className={`material-symbols-outlined text-[18px] transition-colors ${
-                  isActive ? "text-[#007AFF]" : "text-zinc-500"
+                className={`flex size-5 items-center justify-center rounded-sm border transition-all duration-200 ${
+                  isActive
+                    ? "border-[#007AFF] bg-[#007AFF]/20 text-[#007AFF] shadow-[0_0_8px_rgba(0,122,255,0.4)]"
+                    : "border-zinc-500/40 text-zinc-400"
                 }`}
               >
-                {tab.icon}
+                <span className="material-symbols-outlined text-[14px]">
+                  {tab.icon}
+                </span>
               </span>
               <span>{tab.label}</span>
             </Link>
