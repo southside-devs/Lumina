@@ -161,7 +161,7 @@ class DataStore:
 
     def count(self, table, where_clause=None):
         """Count rows in a table, optionally filtered."""
-        query = f"SELECT COUNT(ROWID) FROM {table}"
+        query = f"SELECT COUNT(*) FROM {table}"
         if where_clause:
             query += f" WHERE {where_clause}"
         result = self.execute_query(query)

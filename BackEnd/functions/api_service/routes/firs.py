@@ -78,14 +78,13 @@ def list_firs(request, db):
     where = " AND ".join(conditions) if conditions else ""
     where_sql = f"WHERE {where}" if where else ""
 
-    # Use Date if available, or fall back to ROWID ordering
     query = (
         f"SELECT * FROM {TABLE} {where_sql} "
         f"ORDER BY ROWID DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
-    count_query = f"SELECT COUNT(ROWID) FROM {TABLE} {where_sql}"
+    count_query = f"SELECT COUNT(*) FROM {TABLE} {where_sql}"
     total = _extract_count(db.execute_query(count_query))
 
     rows = [_extract(r) for r in results]
@@ -181,7 +180,7 @@ def search_firs(request, db):
     )
     results = db.execute_query(query)
 
-    count_query = f"SELECT COUNT(ROWID) FROM {TABLE} {where_sql}"
+    count_query = f"SELECT COUNT(*) FROM {TABLE} {where_sql}"
     total = _extract_count(db.execute_query(count_query))
 
     rows = [_extract(r) for r in results]
@@ -225,6 +224,8 @@ def create_fir(request, db):
     status = data.get("Status", "Under Investigation")
 
     row = {
+        "ROWID": next_id,
+        "ID": next_id,
         "Station_ID": station_id,
         "FIR_Number": fir_number,
         "Date": incident_date,
