@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 function Toggle({
   label,
@@ -54,55 +54,139 @@ export function MapToolbar({
   const [epsSpatial, setEpsSpatial] = useState(12.0);
   const [epsTemporal, setEpsTemporal] = useState(45);
   const [minPts, setMinPts] = useState(4);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleUpdate = (s: number, t: number, m: number) => {
+  // Debounced parent notification for silky-smooth 60fps dragging
+  const notifyParent = useCallback(
+    (s: number, t: number, m: number, immediate = false) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (immediate) {
+        onClusterTuned?.({ epsSpatial: s, epsTemporal: t, minPts: m });
+      } else {
+        debounceTimerRef.current = setTimeout(() => {
+          onClusterTuned?.({ epsSpatial: s, epsTemporal: t, minPts: m });
+        }, 120);
+      }
+    },
+    [onClusterTuned]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
+  }, []);
+
+  const handleSpatialChange = (val: number) => {
+    setEpsSpatial(val);
+    notifyParent(val, epsTemporal, minPts);
+  };
+
+  const handleTemporalChange = (val: number) => {
+    setEpsTemporal(val);
+    notifyParent(epsSpatial, val, minPts);
+  };
+
+  const handleMinPtsChange = (val: number) => {
+    setMinPts(val);
+    notifyParent(epsSpatial, epsTemporal, val);
+  };
+
+  const applyPreset = (s: number, t: number, m: number) => {
     setEpsSpatial(s);
     setEpsTemporal(t);
     setMinPts(m);
-    onClusterTuned?.({ epsSpatial: s, epsTemporal: t, minPts: m });
+    notifyParent(s, t, m, true);
   };
 
   return (
     <div className="relative">
       {/* Parameter Tuning Popup */}
       {showConfig && (
-        <div className="absolute bottom-full left-1/2 mb-3 -translate-x-1/2 w-84 rounded-2xl border border-zinc-700 bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-2xl z-50 space-y-3.5 animate-in fade-in zoom-in-95">
+        <div className="absolute bottom-full left-1/2 mb-3 -translate-x-1/2 w-88 rounded-2xl border border-zinc-700 bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-2xl z-50 space-y-4 animate-in fade-in zoom-in-95">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-sm text-teal-400">tune</span>
-              <span className="font-mono text-xs font-bold uppercase text-white">ST-DBSCAN Tuning</span>
+              <span className="font-mono text-xs font-bold uppercase text-white">ST-DBSCAN Clustering Model</span>
             </div>
             <button
               type="button"
               onClick={() => setShowConfig(false)}
-              className="text-zinc-400 hover:text-white p-0.5 cursor-pointer"
+              className="text-zinc-400 hover:text-white p-0.5 cursor-pointer text-sm"
             >
               ✕
             </button>
           </div>
 
+          {/* Quick Presets */}
+          <div className="grid grid-cols-3 gap-1.5 pt-0.5">
+            <button
+              type="button"
+              onClick={() => applyPreset(12.0, 45, 4)}
+              className={`px-2 py-1 rounded text-[10px] font-mono transition-colors cursor-pointer border ${
+                epsSpatial === 12.0 && epsTemporal === 45 && minPts === 4
+                  ? "bg-slate-300 text-zinc-950 border-white font-bold"
+                  : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:bg-zinc-800"
+              }`}
+            >
+              Statewide (Default)
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset(4.0, 14, 6)}
+              className={`px-2 py-1 rounded text-[10px] font-mono transition-colors cursor-pointer border ${
+                epsSpatial === 4.0 && epsTemporal === 14 && minPts === 6
+                  ? "bg-slate-300 text-zinc-950 border-white font-bold"
+                  : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:bg-zinc-800"
+              }`}
+            >
+              Urban Waves
+            </button>
+            <button
+              type="button"
+              onClick={() => applyPreset(25.0, 90, 3)}
+              className={`px-2 py-1 rounded text-[10px] font-mono transition-colors cursor-pointer border ${
+                epsSpatial === 25.0 && epsTemporal === 90 && minPts === 3
+                  ? "bg-slate-300 text-zinc-950 border-white font-bold"
+                  : "bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white hover:bg-zinc-800"
+              }`}
+            >
+              Broad Regional
+            </button>
+          </div>
+
           {/* Spatial Epsilon */}
-          <div className="space-y-1">
-            <div className="flex justify-between font-mono text-[10px] text-zinc-400">
-              <span>Spatial Radius (εs)</span>
-              <span className="font-bold text-sky-400">{epsSpatial} km</span>
+          <div className="space-y-1.5">
+            <div className="flex justify-between font-mono text-[11px] text-zinc-300">
+              <span className="flex items-center gap-1">
+                <span className="text-sky-400 font-bold">εs</span> Spatial Radius
+              </span>
+              <span className="font-bold text-sky-400 bg-sky-950/60 px-1.5 py-0.5 rounded border border-sky-800/50">
+                {epsSpatial.toFixed(1)} km
+              </span>
             </div>
             <input
               type="range"
               min="2.0"
               max="35.0"
-              step="1.0"
+              step="0.5"
               value={epsSpatial}
-              onChange={(e) => handleUpdate(Number(e.target.value), epsTemporal, minPts)}
-              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
+              onChange={(e) => handleSpatialChange(Number(e.target.value))}
+              className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-sky-400"
             />
           </div>
 
           {/* Temporal Epsilon */}
-          <div className="space-y-1">
-            <div className="flex justify-between font-mono text-[10px] text-zinc-400">
-              <span>Temporal Window (εt)</span>
-              <span className="font-bold text-amber-400">{epsTemporal} Days</span>
+          <div className="space-y-1.5">
+            <div className="flex justify-between font-mono text-[11px] text-zinc-300">
+              <span className="flex items-center gap-1">
+                <span className="text-amber-400 font-bold">εt</span> Temporal Window
+              </span>
+              <span className="font-bold text-amber-400 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/50">
+                {epsTemporal} Days
+              </span>
             </div>
             <input
               type="range"
@@ -110,32 +194,38 @@ export function MapToolbar({
               max="120"
               step="1"
               value={epsTemporal}
-              onChange={(e) => handleUpdate(epsSpatial, Number(e.target.value), minPts)}
-              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
+              onChange={(e) => handleTemporalChange(Number(e.target.value))}
+              className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
             />
           </div>
 
           {/* Min Samples */}
-          <div className="space-y-1">
-            <div className="flex justify-between font-mono text-[10px] text-zinc-400">
-              <span>Min Cluster Incidents (MinPts)</span>
-              <span className="font-bold text-red-400">{minPts} points</span>
+          <div className="space-y-1.5">
+            <div className="flex justify-between font-mono text-[11px] text-zinc-300">
+              <span className="flex items-center gap-1">
+                <span className="text-red-400 font-bold">MinPts</span> Minimum Incidents
+              </span>
+              <span className="font-bold text-red-400 bg-red-950/60 px-1.5 py-0.5 rounded border border-red-800/50">
+                {minPts} events
+              </span>
             </div>
             <input
               type="range"
               min="2"
-              max="20"
+              max="16"
               step="1"
               value={minPts}
-              onChange={(e) => handleUpdate(epsSpatial, epsTemporal, Number(e.target.value))}
-              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
+              onChange={(e) => handleMinPtsChange(Number(e.target.value))}
+              className="w-full h-2 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-red-400"
             />
           </div>
 
-
-          <div className="font-mono text-[9px] text-zinc-500 pt-1 border-t border-zinc-900 flex justify-between">
-            <span>AppSail Python Runtime</span>
-            <span className="text-emerald-400 font-bold">LIVE RE-CLUSTER</span>
+          <div className="font-mono text-[10px] text-zinc-500 pt-2 border-t border-zinc-900 flex justify-between items-center">
+            <span>AppSail NumPy Engine</span>
+            <span className="text-emerald-400 font-bold flex items-center gap-1">
+              <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              REAL-TIME RE-CLUSTER
+            </span>
           </div>
         </div>
       )}
@@ -180,6 +270,3 @@ export function MapToolbar({
     </div>
   );
 }
-
-
-
