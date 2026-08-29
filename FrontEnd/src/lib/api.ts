@@ -48,7 +48,10 @@ export interface FIRItem {
 
 export interface RiskScoreItem {
   ROWID?: number;
+  ID?: number;
   District_ID: number;
+  District_Name?: string;
+  District_Population?: number;
   Crime_Type: string;
   Score: number;
   Forecast_Date: string;
@@ -409,16 +412,32 @@ export const api = {
   /**
    * Fetch district risk scores from Zia AutoML forecasting
    */
-  async getRiskScores(districtId?: number): Promise<RiskScoreItem[]> {
-    const endpoint = districtId
-      ? `/risk-scores?district_id=${districtId}`
-      : "/risk-scores?limit=50";
-    const data = await fetchJson<RiskScoreItem[]>(endpoint);
-    if (data && Array.isArray(data)) {
-      return data;
+  async getRiskScores(params?: {
+    district_id?: number;
+    crime_type?: string;
+    min_score?: number;
+    limit?: number;
+  }): Promise<RiskScoreItem[]> {
+    const queryParts: string[] = [];
+    if (params?.district_id) queryParts.push(`district_id=${params.district_id}`);
+    if (params?.crime_type) queryParts.push(`crime_type=${encodeURIComponent(params.crime_type)}`);
+    if (params?.min_score) queryParts.push(`min_score=${params.min_score}`);
+    queryParts.push(`limit=${params?.limit || 100}`);
+
+    const endpoint = `/risk-scores?${queryParts.join("&")}`;
+    const data = await fetchJson<RiskScoreItem[] | { data: RiskScoreItem[] }>(endpoint);
+
+    if (data) {
+      if (Array.isArray(data)) {
+        return data;
+      }
+      if (Array.isArray((data as any).data)) {
+        return (data as any).data as RiskScoreItem[];
+      }
     }
     return [];
   },
+
 
   /**
    * Send a query to the Catalyst AI Chatbot / Copilot

@@ -1,6 +1,6 @@
 """
 Lumina — Risk Scores API Routes
-GET  /api/risk-scores       — List risk scores (filterable by district, crime type)
+GET  /api/risk-scores       — List risk scores (filterable by district, crime type, min_score)
 GET  /api/risk-scores/<id>  — Get risk score by ID
 POST /api/risk-scores       — Create/update a risk score
 """
@@ -30,28 +30,34 @@ def handle(request, path_parts):
 
 
 def list_risk_scores(request, db):
-    """List risk scores with optional filters."""
+    """List risk scores with optional filters and joined district names."""
     limit = int(request.args.get("limit", 100))
     offset = int(request.args.get("offset", 0))
     district_id = request.args.get("district_id")
     crime_type = request.args.get("crime_type")
+    min_score = request.args.get("min_score")
 
     conditions = []
     if district_id:
-        conditions.append(f"District_ID = {int(district_id)}")
+        conditions.append(f"Risk_Score.District_ID = {int(district_id)}")
     if crime_type:
-        conditions.append(f"Crime_Type = '{crime_type}'")
+        conditions.append(f"Risk_Score.Crime_Type = '{crime_type}'")
+    if min_score:
+        conditions.append(f"Risk_Score.Score >= {float(min_score)}")
 
     where = " AND ".join(conditions) if conditions else ""
     where_sql = f"WHERE {where}" if where else ""
 
     query = (
-        f"SELECT * FROM {TABLE} {where_sql} "
-        f"ORDER BY Score DESC LIMIT {limit} OFFSET {offset}"
+        f"SELECT Risk_Score.*, District.Name AS District_Name, District.Population AS District_Population "
+        f"FROM {TABLE} "
+        f"LEFT JOIN District ON Risk_Score.District_ID = District.ROWID "
+        f"{where_sql} "
+        f"ORDER BY Risk_Score.Score DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
-    count_query = f"SELECT COUNT(ROWID) FROM {TABLE} {where_sql}"
+    count_query = f"SELECT COUNT(*) FROM {TABLE} {where_sql}"
     total = _extract_count(db.execute_query(count_query))
 
     rows = [_extract(r) for r in results]
@@ -59,17 +65,23 @@ def list_risk_scores(request, db):
 
 
 def get_risk_score(db, score_id):
-    """Get a single risk score by ROWID."""
+    """Get a single risk score by ROWID with joined district name."""
     try:
         row_id = int(score_id)
     except ValueError:
         return bad_request("Invalid risk score ID")
 
-    result = db.get_by_id(TABLE, row_id)
-    if not result:
+    query = (
+        f"SELECT Risk_Score.*, District.Name AS District_Name "
+        f"FROM {TABLE} "
+        f"LEFT JOIN District ON Risk_Score.District_ID = District.ROWID "
+        f"WHERE Risk_Score.ROWID = {row_id} OR Risk_Score.ID = {row_id} LIMIT 1"
+    )
+    results = db.execute_query(query)
+    if not results:
         return not_found(f"Risk score with ID {row_id} not found")
 
-    return success(_extract(result))
+    return success(_extract(results[0]))
 
 
 def create_risk_score(request, db):
