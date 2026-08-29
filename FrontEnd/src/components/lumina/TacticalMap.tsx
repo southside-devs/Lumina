@@ -139,6 +139,7 @@ interface TacticalMapProps {
   firs?: FIRItem[];
   mapRef?: React.MutableRefObject<L.Map | null>;
   clusterParams?: { epsSpatial: number; epsTemporal: number; minPts: number };
+  onClustersLoaded?: (clusters: TacticalHotspot[]) => void;
 }
 
 export function TacticalMap({
@@ -152,6 +153,7 @@ export function TacticalMap({
   firs = [],
   mapRef,
   clusterParams,
+  onClustersLoaded,
 }: TacticalMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -169,6 +171,7 @@ export function TacticalMap({
         const clusters = await api.getHotspotClusters(epsS, epsT, minP);
         if (mounted && clusters) {
           setHotspotsList(clusters);
+          onClustersLoaded?.(clusters);
         }
       } catch (e) {
         console.warn("Using baseline tactical hotspots:", e);
@@ -179,7 +182,8 @@ export function TacticalMap({
       mounted = false;
       clearTimeout(timer);
     };
-  }, [clusterParams?.epsSpatial, clusterParams?.epsTemporal, clusterParams?.minPts]);
+  }, [clusterParams?.epsSpatial, clusterParams?.epsTemporal, clusterParams?.minPts, onClustersLoaded]);
+
 
 
 

@@ -129,6 +129,17 @@ export function IntelligenceHub() {
     setCardOpen(false);
   };
 
+  const handleClustersLoaded = (newClusters: TacticalHotspot[]) => {
+    if (selectedSpot) {
+      const updated =
+        newClusters.find((c) => c.id === selectedSpot.id) ||
+        newClusters.find((c) => c.name.split(" ")[0] === selectedSpot.name.split(" ")[0]);
+      if (updated) {
+        setSelectedSpot(updated);
+      }
+    }
+  };
+
 
   return (
     <div className="flex h-screen overflow-hidden bg-shell text-foreground">
@@ -149,7 +160,9 @@ export function IntelligenceHub() {
             onSelectFIR={handleSelectFir}
             mapRef={mapRef}
             clusterParams={clusterParams}
+            onClustersLoaded={handleClustersLoaded}
           />
+
 
           <div className="relative z-10 flex h-full flex-col p-6 pointer-events-none">
             <header className="pointer-events-auto">
