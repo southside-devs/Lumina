@@ -394,51 +394,49 @@ export function NetworkTopologyView() {
               </div>
 
               {/* CENTER: Radar / Criminal Topology Canvas */}
-              <div className="relative flex flex-1 items-center justify-center rounded-xl border border-zinc-800/80 bg-gradient-to-b from-zinc-950/90 via-[#07080c] to-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl overflow-hidden min-h-[360px]">
-                {/* Concentric Radar Rings */}
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="h-[90%] w-[90%] rounded-full border border-zinc-800/30" />
-                  <div className="h-[70%] w-[70%] rounded-full border border-zinc-800/40" />
-                  <div className="h-[48%] w-[48%] rounded-full border border-zinc-800/50" />
-                  <div className="h-[26%] w-[26%] rounded-full border border-red-500/20 animate-pulse" />
-                  <div className="absolute h-full w-px bg-zinc-800/30" />
-                  <div className="absolute h-px w-full bg-zinc-800/30" />
-                </div>
+              <div className="relative flex flex-1 items-center justify-center rounded-xl border border-zinc-800/80 bg-gradient-to-b from-zinc-950/90 via-[#07080c] to-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl overflow-hidden min-h-[380px]">
+                {/* 1:1 Aspect-Square Radar Container Centered */}
+                <div className="relative aspect-square h-[94%] max-h-[540px] flex items-center justify-center select-none">
+                  {/* Concentric Radar Rings */}
+                  <div className="pointer-events-none absolute inset-0 rounded-full border border-zinc-800/40" />
+                  <div className="pointer-events-none absolute inset-[16%] rounded-full border border-zinc-800/40" />
+                  <div className="pointer-events-none absolute inset-[34%] rounded-full border border-zinc-800/50" />
+                  <div className="pointer-events-none absolute inset-[52%] rounded-full border border-red-500/20 animate-pulse" />
+                  <div className="pointer-events-none absolute h-full w-px bg-zinc-800/30" />
+                  <div className="pointer-events-none absolute h-px w-full bg-zinc-800/30" />
 
-                {/* Rotating Radar Sweep Line */}
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                  <div className="h-1/2 w-1/2 origin-bottom-right rotate-45 bg-gradient-to-tl from-red-500/10 via-transparent to-transparent animate-[spin_8s_linear_infinite]" />
-                </div>
+                  {/* Perfectly Centered Rotating Radar Sweep Line */}
+                  <div className="pointer-events-none absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,transparent_0deg,transparent_310deg,rgba(239,68,68,0.15)_360deg)] animate-[spin_7s_linear_infinite]" />
 
-                {/* SVG Connecting Lines */}
-                <svg className="pointer-events-none absolute inset-0 h-full w-full">
-                  {filteredNodes.map((node) => {
-                    return node.connections.map((targetId) => {
-                      const target = nodes.find((n) => n.id === targetId);
-                      if (!target) return null;
+                  {/* SVG Connecting Lines */}
+                  <svg className="pointer-events-none absolute inset-0 h-full w-full">
+                    {filteredNodes.map((node) => {
+                      return node.connections.map((targetId) => {
+                        const target = nodes.find((n) => n.id === targetId);
+                        if (!target) return null;
 
-                      const isIsolated =
-                        isolatedNodeId === node.id || isolatedNodeId === target.id;
+                        const isIsolated =
+                          isolatedNodeId === node.id || isolatedNodeId === target.id;
 
-                      return (
-                        <line
-                          key={`${node.id}-${targetId}`}
-                          x1={`${node.x}%`}
-                          y1={`${node.y}%`}
-                          x2={`${target.x}%`}
-                          y2={`${target.y}%`}
-                          stroke={isIsolated ? "#3f3f46" : "#ef4444"}
-                          strokeWidth={node.isCenter || target.isCenter ? 1.8 : 1}
-                          strokeOpacity={isIsolated ? 0.2 : 0.45}
-                          strokeDasharray={isIsolated ? "4 4" : undefined}
-                        />
-                      );
-                    });
-                  })}
-                </svg>
+                        return (
+                          <line
+                            key={`${node.id}-${targetId}`}
+                            x1={`${node.x}%`}
+                            y1={`${node.y}%`}
+                            x2={`${target.x}%`}
+                            y2={`${target.y}%`}
+                            stroke={isIsolated ? "#3f3f46" : "#ef4444"}
+                            strokeWidth={node.isCenter || target.isCenter ? 1.8 : 1}
+                            strokeOpacity={isIsolated ? 0.2 : 0.45}
+                            strokeDasharray={isIsolated ? "4 4" : undefined}
+                          />
+                        );
+                      });
+                    })}
+                  </svg>
 
-                {/* Interactive Radar Nodes */}
-                <div className="relative h-full w-full">
+                  {/* Interactive Radar Nodes */}
+                  <div className="relative h-full w-full">
                   {filteredNodes.map((node) => {
                     const color = getNodeColor(node.type);
                     const isActive = activeNode.id === node.id;
@@ -528,8 +526,12 @@ export function NetworkTopologyView() {
                       </div>
                     );
                   })}
+
                 </div>
               </div>
+            </div>
+
+
 
               {/* RIGHT SIDEBAR: Target Suspect Dossier & Action Console */}
               <div className="flex w-full lg:w-72 flex-col gap-3">
