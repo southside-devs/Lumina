@@ -140,6 +140,9 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
     ]
 
 
+    # Find max cluster size for normalization
+    max_size = max([len(np.where(labels == cid)[0]) for cid in unique_clusters]) if unique_clusters else 1
+
     for cid in unique_clusters:
         indices = np.where(labels == cid)[0]
         c_lats = lats[indices]
@@ -173,14 +176,23 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
             else "Karnataka Sector"
         )
 
-        # Calculate threat score (0-100)
+        # Realistic Threat Score (30-98) based on square-root density curve and violent crime ratio
         size = len(indices)
-        base_threat = min(size * 4 + 40, 95)
-        has_violent = any(
-            k in crime_counts
-            for k in ["Assault", "Murder", "Robbery", "Extortion", "Arms Act"]
+        violent_crimes = sum(
+            crime_counts.get(k, 0)
+            for k in ["Assault", "Murder", "Robbery", "Extortion", "Arms Act", "Cybercrime"]
         )
-        threat_score = min(base_threat + (10 if has_violent else 0), 98)
+        violent_ratio = violent_crimes / max(size, 1)
+
+        density_component = ((size / max_size) ** 0.5) * 58.0
+        severity_component = violent_ratio * 26.0
+        baseline_score = 18.0
+
+        threat_score = int(
+            min(max(baseline_score + density_component + severity_component, 28), 98)
+        )
+
+
 
         patrol_idx = cid % len(patrol_divisions)
         patrol_unit, patrol_sector, eta = patrol_divisions[patrol_idx]

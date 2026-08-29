@@ -309,8 +309,8 @@ export function TacticalMap({
         const borderColor = isSelected ? "#ffffff" : isHigh ? "#e2e8f0" : isMed ? "#94a3b8" : "#64748b";
         const ringColor   = isSelected ? "#cbd5e1" : isHigh ? "#94a3b8" : "#475569";
         
-        // Intensity count
-        const hotspotCount = Math.max(1, Math.round(spot.firCount / 40));
+        // Threat Score badge on hotspot pin (e.g. 94, 85, 78, 62, 45)
+        const displayScore = spot.threatScore || 75;
 
         // Perfect 1:1 circular beacon animation ONLY for hotspots
         const beaconOuter = coreSize + 14;
@@ -335,9 +335,10 @@ export function TacticalMap({
               <div class="relative z-10 flex items-center justify-center rounded-full border bg-black shadow-lg shrink-0 transition-transform group-hover:scale-110"
                 style="width:${coreSize}px; height:${coreSize}px; min-width:${coreSize}px; min-height:${coreSize}px; border-color:${borderColor}; ${isSelected ? "outline: 1.5px solid #ffffff; outline-offset: 2px;" : ""}">
                 <span class="font-mono font-bold text-white text-center leading-none select-none flex items-center justify-center" style="font-size: ${coreSize >= 24 ? "10px" : "9px"}; width:${coreSize}px; height:${coreSize}px;">
-                  ${hotspotCount}
+                  ${displayScore}
                 </span>
               </div>
+
 
               <!-- Minimal hover label -->
               <div class="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
