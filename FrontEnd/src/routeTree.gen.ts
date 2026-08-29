@@ -17,6 +17,7 @@ import { Route as AIChatbotRouteImport } from './routes/ai-chatbot'
 import { Route as FIRExplorerRouteImport } from './routes/fir-explorer'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as HelpRouteImport } from './routes/help'
+import { Route as LoginRouteImport } from './routes/login'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +59,11 @@ const HelpRoute = HelpRouteImport.update({
   path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/fir-explorer': typeof FIRExplorerRoute
   '/about': typeof AboutRoute
   '/help': typeof HelpRoute
+  '/login': typeof LoginRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/fir-explorer': typeof FIRExplorerRoute
   '/about': typeof AboutRoute
   '/help': typeof HelpRoute
+  '/login': typeof LoginRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,13 +97,14 @@ export interface FileRoutesById {
   '/fir-explorer': typeof FIRExplorerRoute
   '/about': typeof AboutRoute
   '/help': typeof HelpRoute
+  '/login': typeof LoginRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer' | '/about' | '/help'
+  fullPaths: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer' | '/about' | '/help' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer' | '/about' | '/help'
-  id: '__root__' | '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer' | '/about' | '/help'
+  to: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer' | '/about' | '/help' | '/login'
+  id: '__root__' | '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer' | '/about' | '/help' | '/login'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -107,6 +116,7 @@ export interface RootRouteChildren {
   FIRExplorerRoute: typeof FIRExplorerRoute
   AboutRoute: typeof AboutRoute
   HelpRoute: typeof HelpRoute
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -167,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -179,6 +196,7 @@ const rootRouteChildren: RootRouteChildren = {
   FIRExplorerRoute: FIRExplorerRoute,
   AboutRoute: AboutRoute,
   HelpRoute: HelpRoute,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

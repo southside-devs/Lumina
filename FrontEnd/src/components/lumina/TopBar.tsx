@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { ProfileMenu } from "./ProfileMenu";
@@ -13,6 +14,7 @@ const statuses = [
 type OpenPanel = "none" | "notifications" | "profile";
 
 export function TopBar() {
+  const navigate = useNavigate();
   const [panel, setPanel] = useState<OpenPanel>("none");
   const [tab, setTab] = useState<NotifTab>("unread");
   const [notices, setNotices] = useState<IntelligenceNotice[]>(INITIAL_NOTICES);
@@ -198,11 +200,12 @@ export function TopBar() {
                   description: "Biometric credentials will be cleared on next station login.",
                 })
               }
-              onLogout={() =>
+              onLogout={() => {
                 toast.success("Session closed", {
                   description: "Insp. R. Kumar signed out of Command Center.",
-                })
-              }
+                });
+                navigate({ to: "/login" });
+              }}
             />
           )}
         </div>
