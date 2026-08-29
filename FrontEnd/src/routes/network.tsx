@@ -9,7 +9,18 @@ const title = "LUMINA — Network Topology Intelligence";
 const description =
   "Real-time criminal network topology, suspect link isolation, exposed entity mapping, and spatiotemporal network interaction analytics.";
 
+interface NetworkSearchParams {
+  fir_id?: number;
+  suspect_id?: number;
+}
+
 export const Route = createFileRoute("/network")({
+  validateSearch: (search: Record<string, unknown>): NetworkSearchParams => {
+    return {
+      fir_id: search.fir_id ? Number(search.fir_id) : undefined,
+      suspect_id: search.suspect_id ? Number(search.suspect_id) : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title },
@@ -55,8 +66,9 @@ const FALLBACK_NODES: NetworkNode[] = [
 
 export function NetworkTopologyView() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const [topSuspects, setTopSuspects] = useState<TopSuspectItem[]>([]);
-  const [selectedSuspectId, setSelectedSuspectId] = useState<number>(43); // Default Jatin Kar (12 arrests)
+  const [selectedSuspectId, setSelectedSuspectId] = useState<number | null>(null);
   const [currentNetwork, setCurrentNetwork] = useState<SuspectNetworkResponse | null>(null);
   const [nodes, setNodes] = useState<NetworkNode[]>(FALLBACK_NODES);
   const [selectedCategory, setSelectedCategory] = useState<NodeType | "ALL">("ALL");
@@ -71,7 +83,7 @@ export function NetworkTopologyView() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // 1. Fetch top repeat offenders list and check for ?fir_id= or ?suspect_id= on mount
+  // 1. Fetch top repeat offenders list on mount
   useEffect(() => {
     let mounted = true;
     async function loadTopSuspects() {
@@ -79,25 +91,6 @@ export function NetworkTopologyView() {
         const list = await api.getTopSuspects();
         if (mounted && list.length > 0) {
           setTopSuspects(list);
-
-          const params = new URLSearchParams(window.location.search);
-          const urlSuspect = params.get("suspect_id");
-          const urlFir = params.get("fir_id");
-
-          if (urlSuspect) {
-            setSelectedSuspectId(parseInt(urlSuspect, 10));
-          } else if (urlFir) {
-            const inc = await api.getIncidentNetwork(parseInt(urlFir, 10));
-            if (mounted && inc && inc.suspects && inc.suspects.length > 0) {
-              const primary = inc.suspects[0];
-              setSelectedSuspectId(primary.ROWID);
-              showToast(`🎯 Linked FIR #${inc.incident.FIR_Number} — Targeting ${primary.Name}`);
-            } else {
-              setSelectedSuspectId(parseInt(list[0].id, 10));
-            }
-          } else {
-            setSelectedSuspectId(parseInt(list[0].id, 10));
-          }
         }
       } catch (e) {
         console.warn("Failed to load top suspects:", e);
@@ -109,8 +102,90 @@ export function NetworkTopologyView() {
     };
   }, []);
 
+  // 2. React to search.fir_id or search.suspect_id URL changes
+  useEffect(() => {
+    let mounted = true;
+    async function resolveTarget() {
+      if (search.suspect_id) {
+        setSelectedSuspectId(Number(search.suspect_id));
+      } else if (search.fir_id) {
+        setLoading(true);
+        try {
+          const inc = await api.getIncidentNetwork(Number(search.fir_id));
+          if (mounted && inc && inc.incident) {
+            if (inc.suspects && inc.suspects.length > 0) {
+              const primary = inc.suspects[0];
+              setSelectedSuspectId(primary.ROWID);
+              showToast(`🎯 Linked FIR #${inc.incident.FIR_Number} — Targeting ${primary.Name}`);
+            } else {
+              // Custom incident graph for cases with 0 booked suspects
+              const fir = inc.incident;
+              const firId = `fir_${fir.ROWID || fir.ID}`;
+              const firNode: NetworkNode = {
+                id: firId,
+                name: `Case #${fir.FIR_Number} (${fir.Crime_Group})`,
+                type: "Suspects",
+                riskScore: 78,
+                x: 50,
+                y: 50,
+                radius: 15,
+                connections: ["loc_station", "syn_crime"],
+                isCenter: true,
+              };
+              const locNode: NetworkNode = {
+                id: "loc_station",
+                name: `Station — ${fir.Station_Name || "Division #" + fir.Station_ID}`,
+                type: "Locations",
+                riskScore: 65,
+                x: 75,
+                y: 40,
+                radius: 9,
+                connections: [firId],
+              };
+              const synNode: NetworkNode = {
+                id: "syn_crime",
+                name: `Category — ${fir.Crime_Group} Cell`,
+                type: "Syndicates",
+                riskScore: 82,
+                x: 30,
+                y: 65,
+                radius: 11,
+                connections: [firId],
+              };
+              setNodes([firNode, locNode, synNode]);
+              setActiveNode(firNode);
+              setCurrentNetwork({
+                target: {
+                  id: fir.ROWID || fir.ID,
+                  name: `FIR #${fir.FIR_Number}`,
+                  arrestCount: 0,
+                  riskScore: 78,
+                  linkedCasesCount: 1,
+                  linkedCases: [fir],
+                },
+                nodes: [firNode, locNode, synNode],
+                coAccusedCount: 0,
+              });
+              showToast(`🎯 Incident Dossier — FIR #${fir.FIR_Number}`);
+            }
+          }
+        } catch (e) {
+          console.warn("Failed to load incident network:", e);
+        } finally {
+          if (mounted) setLoading(false);
+        }
+      } else {
+        // Default target if none in URL
+        setSelectedSuspectId(43);
+      }
+    }
+    resolveTarget();
+    return () => {
+      mounted = false;
+    };
+  }, [search.fir_id, search.suspect_id]);
 
-  // 2. Fetch specific network graph when target suspect changes
+  // 3. Fetch specific network graph when target suspect changes
   useEffect(() => {
     let mounted = true;
     async function loadNetwork() {
@@ -234,8 +309,8 @@ export function NetworkTopologyView() {
                   <strong className="text-white">
                     {currentNetwork?.target?.name || activeNode.name}
                   </strong>{" "}
-                  ({currentNetwork?.target?.arrestCount || 12} Arrests,{" "}
-                  {currentNetwork?.coAccusedCount || 7} Co-Accused links)
+                  ({currentNetwork?.target?.arrestCount || 0} Arrests,{" "}
+                  {currentNetwork?.coAccusedCount || 0} Co-Accused links)
                 </p>
               </div>
 
@@ -449,101 +524,98 @@ export function NetworkTopologyView() {
 
                   {/* Interactive Radar Nodes */}
                   <div className="relative h-full w-full">
-                  {filteredNodes.map((node) => {
-                    const color = getNodeColor(node.type);
-                    const isActive = activeNode.id === node.id;
-                    const isHovered = hoveredNode?.id === node.id;
-                    const isIsolated = isolatedNodeId === node.id;
+                    {filteredNodes.map((node) => {
+                      const color = getNodeColor(node.type);
+                      const isActive = activeNode.id === node.id;
+                      const isHovered = hoveredNode?.id === node.id;
+                      const isIsolated = isolatedNodeId === node.id;
 
-                    return (
-                      <div
-                        key={node.id}
-                        onClick={() => setActiveNode(node)}
-                        onMouseEnter={() => setHoveredNode(node)}
-                        onMouseLeave={() => setHoveredNode(null)}
-                        style={{
-                          left: `${node.x}%`,
-                          top: `${node.y}%`,
-                          width: `${node.radius * 2}px`,
-                          height: `${node.radius * 2}px`,
-                        }}
-                        className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 ${
-                          isIsolated ? "opacity-30 grayscale" : "opacity-100"
-                        }`}
-                      >
-                        {/* Glow ring on active or center */}
-                        {(isActive || node.isCenter) && (
-                          <div
-                            className="absolute -inset-2 rounded-full animate-ping opacity-60"
-                            style={{ backgroundColor: `${color}40` }}
-                          />
-                        )}
-
-                        {/* Outer pulse for center target */}
-                        {node.isCenter && (
-                          <div className="absolute -inset-3 rounded-full border border-red-500/60 animate-pulse" />
-                        )}
-
-                        {/* Node Body */}
+                      return (
                         <div
-                          className={`flex h-full w-full items-center justify-center rounded-full border-2 transition-transform hover:scale-125 shadow-lg ${
-                            isActive ? "border-white scale-125" : "border-zinc-900"
-                          }`}
+                          key={node.id}
+                          onClick={() => setActiveNode(node)}
+                          onMouseEnter={() => setHoveredNode(node)}
+                          onMouseLeave={() => setHoveredNode(null)}
                           style={{
-                            backgroundColor: color,
-                            boxShadow: `0 0 16px ${color}80`,
+                            left: `${node.x}%`,
+                            top: `${node.y}%`,
+                            width: `${node.radius * 2}px`,
+                            height: `${node.radius * 2}px`,
                           }}
+                          className={`absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300 ${
+                            isIsolated ? "opacity-30 grayscale" : "opacity-100"
+                          }`}
                         >
-                          {node.isCenter ? (
-                            <span className="text-[10px] font-bold text-white">★</span>
-                          ) : (
-                            <span className="text-[8px] font-bold text-black/80">
-                              {node.arrestCount ? `${node.arrestCount}` : ""}
+                          {/* Glow ring on active or center */}
+                          {(isActive || node.isCenter) && (
+                            <div
+                              className="absolute -inset-2 rounded-full animate-ping opacity-60"
+                              style={{ backgroundColor: `${color}40` }}
+                            />
+                          )}
+
+                          {/* Outer pulse for center target */}
+                          {node.isCenter && (
+                            <div className="absolute -inset-3 rounded-full border border-red-500/60 animate-pulse" />
+                          )}
+
+                          {/* Node Body */}
+                          <div
+                            className={`flex h-full w-full items-center justify-center rounded-full border-2 transition-transform hover:scale-125 shadow-lg ${
+                              isActive ? "border-white scale-125" : "border-zinc-900"
+                            }`}
+                            style={{
+                              backgroundColor: color,
+                              boxShadow: `0 0 16px ${color}80`,
+                            }}
+                          >
+                            {node.isCenter ? (
+                              <span className="text-[10px] font-bold text-white">★</span>
+                            ) : (
+                              <span className="text-[8px] font-bold text-black/80">
+                                {node.arrestCount ? `${node.arrestCount}` : ""}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Permanent Node Label */}
+                          <div className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-center">
+                            <span
+                              className={`rounded px-1.5 py-0.2 font-mono text-[9px] font-bold tracking-tight shadow-md backdrop-blur-md ${
+                                node.isCenter
+                                  ? "bg-red-500/80 text-white font-extrabold"
+                                  : isActive
+                                  ? "bg-zinc-900/90 text-white border border-zinc-700"
+                                  : "bg-black/70 text-zinc-300"
+                              }`}
+                            >
+                              {node.name.split("—")[1] || node.name}
                             </span>
+                          </div>
+
+                          {/* Hover Tooltip */}
+                          {isHovered && (
+                            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur-xl">
+                              <div className="font-mono text-[9px] font-bold uppercase text-zinc-400">
+                                {node.type}
+                              </div>
+                              <div className="font-sans text-xs font-semibold text-white">
+                                {node.name}
+                              </div>
+                              <div className="font-mono text-[10px] text-zinc-400">
+                                Threat Index:{" "}
+                                <span className="font-bold text-red-400">
+                                  {node.riskScore} / 100
+                                </span>
+                              </div>
+                            </div>
                           )}
                         </div>
-
-                        {/* Permanent Node Label */}
-                        <div className="pointer-events-none absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-center">
-                          <span
-                            className={`rounded px-1.5 py-0.2 font-mono text-[9px] font-bold tracking-tight shadow-md backdrop-blur-md ${
-                              node.isCenter
-                                ? "bg-red-500/80 text-white font-extrabold"
-                                : isActive
-                                ? "bg-zinc-900/90 text-white border border-zinc-700"
-                                : "bg-black/70 text-zinc-300"
-                            }`}
-                          >
-                            {node.name.split("—")[1] || node.name}
-                          </span>
-                        </div>
-
-                        {/* Hover Tooltip */}
-                        {isHovered && (
-                          <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-700 bg-zinc-950/95 p-2 shadow-2xl backdrop-blur-xl">
-                            <div className="font-mono text-[9px] font-bold uppercase text-zinc-400">
-                              {node.type}
-                            </div>
-                            <div className="font-sans text-xs font-semibold text-white">
-                              {node.name}
-                            </div>
-                            <div className="font-mono text-[10px] text-zinc-400">
-                              Threat Index:{" "}
-                              <span className="font-bold text-red-400">
-                                {node.riskScore} / 100
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-
-
 
               {/* RIGHT SIDEBAR: Target Suspect Dossier & Action Console */}
               <div className="flex w-full lg:w-72 flex-col gap-3">

@@ -254,7 +254,13 @@ def get_incident_network(db, incident_id):
     except ValueError:
         return bad_request("Invalid incident ID")
 
-    fir_rows = db.execute_query(f"SELECT * FROM FIR WHERE ROWID = {f_id} OR ID = {f_id} LIMIT 1")
+    fir_rows = db.execute_query(
+        f"SELECT f.*, ps.Name AS Station_Name, d.Name AS District_Name "
+        f"FROM FIR f "
+        f"LEFT JOIN Police_Station ps ON f.Station_ID = ps.ROWID "
+        f"LEFT JOIN District d ON ps.District_ID = d.ROWID "
+        f"WHERE f.ROWID = {f_id} OR f.ID = {f_id} LIMIT 1"
+    )
     if not fir_rows:
         return not_found(f"Incident with ID {f_id} not found")
     fir = fir_rows[0]
@@ -271,3 +277,4 @@ def get_incident_network(db, incident_id):
         "incident": fir,
         "suspects": suspects,
     })
+
