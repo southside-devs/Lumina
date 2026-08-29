@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { api } from "@/lib/api";
@@ -63,6 +63,17 @@ export function AIChatbotView() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<string | null>(null);
 
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Automatically scroll to bottom on new messages or during analysis
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isAnalyzing]);
+
   // Persist messages to sessionStorage on every change
   useEffect(() => {
     try {
@@ -84,7 +95,6 @@ export function AIChatbotView() {
       // Ignore storage errors
     }
   }, []);
-
 
   const handleSendPrompt = async (promptText: string) => {
     if (!promptText.trim() || isAnalyzing) return;
@@ -208,7 +218,7 @@ export function AIChatbotView() {
               </div>
             ) : (
               /* Chat Conversation History */
-              <div className="flex-1 w-full max-w-2xl overflow-y-auto custom-scrollbar space-y-4 px-2 py-4">
+              <div className="flex-1 min-h-0 w-full max-w-2xl overflow-y-auto custom-scrollbar space-y-4 px-2 py-4 mb-2">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
@@ -255,6 +265,7 @@ export function AIChatbotView() {
                     <span>QuickML is processing query vector index...</span>
                   </div>
                 )}
+                <div ref={messagesEndRef} className="h-1" />
               </div>
             )}
 
