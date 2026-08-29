@@ -288,37 +288,37 @@ export function TacticalMap({
         // Inner subtle concentric circular ring
         L.circle([spot.lat, spot.lng], {
           radius: innerRadius,
-          color: isSelected ? "#e2e8f0" : isHigh ? "#ef4444" : isMed ? "#f59e0b" : "#475569",
-          fillColor: isHigh ? "#ef4444" : "#09090b",
-          fillOpacity: isSelected ? 0.35 : isHigh ? 0.15 : 0.08,
-          weight: isSelected ? 1.4 : 0.8,
+          color: isSelected ? "#e2e8f0" : isHigh ? "#94a3b8" : "#475569",
+          fillColor: "#09090b",
+          fillOpacity: isSelected ? 0.35 : isHigh ? 0.25 : 0.12,
+          weight: isSelected ? 1.2 : 0.8,
         }).addTo(layerGroup);
 
         // Outer concentric circular boundary (spatial footprint)
         L.circle([spot.lat, spot.lng], {
           radius: baseRadiusMeters,
-          color: isSelected ? "#ffffff" : isHigh ? "#ef4444" : isMed ? "#f59e0b" : "#334155",
+          color: isSelected ? "#ffffff" : isHigh ? "#cbd5e1" : isMed ? "#64748b" : "#334155",
           fillColor: "#09090b",
-          fillOpacity: isSelected ? 0.18 : isHigh ? 0.08 : 0.03,
-          weight: isSelected ? 1.6 : isHigh ? 1.2 : 0.7,
+          fillOpacity: isSelected ? 0.15 : isHigh ? 0.08 : 0.03,
+          weight: isSelected ? 1.4 : isHigh ? 1.1 : 0.7,
           dashArray: isSelected || isHigh ? undefined : "3 6",
         }).addTo(layerGroup);
 
         // Balanced circular node sizing
-        const coreSize    = isSelected ? 30 : isHigh ? 26 : isMed ? 23 : 20;
-        const borderColor = isSelected ? "#ffffff" : isHigh ? "#ef4444" : isMed ? "#f59e0b" : "#64748b";
-        const ringColor   = isSelected ? "#cbd5e1" : isHigh ? "#ef4444" : "#475569";
+        const coreSize    = isSelected ? 29 : isHigh ? 25 : isMed ? 22 : 19;
+        const borderColor = isSelected ? "#ffffff" : isHigh ? "#e2e8f0" : isMed ? "#94a3b8" : "#64748b";
+        const ringColor   = isSelected ? "#cbd5e1" : isHigh ? "#94a3b8" : "#475569";
         
         // Intensity count
-        const hotspotCount = spot.firCount || spot.size || 1;
+        const hotspotCount = Math.max(1, Math.round(spot.firCount / 40));
 
         // Perfect 1:1 circular beacon animation ONLY for hotspots
         const beaconOuter = coreSize + 14;
         const beaconInner = coreSize + 7;
         const beaconHtml = `
-          <div class="absolute rounded-full border opacity-40 animate-ping pointer-events-none shrink-0" 
+          <div class="absolute rounded-full border opacity-30 animate-ping pointer-events-none shrink-0" 
             style="width:${beaconOuter}px; height:${beaconOuter}px; min-width:${beaconOuter}px; min-height:${beaconOuter}px; border-color:${borderColor}; animation-duration: 2.8s;"></div>
-          <div class="absolute rounded-full border opacity-25 pointer-events-none shrink-0" 
+          <div class="absolute rounded-full border opacity-20 pointer-events-none shrink-0" 
             style="width:${beaconInner}px; height:${beaconInner}px; min-width:${beaconInner}px; min-height:${beaconInner}px; border-color:${ringColor};"></div>
         `;
 
@@ -333,16 +333,16 @@ export function TacticalMap({
               
               <!-- Perfect Dark circular core with centered clean white typography -->
               <div class="relative z-10 flex items-center justify-center rounded-full border bg-black shadow-lg shrink-0 transition-transform group-hover:scale-110"
-                style="width:${coreSize}px; height:${coreSize}px; min-width:${coreSize}px; min-height:${coreSize}px; border-color:${borderColor}; ${isSelected ? "outline: 2px solid #ffffff; outline-offset: 2px;" : ""}">
+                style="width:${coreSize}px; height:${coreSize}px; min-width:${coreSize}px; min-height:${coreSize}px; border-color:${borderColor}; ${isSelected ? "outline: 1.5px solid #ffffff; outline-offset: 2px;" : ""}">
                 <span class="font-mono font-bold text-white text-center leading-none select-none flex items-center justify-center" style="font-size: ${coreSize >= 24 ? "10px" : "9px"}; width:${coreSize}px; height:${coreSize}px;">
-                  ${hotspotCount > 99 ? "99+" : hotspotCount}
+                  ${hotspotCount}
                 </span>
               </div>
 
               <!-- Minimal hover label -->
               <div class="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                <span class="font-mono text-[9px] text-white bg-black/90 px-1.5 py-0.5 rounded border border-zinc-800 shadow-md">
-                  ${spot.name} (${spot.threatScore}/100)
+                <span class="font-mono text-[9px] text-zinc-300 bg-black/90 px-1.5 py-0.5 rounded border border-zinc-800 shadow-md">
+                  ${spot.name} (${spot.threatScore})
                 </span>
               </div>
             </div>
@@ -355,7 +355,7 @@ export function TacticalMap({
       });
     }
 
-    // 3. Draw Live Incident Markers — Refined, static circular pins
+    // 3. Draw Live Incident Markers — Refined, static monochrome circular pins
     if (showIncidents && firs && firs.length > 0) {
       firs.forEach((fir, idx) => {
         const lat = Number(fir.Latitude);
@@ -374,10 +374,11 @@ export function TacticalMap({
         const outerDiameter = isSelected ? 15 : isCritical ? 11 : isRecent ? 9 : 7;
         const coreDiameter  = isSelected ? 9 : isCritical ? 6 : isRecent ? 5 : 4;
         
-        const outerBorderColor = isSelected ? "#ffffff" : isCritical ? "#ef4444" : isRecent ? "#64748b" : "#3f3f46";
-        const whiteSeparation  = isSelected ? "1px solid #ffffff" : isCritical ? "0.75px solid rgba(239,68,68,0.7)" : "0.5px solid rgba(255,255,255,0.25)";
-        const coreBgColor      = isSelected ? "#e2e8f0" : isCritical ? "#ef4444" : isRecent ? "#64748b" : "#3f3f46";
+        const outerBorderColor = isSelected ? "#ffffff" : isCritical ? "#cbd5e1" : isRecent ? "#64748b" : "#3f3f46";
+        const whiteSeparation  = isSelected ? "1px solid #ffffff" : isCritical ? "0.75px solid rgba(255,255,255,0.7)" : "0.5px solid rgba(255,255,255,0.25)";
+        const coreBgColor      = isSelected ? "#e2e8f0" : isCritical ? "#cbd5e1" : isRecent ? "#64748b" : "#3f3f46";
         const opacity          = isSelected ? 1.0 : isCritical ? 0.95 : isRecent ? 0.75 : 0.55;
+
 
         // Selected state adds second concentric circular ring
         const selectedConcentricHtml = isSelected
