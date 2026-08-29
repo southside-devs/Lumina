@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { api } from "@/lib/api";
+
+const CHAT_STORAGE_KEY = "lumina_ai_chat_history";
 
 const title = "LUMINA — AI Chatbot Assistant";
 const description =
@@ -48,10 +50,27 @@ const SUGGESTIONS = [
 ];
 
 export function AIChatbotView() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    // Restore session chat history so it survives page navigation
+    try {
+      const saved = sessionStorage.getItem(CHAT_STORAGE_KEY);
+      return saved ? (JSON.parse(saved) as ChatMessage[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [inputText, setInputText] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState<string | null>(null);
+
+  // Persist messages to sessionStorage on every change
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages));
+    } catch {
+      // Ignore storage quota errors silently
+    }
+  }, [messages]);
 
   const handleSendPrompt = async (promptText: string) => {
     if (!promptText.trim() || isAnalyzing) return;
@@ -258,19 +277,27 @@ export function AIChatbotView() {
                     <button
                       type="button"
                       className="flex items-center gap-1.5 font-medium transition-colors hover:text-white cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-base text-[#8e8e93]">settings</span>
-                      <span>Settings</span>
-                    </button>
-
-                    <button
-                      type="button"
                       onClick={() => handleSendPrompt("Voice transcription activated: Searching repeat offenders in Hubballi")}
-                      className="flex items-center gap-1.5 font-medium transition-colors hover:text-white cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-base text-[#8e8e93]">mic</span>
                       <span>Voice</span>
                     </button>
+
+                    {messages.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMessages([]);
+                          try { sessionStorage.removeItem(CHAT_STORAGE_KEY); } catch {}
+                        }}
+                        className="flex items-center gap-1.5 font-medium text-red-400/70 transition-colors hover:text-red-400 cursor-pointer"
+                        title="Clear conversation"
+                      >
+                        <span className="material-symbols-outlined text-base">delete_sweep</span>
+                        <span>Clear</span>
+                      </button>
+                    )}
+
                   </div>
 
                   {/* Right White Squircle Send Button */}
