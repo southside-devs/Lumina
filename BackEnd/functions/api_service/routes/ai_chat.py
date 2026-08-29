@@ -118,21 +118,22 @@ def get_model_candidates(api_key):
 def _extract_fir_references(text):
     """
     Extract FIR number patterns from free text.
-    Matches formats like: 2706/2026, FIR-2706/2026, FIR #5001, ID 5001
+    Matches formats like: 6746/2026, FIR-6746/2026, FIR #5001, ID 5001
     Returns list of (ref_string, ref_type) tuples where ref_type is 'number' or 'id'.
     """
     found = []
 
-    # FIR_Number patterns like 2706/2026 or 0001/2025
-    for m in re.finditer(r'\b(\d{1,4}/20\d{2})\b', text, re.IGNORECASE):
+    # 1. Match full FIR_Number patterns like 6746/2026, 0001/2025, 2706/2026
+    for m in re.finditer(r'\b(\d{1,5}/20\d{2})\b', text, re.IGNORECASE):
         found.append((m.group(1), 'number'))
 
-    # Bare 4-5 digit IDs that look like FIR IDs (after keywords)
-    for m in re.finditer(
-        r'(?:FIR|case|id|rowid|report)[#\s\-:]*(\d{4,5})\b',
-        text, re.IGNORECASE
-    ):
-        found.append((m.group(1), 'id'))
+    # 2. If no full FIR number was found, look for standalone 4-5 digit IDs (e.g., FIR #5001, ID 5001, case 5001)
+    if not found:
+        for m in re.finditer(
+            r'(?:FIR|case|id|rowid|report)[#\s\-:]*(\d{1,5})\b(?!\s*/\s*\d)',
+            text, re.IGNORECASE
+        ):
+            found.append((m.group(1), 'id'))
 
     # Deduplicate
     seen = set()
@@ -153,8 +154,11 @@ def _fetch_db_context(query, db):
 
     # 1. FIR-specific lookups
     fir_refs = _extract_fir_references(query)
+    found_any_fir = False
+
     for ref, ref_type in fir_refs:
         try:
+            rows = []
             if ref_type == 'number':
                 # Exact match first
                 escaped = ref.replace("'", "''")
@@ -171,19 +175,25 @@ def _fetch_db_context(query, db):
                     num = parts[0].lstrip('0') or '0'
                     yr = parts[1] if len(parts) > 1 else ''
                     rows = db.execute_query(
-                        f"SELECT * FROM FIR WHERE FIR_Number LIKE '%{num}/{yr}%' LIMIT 1"
+                        f"SELECT FIR.*, Police_Station.Name AS Station_Name, District.Name AS District_Name "
+                        f"FROM FIR "
+                        f"LEFT JOIN Police_Station ON FIR.Station_ID = Police_Station.ROWID "
+                        f"LEFT JOIN District ON Police_Station.District_ID = District.ROWID "
+                        f"WHERE FIR.FIR_Number LIKE '%{num}/{yr}%' OR FIR.FIR_Number LIKE '%{escaped}%' LIMIT 1"
                     )
             else:
                 # Lookup by numeric ID / ROWID
                 fir_id = int(ref)
                 rows = db.execute_query(
-                    f"SELECT FIR.*, Police_Station.Name AS Station_Name "
+                    f"SELECT FIR.*, Police_Station.Name AS Station_Name, District.Name AS District_Name "
                     f"FROM FIR "
                     f"LEFT JOIN Police_Station ON FIR.Station_ID = Police_Station.ROWID "
+                    f"LEFT JOIN District ON Police_Station.District_ID = District.ROWID "
                     f"WHERE FIR.ROWID = {fir_id} OR FIR.ID = {fir_id} LIMIT 1"
                 )
 
             if rows:
+                found_any_fir = True
                 r = rows[0]
                 context_parts.append(
                     f"[LIVE DATABASE RECORD — FIR]\n"
@@ -198,13 +208,14 @@ def _fetch_db_context(query, db):
                     f"Narrative     : {r.get('Narrative', 'N/A')}\n"
                     f"Internal ID   : {r.get('ROWID', r.get('ID', 'N/A'))}"
                 )
-            else:
+            elif not found_any_fir:
                 context_parts.append(
                     f"[DATABASE LOOKUP RESULT] FIR reference '{ref}' was NOT found in the Lumina database. "
                     f"You must inform the user that this FIR does not exist in the current dataset and not fabricate details."
                 )
         except Exception as e:
             print(f"FIR lookup error for '{ref}': {e}")
+
 
     # 2. Always include platform-wide stats for grounding
     try:

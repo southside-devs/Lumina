@@ -72,6 +72,20 @@ export function AIChatbotView() {
     }
   }, [messages]);
 
+  // Auto-send pending prompt if redirected from FIR Explorer or Tactical Map
+  useEffect(() => {
+    try {
+      const pending = sessionStorage.getItem("lumina_pending_prompt");
+      if (pending) {
+        sessionStorage.removeItem("lumina_pending_prompt");
+        handleSendPrompt(pending);
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, []);
+
+
   const handleSendPrompt = async (promptText: string) => {
     if (!promptText.trim() || isAnalyzing) return;
 

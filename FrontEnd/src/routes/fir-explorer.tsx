@@ -369,12 +369,18 @@ function FIRExplorerView() {
               <button
                 type="button"
                 onClick={() => {
+                  try {
+                    sessionStorage.setItem(
+                      "lumina_pending_prompt",
+                      `Give full investigative intelligence briefing on FIR #${selectedFir.FIR_Number}`
+                    );
+                  } catch {}
                   setSelectedFir(null);
                   navigate({ to: "/ai-chatbot" });
                 }}
                 className="flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 font-semibold text-black hover:bg-zinc-200 shadow-lg cursor-pointer"
               >
-                <span className="material-symbols-outlined text-sm">auto_fix_high</span>
+                <span className="material-symbols-outlined text-sm">auto_awesome</span>
                 <span>Ask AI Copilot</span>
               </button>
             </div>
