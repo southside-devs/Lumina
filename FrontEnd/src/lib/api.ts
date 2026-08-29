@@ -440,6 +440,28 @@ export const api = {
 
 
   /**
+   * Fetch top repeat offenders / network syndicate hubs
+   */
+  async getTopSuspects(): Promise<TopSuspectItem[]> {
+    const data = await fetchJson<{ topSuspects: TopSuspectItem[] }>("/graph/network/top-suspects");
+    if (data && Array.isArray(data.topSuspects)) {
+      return data.topSuspects;
+    }
+    return [];
+  },
+
+  /**
+   * Fetch co-accused network graph around a target suspect
+   */
+  async getSuspectNetwork(suspectId: number): Promise<SuspectNetworkResponse | null> {
+    const data = await fetchJson<SuspectNetworkResponse>(`/graph/suspect/${suspectId}`);
+    if (data && data.nodes && data.target) {
+      return data;
+    }
+    return null;
+  },
+
+  /**
    * Send a query to the Catalyst AI Chatbot / Copilot
    */
   async sendAIChat(
@@ -471,3 +493,54 @@ export const api = {
     return `📊 [LUMINA AI Copilot]: Processed 5,000 statewide records across 209 mapped police stations. All intelligence feeds are live and operational.`;
   },
 };
+
+export interface TopSuspectItem {
+  id: string;
+  name: string;
+  arrestCount: number;
+  age?: number;
+  gender?: string;
+  caseCount: number;
+  riskScore: number;
+}
+
+export interface NetworkGraphNode {
+  id: string;
+  rawId?: number;
+  name: string;
+  type: "Suspects" | "Vehicles" | "Locations" | "Syndicates";
+  riskScore: number;
+  arrestCount?: number;
+  age?: number;
+  gender?: string;
+  involvement?: string;
+  x: number;
+  y: number;
+  radius: number;
+  connections: string[];
+  isCenter?: boolean;
+}
+
+export interface SuspectNetworkResponse {
+  target: {
+    id: number;
+    name: string;
+    arrestCount: number;
+    age?: number;
+    gender?: string;
+    riskScore: number;
+    linkedCasesCount: number;
+    linkedCases: {
+      FIR_ID: number;
+      FIR_Number: string;
+      Crime_Group: string;
+      Date: string;
+      Station_Name?: string;
+      District_Name?: string;
+      Involvement_Type?: string;
+    }[];
+  };
+  nodes: NetworkGraphNode[];
+  coAccusedCount: number;
+}
+
