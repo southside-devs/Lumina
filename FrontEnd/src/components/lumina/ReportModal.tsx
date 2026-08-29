@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { toast } from "sonner";
+import { api, type CreateFIRResult } from "@/lib/api";
 
 interface ReportModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [createdFIR, setCreatedFIR] = useState<CreateFIRResult | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -43,7 +45,7 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
     fileInputRef.current?.click();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!complainantName.trim()) {
@@ -73,26 +75,27 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
 
     setIsSubmitting(true);
 
-    // Simulate submission
-    setTimeout(() => {
+    try {
+      const result = await api.createFir({
+        complainant_name: complainantName,
+        contact_info: contactInfo,
+        incident_type: incidentType,
+        date_of_occurrence: dateOfOccurrence,
+        time_of_occurrence: timeOfOccurrence,
+        location: location,
+        description: description,
+        suspect_details: suspectDetails,
+      });
+
+      setCreatedFIR(result);
       setIsSubmitting(false);
       setIsSubmitted(true);
-      toast.success("First Information Report filed successfully!");
-      setTimeout(() => {
-        // Reset and close
-        setComplainantName("");
-        setContactInfo("");
-        setIncidentType("");
-        setDateOfOccurrence("");
-        setTimeOfOccurrence("");
-        setLocation("");
-        setDescription("");
-        setSuspectDetails("");
-        setAttachedFiles([]);
-        setIsSubmitted(false);
-        onClose();
-      }, 1500);
-    }, 1200);
+      toast.success(`FIR ${result.FIR_Number} filed successfully!`);
+    } catch (err) {
+      console.error("Failed to create FIR:", err);
+      setIsSubmitting(false);
+      toast.error("Failed to submit report. Please try again.");
+    }
   };
 
   return (
@@ -122,14 +125,49 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
         </div>
 
         {isSubmitted ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center">
-            <div className="mb-4 flex size-16 items-center justify-center rounded-full bg-signal-ok/20 text-signal-ok">
+          <div className="flex flex-col items-center justify-center p-12 text-center gap-4">
+            <div className="flex size-16 items-center justify-center rounded-full bg-signal-ok/20 text-signal-ok">
               <span className="material-symbols-outlined text-4xl">check_circle</span>
             </div>
             <h3 className="font-display text-xl font-bold">Report Submitted</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Incident has been logged in the LUMINA Command Center database.
             </p>
+            {createdFIR && (
+              <div className="w-full rounded-xl border border-hairline bg-[#121214] p-4 text-left space-y-2">
+                <p className="text-[10px] font-mono font-bold uppercase text-signal-brand">FIR Reference Details</p>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs">
+                  <span className="text-muted-foreground">FIR Number:</span>
+                  <span className="font-bold text-white">{createdFIR.FIR_Number}</span>
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className="text-amber-400 font-semibold">{createdFIR.Status}</span>
+                  <span className="text-muted-foreground">Crime Category:</span>
+                  <span className="text-white">{createdFIR.Crime_Group}</span>
+                  <span className="text-muted-foreground">Date Filed:</span>
+                  <span className="text-white">{createdFIR.Date || new Date().toLocaleDateString()}</span>
+                </div>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setComplainantName("");
+                setContactInfo("");
+                setIncidentType("");
+                setDateOfOccurrence("");
+                setTimeOfOccurrence("");
+                setLocation("");
+                setDescription("");
+                setSuspectDetails("");
+                setAttachedFiles([]);
+                setIsSubmitted(false);
+                setCreatedFIR(null);
+                onClose();
+              }}
+              className="mt-2 rounded-full border border-hairline px-6 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+            >
+              Close
+            </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-5">
