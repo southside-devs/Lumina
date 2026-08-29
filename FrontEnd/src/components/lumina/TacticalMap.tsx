@@ -156,15 +156,32 @@ export function TacticalMap({
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
 
-    // Center on Karnataka: [14.8, 76.0]
+    // Target center and zoom for Karnataka
+    const targetCenter: [number, number] = [14.8, 76.0];
+    const targetZoom = 8;
+    
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const initialZoom = prefersReducedMotion ? targetZoom : targetZoom - 1;
+
     const map = L.map(mapContainerRef.current, {
-      center: [14.8, 76.0],
-      zoom: 7,
+      center: targetCenter,
+      zoom: initialZoom,
       minZoom: 6,
       maxZoom: 16,
       zoomControl: false,
       attributionControl: false,
     });
+
+    if (!prefersReducedMotion) {
+      setTimeout(() => {
+        if (mapInstanceRef.current === map) {
+          map.flyTo(targetCenter, targetZoom, {
+            duration: 1.5,
+            easeLinearity: 0.25,
+          });
+        }
+      }, 250);
+    }
 
     // 1. Official Esri Dark Gray Base Map Layer (100% Native Dark Military GIS)
     L.tileLayer(
