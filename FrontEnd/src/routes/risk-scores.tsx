@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/risk-scores")({
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="flex items-center gap-2 font-mono text-label-sm uppercase tracking-[0.14em] text-muted-foreground/70">
+    <div className="flex items-center gap-2 font-mono text-label-sm uppercase tracking-[0.14em] text-muted-foreground/70 ui-no-select">
       <span className="size-1.5 rounded-full bg-signal-brand" />
       {children}
     </div>
@@ -35,7 +35,7 @@ function SectionLabel({ children }: { children: string }) {
 
 function PanelHead({ title: t }: { title: string }) {
   return (
-    <div className="mb-4 flex items-center gap-2">
+    <div className="mb-4 flex items-center gap-2 ui-no-select">
       <h2 className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-1 px-3 py-1.5 font-display text-headline-md">
         {t}
         <span className="material-symbols-outlined text-base text-muted-foreground">
@@ -47,16 +47,38 @@ function PanelHead({ title: t }: { title: string }) {
 }
 
 const DEFAULT_LEADERBOARD = [
-  { name: "Bengaluru Urban", score: 88 },
-  { name: "Mysuru", score: 72 },
-  { name: "Mangaluru", score: 65 },
-  { name: "Belagavi", score: 58 },
-  { name: "Hubballi-Dharwad", score: 45 },
+  { name: "Bengaluru Urban", score: 88, risk: "High" as const },
+  { name: "Mysuru", score: 72, risk: "High" as const },
+  { name: "Mangaluru", score: 65, risk: "Medium" as const },
+  { name: "Belagavi", score: 58, risk: "Medium" as const },
+  { name: "Hubballi-Dharwad", score: 45, risk: "Low" as const },
+  { name: "Kalaburagi", score: 40, risk: "Low" as const },
+  { name: "Shivamogga", score: 52, risk: "Medium" as const },
+  { name: "Tumakuru", score: 35, risk: "Low" as const },
 ];
+
+type RiskLevel = "All" | "High" | "Medium" | "Low";
+type SortDir = "desc" | "asc";
+
+function getRiskLabel(score: number): "High" | "Medium" | "Low" {
+  if (score >= 70) return "High";
+  if (score >= 45) return "Medium";
+  return "Low";
+}
+
+const riskColors: Record<string, string> = {
+  High: "text-signal-critical",
+  Medium: "text-signal-warning",
+  Low: "text-signal-ok",
+};
 
 function RiskScores() {
   const [districts, setDistricts] = useState<DistrictSummary[]>([]);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
+
+  // Filter & sort state
+  const [riskFilter, setRiskFilter] = useState<RiskLevel>("All");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   useEffect(() => {
     let mounted = true;
@@ -80,25 +102,60 @@ function RiskScores() {
     };
   }, []);
 
-  // Compute dynamic leaderboard
-  const leaderboard = districts.length > 0
-    ? districts.slice(0, 5).map((d) => ({
-        name: d.district_name,
-        score: Math.min(Math.round((d.total_firs / (districts[0]?.total_firs || 1)) * 90) + 10, 98),
-      }))
-    : DEFAULT_LEADERBOARD;
+  // Compute dynamic leaderboard with risk labels
+  const rawLeaderboard = useMemo(() => {
+    if (districts.length > 0) {
+      return districts.slice(0, 8).map((d) => {
+        const score = Math.min(
+          Math.round((d.total_firs / (districts[0]?.total_firs || 1)) * 90) + 10,
+          98,
+        );
+        return { name: d.district_name, score, risk: getRiskLabel(score) };
+      });
+    }
+    return DEFAULT_LEADERBOARD;
+  }, [districts]);
+
+  // Apply filter + sort
+  const leaderboard = useMemo(() => {
+    let items = rawLeaderboard;
+    if (riskFilter !== "All") {
+      items = items.filter((d) => d.risk === riskFilter);
+    }
+    return [...items].sort((a, b) =>
+      sortDir === "desc" ? b.score - a.score : a.score - b.score,
+    );
+  }, [rawLeaderboard, riskFilter, sortDir]);
 
   // Compute resolution rate
   const totalCases = overview?.total_firs || 1245;
   const underInvest = overview?.status_breakdown?.["Under Investigation"] || 520;
   const chargesheeted = overview?.status_breakdown?.["Chargesheeted"] || 340;
-  const closed = totalCases - underInvest - chargesheeted;
 
   const resolution = [
-    { label: "Under Investigation", pct: Math.round((underInvest / totalCases) * 100), fill: "bg-muted-foreground/30" },
-    { label: "Chargesheeted", pct: Math.round((chargesheeted / totalCases) * 100), fill: "bg-muted-foreground/60" },
-    { label: "Closed / Resolved", pct: Math.max(100 - Math.round((underInvest / totalCases) * 100) - Math.round((chargesheeted / totalCases) * 100), 10), fill: "bg-foreground/90" },
+    {
+      label: "Under Investigation",
+      pct: Math.round((underInvest / totalCases) * 100),
+      fill: "bg-muted-foreground/30",
+    },
+    {
+      label: "Chargesheeted",
+      pct: Math.round((chargesheeted / totalCases) * 100),
+      fill: "bg-muted-foreground/60",
+    },
+    {
+      label: "Closed / Resolved",
+      pct: Math.max(
+        100 -
+          Math.round((underInvest / totalCases) * 100) -
+          Math.round((chargesheeted / totalCases) * 100),
+        10,
+      ),
+      fill: "bg-foreground/90",
+    },
   ];
+
+  const RISK_FILTERS: RiskLevel[] = ["All", "High", "Medium", "Low"];
 
   return (
     <div className="flex h-screen overflow-hidden bg-shell text-foreground">
@@ -113,27 +170,23 @@ function RiskScores() {
           <div className="mx-auto max-w-7xl space-y-6">
             <header className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="font-display text-headline-lg tracking-tight">
+                <h1 className="font-display text-headline-lg tracking-tight ui-no-select">
                   Risk Scores &amp; Predictive Analytics
                 </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground ui-no-select">
                   Real-time threat assessment and historical vulnerability mapping powered by Zia AutoML.
                 </p>
               </div>
-              <div className="flex gap-2">
-                {[
-                  { icon: "calendar_today", label: "Next 14 Days" },
-                  { icon: "filter_list", label: "Filter Forecast" },
-                ].map((b) => (
-                  <button
-                    key={b.label}
-                    type="button"
-                    className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-1 px-3 py-2 font-mono text-label-md text-muted-foreground transition-colors hover:text-foreground"
-                  >
-                    <span className="material-symbols-outlined text-base">{b.icon}</span>
-                    {b.label}
-                  </button>
-                ))}
+
+              {/* Forecast window button (decorative) */}
+              <div className="flex gap-2 ui-no-select">
+                <button
+                  type="button"
+                  className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-1 px-3 py-2 font-mono text-label-md text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  <span className="material-symbols-outlined text-base">calendar_today</span>
+                  Next 14 Days
+                </button>
               </div>
             </header>
 
@@ -143,7 +196,7 @@ function RiskScores() {
               <section className="glass-panel p-6 lg:col-span-2">
                 <div className="mb-4 flex items-center justify-between">
                   <PanelHead title="Crime Trend vs. AutoML" />
-                  <div className="flex gap-4 font-mono text-label-sm text-muted-foreground">
+                  <div className="flex gap-4 font-mono text-label-sm text-muted-foreground ui-no-select">
                     <span className="flex items-center gap-1.5">
                       <span className="h-px w-4 bg-muted-foreground" /> Historical
                     </span>
@@ -189,7 +242,7 @@ function RiskScores() {
                     className="text-foreground"
                   />
                 </svg>
-                <div className="mt-2 flex justify-between font-mono text-label-sm text-muted-foreground">
+                <div className="mt-2 flex justify-between font-mono text-label-sm text-muted-foreground ui-no-select">
                   <span>00:00</span>
                   <span className="font-bold text-foreground">22:00 - 02:00</span>
                   <span>12:00</span>
@@ -202,25 +255,93 @@ function RiskScores() {
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <section className="glass-panel p-6 lg:col-span-2">
-                <PanelHead title="District Risk Leaderboard" />
-                <ul className="mt-6 space-y-5">
-                  {leaderboard.map((d) => (
-                    <li key={d.name} className="flex items-center">
-                      <span className="w-28 pr-4 text-right font-mono text-label-md text-muted-foreground sm:w-40 truncate" title={d.name}>
-                        {d.name}
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <PanelHead title="District Risk Leaderboard" />
+
+                  {/* ── Filter + Sort controls ─────────────────────── */}
+                  <div className="flex items-center gap-2 ui-no-select">
+                    {/* Risk level filter */}
+                    <div
+                      role="group"
+                      aria-label="Filter by risk level"
+                      className="flex gap-1 rounded-full border border-hairline bg-surface-1/60 p-0.5"
+                    >
+                      {RISK_FILTERS.map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setRiskFilter(level)}
+                          className={`rounded-full px-3 py-1 font-mono text-label-sm transition-colors ${
+                            riskFilter === level
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Sort direction toggle */}
+                    <button
+                      type="button"
+                      aria-label={sortDir === "desc" ? "Sort ascending" : "Sort descending"}
+                      onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+                      className="flex items-center gap-1.5 rounded-lg border border-hairline bg-surface-1 px-3 py-1 font-mono text-label-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {sortDir === "desc" ? "arrow_downward" : "arrow_upward"}
                       </span>
-                      <div className="h-2.5 flex-1 overflow-hidden rounded-sm bg-surface-1">
-                        <div
-                          className="h-full rounded-sm bg-foreground/80 transition-all duration-700"
-                          style={{ width: `${d.score}%` }}
-                        />
-                      </div>
-                      <span className="w-12 text-right font-mono text-label-md font-bold">
-                        {d.score}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                      {sortDir === "desc" ? "Highest" : "Lowest"}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Leaderboard rows */}
+                {leaderboard.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-10 text-center">
+                    <span className="material-symbols-outlined text-3xl text-muted-foreground/40">
+                      filter_list_off
+                    </span>
+                    <p className="font-mono text-xs text-muted-foreground/60">
+                      No districts match this filter.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setRiskFilter("All")}
+                      className="mt-1 font-mono text-xs text-signal-brand hover:underline"
+                    >
+                      Clear filter
+                    </button>
+                  </div>
+                ) : (
+                  <ul className="mt-2 space-y-4">
+                    {leaderboard.map((d) => (
+                      <li key={d.name} className="flex items-center gap-3">
+                        <span
+                          className="w-28 shrink-0 truncate pr-2 text-right font-mono text-label-md text-muted-foreground sm:w-40"
+                          title={d.name}
+                        >
+                          {d.name}
+                        </span>
+                        <div className="h-2.5 flex-1 overflow-hidden rounded-sm bg-surface-1">
+                          <div
+                            className="h-full rounded-sm bg-foreground/80 transition-all duration-700"
+                            style={{ width: `${d.score}%` }}
+                          />
+                        </div>
+                        <span className="w-10 shrink-0 text-right font-mono text-label-md font-bold">
+                          {d.score}
+                        </span>
+                        <span
+                          className={`w-16 shrink-0 font-mono text-label-sm font-semibold ${riskColors[d.risk]}`}
+                        >
+                          {d.risk}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </section>
 
               <section className="glass-panel p-6">
@@ -236,7 +357,7 @@ function RiskScores() {
                       key={r.label}
                       className="flex items-center justify-between font-mono text-label-sm"
                     >
-                      <span className="flex items-center gap-2 text-muted-foreground">
+                      <span className="flex items-center gap-2 text-muted-foreground ui-no-select">
                         <span className={`size-1.5 rounded-full ${r.fill}`} />
                         {r.label}
                       </span>

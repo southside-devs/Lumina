@@ -395,7 +395,7 @@ export function NetworkTopologyView() {
                           />
                         )}
 
-                        {(isHovered || isSelected) && (
+                        {isHovered && (
                           <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-800 bg-zinc-950/95 px-3 py-1.5 shadow-2xl backdrop-blur-xl">
                             <div className="font-mono text-[10px] font-bold uppercase text-zinc-400">
                               {node.type}

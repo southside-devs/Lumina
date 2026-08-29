@@ -1,6 +1,5 @@
-@import "tailwindcss" source(none);
+@import "tailwindcss";
 @import "tw-animate-css";
-@source "../src";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -131,6 +130,16 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Text-selection utilities ──────────────────────────────────────────────
+   Apply .ui-no-select to nav labels, buttons, tabs, badges, decorative labels.
+   Never apply to inputs, textareas, data values, IDs, logs, or user content.
+*/
+.ui-no-select,
+.ui-no-select * {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Glass panel utility */

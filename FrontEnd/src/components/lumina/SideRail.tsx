@@ -11,8 +11,12 @@ const primaryNav = [
   { icon: "auto_awesome", label: "AI Chatbot", to: "/ai-chatbot" },
 ] as const;
 
-const secondaryNav = [
-  { icon: "help", label: "Help & Docs" },
+const secondaryLinks = [
+  { icon: "info", label: "About", to: "/about" as const },
+  { icon: "help", label: "Help & Docs", to: "/help" as const },
+] as const;
+
+const secondaryButtons = [
   { icon: "settings", label: "System Config" },
   { icon: "logout", label: "Logout" },
 ];
@@ -29,7 +33,7 @@ export function SideRail() {
     <>
       <nav
         aria-label="Primary"
-        className="fixed left-0 top-0 z-50 flex h-full w-16 flex-col items-center gap-6 border-r border-hairline bg-rail/70 py-4 backdrop-blur-2xl"
+        className="fixed left-0 top-0 z-50 flex h-full w-16 flex-col items-center gap-6 border-r border-hairline bg-rail/70 py-4 backdrop-blur-2xl ui-no-select"
       >
         {/* Top command trigger button (amber/yellow) -> Opens FIR Report Modal */}
         <button
@@ -76,7 +80,19 @@ export function SideRail() {
         </div>
 
         <div className="mt-auto flex w-full flex-col gap-3 px-2">
-          {secondaryNav.map((item) => (
+          {secondaryLinks.map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              title={item.label}
+              aria-label={item.label}
+              className={idleClass}
+              activeProps={{ className: activeClass }}
+            >
+              <span className="material-symbols-outlined">{item.icon}</span>
+            </Link>
+          ))}
+          {secondaryButtons.map((item) => (
             <button
               key={item.label}
               type="button"
