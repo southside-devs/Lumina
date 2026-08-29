@@ -1,7 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { FIRItem } from "@/lib/api";
+import { api, type FIRItem, type SpatiotemporalCluster } from "@/lib/api";
 
 export interface TacticalHotspot {
   id: string;
@@ -15,6 +15,10 @@ export interface TacticalHotspot {
   activePatrol: string;
   eta: string;
   distance: string;
+  radius_km?: number;
+  crime_types?: Record<string, number>;
+  date_start?: string;
+  date_end?: string;
 }
 
 export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
@@ -27,7 +31,7 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 94,
     firCount: 523,
     category: "Theft & Cybercrime",
-    activePatrol: "Patrol Alpha-4 (Indiranagar → MG Road)",
+    activePatrol: "Patrol Alpha-4 (Indiranagar -> MG Road)",
     eta: "~6m",
     distance: "3.8 km",
   },
@@ -40,7 +44,7 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 88,
     firCount: 260,
     category: "Interstate Smuggling & Fraud",
-    activePatrol: "Patrol Delta-2 (Camp Area → Tilakwadi)",
+    activePatrol: "Patrol Delta-2 (Camp Area -> Tilakwadi)",
     eta: "~12m",
     distance: "7.4 km",
   },
@@ -53,7 +57,7 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 82,
     firCount: 206,
     category: "Coastal Cargo & Cyber Fraud",
-    activePatrol: "Patrol Coastal-1 (Panambur → Hampankatta)",
+    activePatrol: "Patrol Coastal-1 (Panambur -> Hampankatta)",
     eta: "~9m",
     distance: "5.1 km",
   },
@@ -66,7 +70,7 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 78,
     firCount: 204,
     category: "Robbery & Commercial Cheating",
-    activePatrol: "Patrol Bravo-3 (Devaraja → Vijayanagar)",
+    activePatrol: "Patrol Bravo-3 (Devaraja -> Vijayanagar)",
     eta: "~14m",
     distance: "8.2 km",
   },
@@ -79,7 +83,7 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 85,
     firCount: 168,
     category: "Arms Act & SC/ST Atrocities",
-    activePatrol: "Patrol Echo-7 (Station Bazaar → Sedam Rd)",
+    activePatrol: "Patrol Echo-7 (Station Bazaar -> Sedam Rd)",
     eta: "~18m",
     distance: "11.0 km",
   },
@@ -92,7 +96,7 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 76,
     firCount: 185,
     category: "Motor Vehicle Theft",
-    activePatrol: "Patrol Transit-5 (Vidyanagar → Old Hubballi)",
+    activePatrol: "Patrol Transit-5 (Vidyanagar -> Old Hubballi)",
     eta: "~10m",
     distance: "6.3 km",
   },
@@ -105,7 +109,7 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 80,
     firCount: 152,
     category: "Extortion & Illegal Transport",
-    activePatrol: "Patrol Sector-9 (Cowl Bazaar → Cantonment)",
+    activePatrol: "Patrol Sector-9 (Cowl Bazaar -> Cantonment)",
     eta: "~15m",
     distance: "9.5 km",
   },
@@ -118,40 +122,60 @@ export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [
     threatScore: 70,
     firCount: 134,
     category: "Burglary & Forest Encroachment",
-    activePatrol: "Patrol Western-3 (Bhadravathi → City Center)",
-    eta: "~11m",
-    distance: "6.9 km",
+    activePatrol: "Patrol Western-2 (Durgigudi -> Bypass)",
+    eta: "~12m",
+    distance: "7.0 km",
   },
 ];
 
 interface TacticalMapProps {
-  firs?: FIRItem[];
-  showIncidents?: boolean;
-  showHotspots: boolean;
-  showPatrols?: boolean;
+  onSelectSpot?: (spot: TacticalHotspot | null) => void;
+  onSelectFIR?: (fir: FIRItem | null) => void;
   activeSpot?: TacticalHotspot | null;
   selectedFIR?: FIRItem | null;
-  onSelectSpot?: (spot: TacticalHotspot) => void;
-  onSelectFIR?: (fir: FIRItem) => void;
+  showIncidents?: boolean;
+  showHotspots?: boolean;
+  showPatrols?: boolean;
+  firs?: FIRItem[];
   mapRef?: React.MutableRefObject<L.Map | null>;
 }
 
 export function TacticalMap({
-  firs = [],
+  onSelectSpot,
+  onSelectFIR,
+  activeSpot,
+  selectedFIR,
   showIncidents = true,
   showHotspots = true,
   showPatrols = true,
-  activeSpot,
-  selectedFIR,
-  onSelectSpot,
-  onSelectFIR,
+  firs = [],
   mapRef,
 }: TacticalMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>(KARNATAKA_HOTSPOTS);
 
-  // Initialize Leaflet Map with Esri World Dark Gray Canvas
+  // 1. Fetch live ST-DBSCAN ML clusters
+  useEffect(() => {
+    let mounted = true;
+    async function fetchMLClusters() {
+      try {
+        const clusters = await api.getHotspotClusters();
+        if (mounted && clusters && clusters.length > 0) {
+          setHotspotsList(clusters);
+        }
+      } catch (e) {
+        console.warn("Using baseline tactical hotspots:", e);
+      }
+    }
+    fetchMLClusters();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  // 2. Initialize Leaflet Map with Esri World Dark Gray Canvas
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
@@ -220,7 +244,7 @@ export function TacticalMap({
     };
   }, [mapRef]);
 
-  // Update Layers (Live FIRs, Markers, Hotspot Circles, Patrol Routes)
+  // 3. Update Layers (Live FIRs, Markers, Hotspot Circles, Patrol Routes)
   useEffect(() => {
     const map = mapInstanceRef.current;
     const layerGroup = layerGroupRef.current;
@@ -240,7 +264,7 @@ export function TacticalMap({
 
       patrolRoutes.forEach((route) => {
         L.polyline([route.from as [number, number], route.to as [number, number]], {
-          color: "#94a3b8",   // medium-light grey
+          color: "#94a3b8",
           weight: 1.5,
           opacity: 0.45,
           dashArray: "4, 8",
@@ -248,51 +272,53 @@ export function TacticalMap({
       });
     }
 
-    // 2. Draw Hotspot Symbols — Pure concentric circular radar indicators with centered count & expanding circular beacon
+    // 2. Draw ST-DBSCAN ML Hotspot Clusters — Concentric circular radar indicators with spatial radius
     if (showHotspots) {
-      KARNATAKA_HOTSPOTS.forEach((spot) => {
+      hotspotsList.forEach((spot) => {
         const isSelected = activeSpot?.id === spot.id;
         const isHigh     = spot.threatScore >= 85;
         const isMed      = spot.threatScore >= 75 && spot.threatScore < 85;
 
-        // Balanced, clear geographic radar footprint
-        const baseRadius = isSelected ? 28000 : isHigh ? 23000 : isMed ? 18000 : 14000;
-        const innerRadius = baseRadius * 0.45;
+        // Dynamic spatial radius from ML model or fallback calculation
+        const baseRadiusMeters = spot.radius_km 
+          ? Math.max(spot.radius_km * 750, 15000) 
+          : isSelected ? 28000 : isHigh ? 23000 : isMed ? 18000 : 14000;
+        const innerRadius = baseRadiusMeters * 0.45;
 
         // Inner subtle concentric circular ring
         L.circle([spot.lat, spot.lng], {
           radius: innerRadius,
-          color: isSelected ? "#e2e8f0" : isHigh ? "#94a3b8" : "#475569",
-          fillColor: "#09090b",
-          fillOpacity: isSelected ? 0.35 : isHigh ? 0.25 : 0.12,
-          weight: isSelected ? 1.2 : 0.8,
+          color: isSelected ? "#e2e8f0" : isHigh ? "#ef4444" : isMed ? "#f59e0b" : "#475569",
+          fillColor: isHigh ? "#ef4444" : "#09090b",
+          fillOpacity: isSelected ? 0.35 : isHigh ? 0.15 : 0.08,
+          weight: isSelected ? 1.4 : 0.8,
         }).addTo(layerGroup);
 
-        // Outer concentric circular boundary (perfect circular geometry)
+        // Outer concentric circular boundary (spatial footprint)
         L.circle([spot.lat, spot.lng], {
-          radius: baseRadius,
-          color: isSelected ? "#ffffff" : isHigh ? "#cbd5e1" : isMed ? "#64748b" : "#334155",
+          radius: baseRadiusMeters,
+          color: isSelected ? "#ffffff" : isHigh ? "#ef4444" : isMed ? "#f59e0b" : "#334155",
           fillColor: "#09090b",
-          fillOpacity: isSelected ? 0.15 : isHigh ? 0.08 : 0.03,
-          weight: isSelected ? 1.4 : isHigh ? 1.1 : 0.7,
+          fillOpacity: isSelected ? 0.18 : isHigh ? 0.08 : 0.03,
+          weight: isSelected ? 1.6 : isHigh ? 1.2 : 0.7,
           dashArray: isSelected || isHigh ? undefined : "3 6",
         }).addTo(layerGroup);
 
         // Balanced circular node sizing
-        const coreSize    = isSelected ? 29 : isHigh ? 25 : isMed ? 22 : 19;
-        const borderColor = isSelected ? "#ffffff" : isHigh ? "#e2e8f0" : isMed ? "#94a3b8" : "#64748b";
-        const ringColor   = isSelected ? "#cbd5e1" : isHigh ? "#94a3b8" : "#475569";
+        const coreSize    = isSelected ? 30 : isHigh ? 26 : isMed ? 23 : 20;
+        const borderColor = isSelected ? "#ffffff" : isHigh ? "#ef4444" : isMed ? "#f59e0b" : "#64748b";
+        const ringColor   = isSelected ? "#cbd5e1" : isHigh ? "#ef4444" : "#475569";
         
-        // Intensity count (e.g. 12, 8, 4, 2)
-        const hotspotCount = Math.max(1, Math.round(spot.firCount / 40));
+        // Intensity count
+        const hotspotCount = spot.firCount || spot.size || 1;
 
         // Perfect 1:1 circular beacon animation ONLY for hotspots
         const beaconOuter = coreSize + 14;
         const beaconInner = coreSize + 7;
         const beaconHtml = `
-          <div class="absolute rounded-full border opacity-30 animate-ping pointer-events-none shrink-0" 
+          <div class="absolute rounded-full border opacity-40 animate-ping pointer-events-none shrink-0" 
             style="width:${beaconOuter}px; height:${beaconOuter}px; min-width:${beaconOuter}px; min-height:${beaconOuter}px; border-color:${borderColor}; animation-duration: 2.8s;"></div>
-          <div class="absolute rounded-full border opacity-20 pointer-events-none shrink-0" 
+          <div class="absolute rounded-full border opacity-25 pointer-events-none shrink-0" 
             style="width:${beaconInner}px; height:${beaconInner}px; min-width:${beaconInner}px; min-height:${beaconInner}px; border-color:${ringColor};"></div>
         `;
 
@@ -307,16 +333,16 @@ export function TacticalMap({
               
               <!-- Perfect Dark circular core with centered clean white typography -->
               <div class="relative z-10 flex items-center justify-center rounded-full border bg-black shadow-lg shrink-0 transition-transform group-hover:scale-110"
-                style="width:${coreSize}px; height:${coreSize}px; min-width:${coreSize}px; min-height:${coreSize}px; border-color:${borderColor}; ${isSelected ? "outline: 1.5px solid #ffffff; outline-offset: 2px;" : ""}">
+                style="width:${coreSize}px; height:${coreSize}px; min-width:${coreSize}px; min-height:${coreSize}px; border-color:${borderColor}; ${isSelected ? "outline: 2px solid #ffffff; outline-offset: 2px;" : ""}">
                 <span class="font-mono font-bold text-white text-center leading-none select-none flex items-center justify-center" style="font-size: ${coreSize >= 24 ? "10px" : "9px"}; width:${coreSize}px; height:${coreSize}px;">
-                  ${hotspotCount}
+                  ${hotspotCount > 99 ? "99+" : hotspotCount}
                 </span>
               </div>
 
               <!-- Minimal hover label -->
               <div class="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                <span class="font-mono text-[9px] text-zinc-300 bg-black/90 px-1.5 py-0.5 rounded border border-zinc-800 shadow-md">
-                  ${spot.name} (${spot.threatScore})
+                <span class="font-mono text-[9px] text-white bg-black/90 px-1.5 py-0.5 rounded border border-zinc-800 shadow-md">
+                  ${spot.name} (${spot.threatScore}/100)
                 </span>
               </div>
             </div>
@@ -329,7 +355,7 @@ export function TacticalMap({
       });
     }
 
-    // 3. Draw Live Incident Markers — Refined, static monochrome circular pins
+    // 3. Draw Live Incident Markers — Refined, static circular pins
     if (showIncidents && firs && firs.length > 0) {
       firs.forEach((fir, idx) => {
         const lat = Number(fir.Latitude);
@@ -348,9 +374,9 @@ export function TacticalMap({
         const outerDiameter = isSelected ? 15 : isCritical ? 11 : isRecent ? 9 : 7;
         const coreDiameter  = isSelected ? 9 : isCritical ? 6 : isRecent ? 5 : 4;
         
-        const outerBorderColor = isSelected ? "#ffffff" : isCritical ? "#cbd5e1" : isRecent ? "#64748b" : "#3f3f46";
-        const whiteSeparation  = isSelected ? "1px solid #ffffff" : isCritical ? "0.75px solid rgba(255,255,255,0.7)" : "0.5px solid rgba(255,255,255,0.25)";
-        const coreBgColor      = isSelected ? "#e2e8f0" : isCritical ? "#cbd5e1" : isRecent ? "#64748b" : "#3f3f46";
+        const outerBorderColor = isSelected ? "#ffffff" : isCritical ? "#ef4444" : isRecent ? "#64748b" : "#3f3f46";
+        const whiteSeparation  = isSelected ? "1px solid #ffffff" : isCritical ? "0.75px solid rgba(239,68,68,0.7)" : "0.5px solid rgba(255,255,255,0.25)";
+        const coreBgColor      = isSelected ? "#e2e8f0" : isCritical ? "#ef4444" : isRecent ? "#64748b" : "#3f3f46";
         const opacity          = isSelected ? 1.0 : isCritical ? 0.95 : isRecent ? 0.75 : 0.55;
 
         // Selected state adds second concentric circular ring
@@ -363,7 +389,7 @@ export function TacticalMap({
           html: `
             <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group" style="width:${outerDiameter}px; height:${outerDiameter}px; opacity:${opacity};">
               ${selectedConcentricHtml}
-              <!-- Outer circular border (Guaranteed 1:1 circle) -->
+              <!-- Outer circular border -->
               <div class="flex items-center justify-center rounded-full shrink-0 transition-transform group-hover:scale-125"
                 style="width:${outerDiameter}px; height:${outerDiameter}px; min-width:${outerDiameter}px; min-height:${outerDiameter}px; background-color: #000000; border: 1px solid ${outerBorderColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.8); ${isSelected ? "box-shadow: 0 0 5px rgba(255,255,255,0.4);" : ""}">
                 
@@ -381,7 +407,7 @@ export function TacticalMap({
         incidentMarker.on("click", () => { onSelectFIR?.(fir); });
       });
     }
-  }, [showIncidents, showHotspots, showPatrols, activeSpot, selectedFIR, firs, onSelectSpot, onSelectFIR]);
+  }, [showIncidents, showHotspots, showPatrols, activeSpot, selectedFIR, firs, hotspotsList, onSelectSpot, onSelectFIR]);
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-black">

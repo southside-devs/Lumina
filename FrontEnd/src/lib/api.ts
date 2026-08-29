@@ -57,7 +57,44 @@ export interface RiskScoreItem {
   Forecast_Date: string;
 }
 
+export interface SpatiotemporalCluster {
+
+  id: string;
+  cluster_id: number;
+  name: string;
+  code: string;
+  size: number;
+  centroid_lat: number;
+  centroid_lon: number;
+  lat: number;
+  lng: number;
+  radius_km: number;
+  threatScore: number;
+  firCount: number;
+  date_start: string;
+  date_end: string;
+  crime_types: Record<string, number>;
+  category: string;
+  activePatrol: string;
+  eta: string;
+  distance: string;
+  fir_ids: number[];
+}
+
+export interface HotspotClustersResponse {
+  total_events_analyzed: number;
+  total_clusters: number;
+  noise_events: number;
+  parameters: {
+    eps_spatial_km: number;
+    eps_temporal_days: number;
+    min_samples: number;
+  };
+  clusters: SpatiotemporalCluster[];
+}
+
 export interface CreateFIRPayload {
+
   complainant_name: string;
   contact_info: string;
   incident_type: string;
@@ -471,6 +508,25 @@ export const api = {
     }
     return null;
   },
+
+  /**
+   * Fetch spatiotemporal ST-DBSCAN clusters from ML engine
+   */
+  async getHotspotClusters(
+    epsSpatial = 15.0,
+    epsTemporal = 60,
+    minSamples = 4,
+    limit = 2000
+  ): Promise<SpatiotemporalCluster[]> {
+    const data = await fetchJson<HotspotClustersResponse>(
+      `/hotspots?eps_spatial=${epsSpatial}&eps_temporal=${epsTemporal}&min_samples=${minSamples}&limit=${limit}`
+    );
+    if (data && Array.isArray(data.clusters)) {
+      return data.clusters;
+    }
+    return [];
+  },
+
 
 
   /**
