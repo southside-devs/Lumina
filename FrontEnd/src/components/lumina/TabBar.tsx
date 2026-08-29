@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { useRouterState } from "@tanstack/react-router";
 
 const tabs = [
   { label: "Overview", to: "/overview" },
@@ -7,30 +7,33 @@ const tabs = [
 ] as const;
 
 const active =
-  "rounded-full bg-primary px-6 py-1.5 font-mono text-label-md text-primary-foreground shadow-sm";
+  "rounded-full border border-hairline bg-surface-2 px-6 py-1.5 font-mono text-label-md text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-2px_6px_rgba(0,0,0,0.55)]";
 const idle =
-  "rounded-full px-6 py-1.5 font-mono text-label-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground";
+  "rounded-full px-6 py-1.5 font-mono text-label-md text-muted-foreground";
 
 export function TabBar() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
   return (
-    <div className="mb-8 flex justify-center">
+    <div className="pointer-events-none mb-8 flex justify-center">
       <div
         role="tablist"
         aria-label="Intelligence views"
         className="flex gap-1 rounded-full border border-hairline bg-surface-1/60 p-1"
       >
-        {tabs.map((tab) => (
-          <Link
-            key={tab.label}
-            to={tab.to}
-            role="tab"
-            className={idle}
-            activeProps={{ className: active }}
-            activeOptions={{ exact: true }}
-          >
-            {tab.label}
-          </Link>
-        ))}
+        {tabs.map((tab) => {
+          const isActive = pathname === tab.to;
+          return (
+            <span
+              key={tab.label}
+              role="tab"
+              aria-selected={isActive}
+              className={isActive ? active : idle}
+            >
+              {tab.label}
+            </span>
+          );
+        })}
       </div>
     </div>
   );

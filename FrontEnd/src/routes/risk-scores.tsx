@@ -26,7 +26,7 @@ export const Route = createFileRoute("/risk-scores")({
 
 function SectionLabel({ children }: { children: string }) {
   return (
-    <div className="flex items-center gap-2 font-mono text-label-sm uppercase tracking-[0.14em] text-muted-foreground/70">
+    <div className="flex items-center gap-2 font-mono text-label-sm uppercase tracking-[0.14em] text-muted-foreground/70 ui-no-select">
       <span className="size-1.5 rounded-full bg-signal-brand" />
       {children}
     </div>
@@ -35,7 +35,7 @@ function SectionLabel({ children }: { children: string }) {
 
 function PanelHead({ title: t, badge }: { title: string; badge?: string }) {
   return (
-    <div className="mb-4 flex items-center justify-between">
+    <div className="mb-4 flex items-center justify-between ui-no-select">
       <h2 className="flex items-center gap-2 rounded-lg border border-hairline bg-surface-1 px-3 py-1.5 font-display text-headline-md">
         {t}
       </h2>
@@ -48,6 +48,21 @@ function PanelHead({ title: t, badge }: { title: string; badge?: string }) {
   );
 }
 
+type RiskLevel = "All" | "High" | "Medium" | "Low";
+type SortDir = "desc" | "asc";
+
+function getRiskLabel(score: number): "High" | "Medium" | "Low" {
+  if (score >= 70) return "High";
+  if (score >= 45) return "Medium";
+  return "Low";
+}
+
+const riskColors: Record<string, string> = {
+  High: "text-signal-critical",
+  Medium: "text-signal-warning",
+  Low: "text-signal-ok",
+};
+
 export function RiskScores() {
   const [districts, setDistricts] = useState<DistrictSummary[]>([]);
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
@@ -55,6 +70,10 @@ export function RiskScores() {
   const [selectedHorizon, setSelectedHorizon] = useState<"14d" | "30d" | "90d">("14d");
   const [selectedDistrictName, setSelectedDistrictName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Filter & sort state
+  const [riskFilter, setRiskFilter] = useState<RiskLevel>("All");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   useEffect(() => {
     let mounted = true;
@@ -83,20 +102,35 @@ export function RiskScores() {
   }, []);
 
   // Aggregate risk scores per district for the leaderboard
-  const leaderboard = useMemo(() => {
+  const rawLeaderboard = useMemo(() => {
     if (!riskScores || riskScores.length === 0) {
-      return districts.slice(0, 6).map((d) => ({
-        name: d.district_name,
-        score: Math.min(Math.round((d.total_firs / (districts[0]?.total_firs || 1)) * 90) + 10, 98),
-        crimeType: "Theft & Cybercrime",
-      }));
+      return districts.slice(0, 10).map((d) => {
+        const score = Math.min(
+          Math.round((d.total_firs / (districts[0]?.total_firs || 1)) * 90) + 10,
+          98,
+        );
+        return {
+          name: d.district_name,
+          score,
+          risk: getRiskLabel(score),
+          crimeType: "Theft & Cybercrime",
+        };
+      });
     }
 
-    const districtMap = new Map<string, { total: number; count: number; topCrime: string; maxScore: number }>();
+    const districtMap = new Map<
+      string,
+      { total: number; count: number; topCrime: string; maxScore: number }
+    >();
 
     riskScores.forEach((item) => {
       const name = item.District_Name || `District #${item.District_ID}`;
-      const existing = districtMap.get(name) || { total: 0, count: 0, topCrime: item.Crime_Type, maxScore: 0 };
+      const existing = districtMap.get(name) || {
+        total: 0,
+        count: 0,
+        topCrime: item.Crime_Type,
+        maxScore: 0,
+      };
       existing.total += item.Score;
       existing.count += 1;
       if (item.Score > existing.maxScore) {
@@ -106,15 +140,27 @@ export function RiskScores() {
       districtMap.set(name, existing);
     });
 
-    const entries = Array.from(districtMap.entries()).map(([name, data]) => ({
-      name,
-      score: Math.round(data.total / data.count),
-      crimeType: data.topCrime,
-    }));
-
-    entries.sort((a, b) => b.score - a.score);
-    return entries.slice(0, 8);
+    return Array.from(districtMap.entries()).map(([name, data]) => {
+      const score = Math.round(data.total / data.count);
+      return {
+        name,
+        score,
+        risk: getRiskLabel(score),
+        crimeType: data.topCrime,
+      };
+    });
   }, [riskScores, districts]);
+
+  // Apply filter + sort to leaderboard
+  const leaderboard = useMemo(() => {
+    let items = rawLeaderboard;
+    if (riskFilter !== "All") {
+      items = items.filter((d) => d.risk === riskFilter);
+    }
+    return [...items].sort((a, b) =>
+      sortDir === "desc" ? b.score - a.score : a.score - b.score,
+    );
+  }, [rawLeaderboard, riskFilter, sortDir]);
 
   // Aggregate top forecasted crime categories statewide
   const categorySurges = useMemo(() => {
@@ -148,7 +194,7 @@ export function RiskScores() {
   }, [riskScores]);
 
   // High-risk early warning alert
-  const topAlert = leaderboard[0];
+  const topAlert = rawLeaderboard[0];
 
   // Case resolution breakdown from live DB status counts
   const totalCases = overview?.total_firs || 5005;
@@ -164,6 +210,8 @@ export function RiskScores() {
     { label: "Convicted", count: convicted, pct: Math.round((convicted / totalCases) * 100), fill: "bg-emerald-400/90" },
   ];
 
+  const RISK_FILTERS: RiskLevel[] = ["All", "High", "Medium", "Low"];
+
   return (
     <div className="flex h-screen overflow-hidden bg-shell text-foreground">
       <SideRail />
@@ -178,14 +226,14 @@ export function RiskScores() {
             {/* Header with Forecast Horizon Filter */}
             <header className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h1 className="font-display text-headline-lg tracking-tight">
+                <h1 className="font-display text-headline-lg tracking-tight ui-no-select">
                   Risk Scores &amp; Predictive Analytics
                 </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-sm text-muted-foreground ui-no-select">
                   Real-time threat assessment and AutoML vulnerability mapping across 31 Karnataka Districts.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 ui-no-select">
                 <span className="font-mono text-xs text-muted-foreground mr-1 hidden sm:inline">Horizon:</span>
                 {(["14d", "30d", "90d"] as const).map((h) => (
                   <button
@@ -242,7 +290,7 @@ export function RiskScores() {
               <section className="glass-panel p-6 lg:col-span-2">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <PanelHead title="Historical Trends vs. Zia AutoML Projection" badge="Live Telemetry" />
-                  <div className="flex gap-4 font-mono text-label-sm text-muted-foreground">
+                  <div className="flex gap-4 font-mono text-label-sm text-muted-foreground ui-no-select">
                     <span className="flex items-center gap-1.5">
                       <span className="h-px w-4 bg-muted-foreground" /> Historical
                     </span>
@@ -286,7 +334,7 @@ export function RiskScores() {
                     <circle cx="320" cy="45" r="4" className="fill-shell stroke-white" strokeWidth="2" />
                     <circle cx="500" cy="15" r="4.5" className="fill-sky-400 animate-ping" />
                   </svg>
-                  <div className="flex justify-between font-mono text-[10px] text-muted-foreground mt-1 px-1">
+                  <div className="flex justify-between font-mono text-[10px] text-muted-foreground mt-1 px-1 ui-no-select">
                     <span>Oct 2025</span>
                     <span>Dec 2025</span>
                     <span>Feb 2026</span>
@@ -316,7 +364,7 @@ export function RiskScores() {
                       strokeWidth="2"
                     />
                   </svg>
-                  <div className="flex justify-between font-mono text-[10px] text-muted-foreground">
+                  <div className="flex justify-between font-mono text-[10px] text-muted-foreground ui-no-select">
                     <span>00:00</span>
                     <span className="font-bold text-white">Peak (Night)</span>
                     <span>12:00</span>
@@ -331,60 +379,113 @@ export function RiskScores() {
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               {/* Dynamic District Risk Leaderboard */}
               <section className="glass-panel p-6 lg:col-span-2">
-                <div className="flex items-center justify-between mb-4">
-                  <PanelHead title="Zia AutoML District Threat Rankings" badge="620 Models" />
-                  <span className="font-mono text-xs text-muted-foreground">Score Index (0–100)</span>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <PanelHead title="Zia AutoML District Threat Rankings" badge={`${rawLeaderboard.length} Districts`} />
+
+                  {/* Filter + Sort controls */}
+                  <div className="flex items-center gap-2 ui-no-select">
+                    <div
+                      role="group"
+                      aria-label="Filter by risk level"
+                      className="flex gap-1 rounded-full border border-hairline bg-surface-1/60 p-0.5"
+                    >
+                      {RISK_FILTERS.map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          onClick={() => setRiskFilter(level)}
+                          className={`rounded-full px-3 py-1 font-mono text-label-sm transition-colors cursor-pointer ${
+                            riskFilter === level
+                              ? "bg-primary text-primary-foreground font-bold"
+                              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          }`}
+                        >
+                          {level}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      aria-label={sortDir === "desc" ? "Sort ascending" : "Sort descending"}
+                      onClick={() => setSortDir((d) => (d === "desc" ? "asc" : "desc"))}
+                      className="flex items-center gap-1.5 rounded-lg border border-hairline bg-surface-1 px-3 py-1 font-mono text-label-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {sortDir === "desc" ? "arrow_downward" : "arrow_upward"}
+                      </span>
+                      {sortDir === "desc" ? "Highest" : "Lowest"}
+                    </button>
+                  </div>
                 </div>
 
-                <ul className="space-y-3.5">
-                  {leaderboard.map((d) => {
-                    const isCritical = d.score >= 75;
-                    const isElevated = d.score >= 55 && d.score < 75;
-                    const color = isCritical ? "#ef4444" : isElevated ? "#f59e0b" : "#10b981";
+                {leaderboard.length === 0 ? (
+                  <div className="flex flex-col items-center gap-2 py-10 text-center">
+                    <span className="material-symbols-outlined text-3xl text-muted-foreground/40">
+                      filter_list_off
+                    </span>
+                    <p className="font-mono text-xs text-muted-foreground/60">
+                      No districts match this filter.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setRiskFilter("All")}
+                      className="mt-1 font-mono text-xs text-signal-brand hover:underline cursor-pointer"
+                    >
+                      Clear filter
+                    </button>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {leaderboard.map((d) => {
+                      const isCritical = d.score >= 70;
+                      const isElevated = d.score >= 45 && d.score < 70;
+                      const color = isCritical ? "#ef4444" : isElevated ? "#f59e0b" : "#10b981";
 
-                    return (
-                      <li
-                        key={d.name}
-                        onClick={() => setSelectedDistrictName(selectedDistrictName === d.name ? null : d.name)}
-                        className={`flex items-center justify-between gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${
-                          selectedDistrictName === d.name
-                            ? "bg-surface-2 border-white/30 shadow-lg"
-                            : "bg-surface-1/60 border-hairline hover:bg-surface-2/60"
-                        }`}
-                      >
-                        <div className="w-40 sm:w-48 truncate">
-                          <span className="font-medium text-xs text-white block truncate" title={d.name}>
-                            {d.name}
-                          </span>
-                          <span className="font-mono text-[10px] text-muted-foreground truncate block">
-                            Top Threat: {d.crimeType}
-                          </span>
-                        </div>
+                      return (
+                        <li
+                          key={d.name}
+                          onClick={() => setSelectedDistrictName(selectedDistrictName === d.name ? null : d.name)}
+                          className={`flex items-center justify-between gap-3 p-2.5 rounded-xl border transition-all cursor-pointer ${
+                            selectedDistrictName === d.name
+                              ? "bg-surface-2 border-white/30 shadow-lg"
+                              : "bg-surface-1/60 border-hairline hover:bg-surface-2/60"
+                          }`}
+                        >
+                          <div className="w-40 sm:w-48 truncate">
+                            <span className="font-medium text-xs text-white block truncate" title={d.name}>
+                              {d.name}
+                            </span>
+                            <span className="font-mono text-[10px] text-muted-foreground truncate block">
+                              Top Threat: {d.crimeType}
+                            </span>
+                          </div>
 
-                        {/* Visual Progress Bar */}
-                        <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-3">
-                          <div
-                            className="h-full rounded-full transition-all duration-700"
-                            style={{ width: `${d.score}%`, backgroundColor: color }}
-                          />
-                        </div>
+                          {/* Visual Progress Bar */}
+                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-3">
+                            <div
+                              className="h-full rounded-full transition-all duration-700"
+                              style={{ width: `${d.score}%`, backgroundColor: color }}
+                            />
+                          </div>
 
-                        {/* Severity Badge */}
-                        <div className="flex items-center gap-2 font-mono">
-                          <span
-                            className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase"
-                            style={{ color, backgroundColor: `${color}20` }}
-                          >
-                            {isCritical ? "Critical" : isElevated ? "Elevated" : "Guarded"}
-                          </span>
-                          <span className="w-8 text-right text-xs font-bold text-white">
-                            {d.score}
-                          </span>
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
+                          {/* Severity Badge */}
+                          <div className="flex items-center gap-2 font-mono">
+                            <span
+                              className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase ${riskColors[d.risk]}`}
+                              style={{ backgroundColor: `${color}20` }}
+                            >
+                              {d.risk}
+                            </span>
+                            <span className="w-8 text-right text-xs font-bold text-white">
+                              {d.score}
+                            </span>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </section>
 
               {/* Crime Category Forecast Matrix */}
@@ -413,7 +514,7 @@ export function RiskScores() {
                   </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-hairline font-mono text-[10px] text-muted-foreground flex justify-between">
+                <div className="mt-6 pt-4 border-t border-hairline font-mono text-[10px] text-muted-foreground flex justify-between ui-no-select">
                   <span>Engine: Zia AutoML v4.2</span>
                   <span className="text-emerald-400 font-bold">STATEWIDE SYNC</span>
                 </div>
@@ -438,7 +539,7 @@ export function RiskScores() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {resolution.map((r) => (
                   <div key={r.label} className="p-3 rounded-xl border border-hairline bg-surface-1/60 font-mono">
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1 ui-no-select">
                       <span className={`size-2 rounded-full ${r.fill}`} />
                       <span className="truncate">{r.label}</span>
                     </div>

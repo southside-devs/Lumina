@@ -1,5 +1,3 @@
-import { Link } from "@tanstack/react-router";
-
 const statuses = [
   { dot: "bg-signal-ok", label: "Nodes", value: "124" },
   { dot: "bg-signal-warning", label: "Alerts", value: "3" },
@@ -8,25 +6,9 @@ const statuses = [
 
 export function TopBar() {
   return (
-    <header className="fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar px-5">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <button
-            type="button"
-            aria-label="Back"
-            className="rounded transition-colors hover:text-foreground"
-          >
-            <span className="material-symbols-outlined text-base">chevron_left</span>
-          </button>
-          <button
-            type="button"
-            aria-label="Forward"
-            className="rounded transition-colors hover:text-foreground"
-          >
-            <span className="material-symbols-outlined text-base">chevron_right</span>
-          </button>
-        </div>
-        <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface-1 px-4 py-1.5">
+    <header className="pointer-events-none fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar px-5 ui-no-select">
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface-1 px-4 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_2px_rgba(0,0,0,0.45)]">
           <span className="material-symbols-outlined text-sm text-muted-foreground">lock</span>
           <span className="font-mono text-label-md tracking-[0.2em] text-foreground">LUMINA</span>
         </div>
@@ -37,53 +19,36 @@ export function TopBar() {
           <div key={s.label} className="flex items-center gap-2">
             <span className={`size-2 rounded-full ${s.dot}`} />
             <span className="uppercase tracking-wider text-muted-foreground">
-              {s.label}: <span className="text-foreground">{s.value}</span>
+              {s.label}:{" "}
+              <span className="select-text text-foreground">{s.value}</span>
             </span>
           </div>
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <div className="relative hidden items-center md:flex">
           <span className="material-symbols-outlined absolute left-3 text-sm text-muted-foreground">
             search
           </span>
-          <label className="sr-only" htmlFor="intel-search">
-            Search intelligence
-          </label>
-          <input
-            id="intel-search"
-            type="text"
-            placeholder="Search Intelligence..."
-            className="w-64 rounded-full border border-input bg-surface-1 py-1.5 pr-9 pl-9 text-sm text-foreground transition-all placeholder:text-muted-foreground/60 focus:border-primary focus:ring-1 focus:ring-ring focus:outline-none"
-          />
+          <div className="w-56 rounded-full border border-input bg-surface-1 py-1.5 pr-9 pl-9 text-sm text-muted-foreground/60">
+            Search Intelligence...
+          </div>
           <span className="material-symbols-outlined absolute right-3 text-xs text-muted-foreground opacity-50">
             keyboard_command_key
           </span>
         </div>
 
-        <Link
-          to="/network"
-          title="Network Topology (Share)"
-          aria-label="Network Topology"
-          className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
+        <span className="relative rounded-full p-2 text-muted-foreground" aria-hidden>
           <span className="material-symbols-outlined">share</span>
-        </Link>
+        </span>
 
-        <button
-          type="button"
-          aria-label="Notifications"
-          className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
+        <span className="relative rounded-full p-2 text-muted-foreground" aria-hidden>
           <span className="material-symbols-outlined">notifications</span>
           <span className="absolute top-1.5 right-1.5 size-2 rounded-full border border-topbar bg-signal-critical" />
-        </button>
+        </span>
 
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded border-l border-hairline p-1 pl-3 transition-colors hover:bg-accent"
-        >
+        <div className="flex items-center gap-2 rounded border-l border-hairline p-1 pl-3">
           <span className="flex size-8 items-center justify-center rounded-full bg-signal-agent text-xs font-bold text-foreground">
             RK
           </span>
@@ -94,7 +59,7 @@ export function TopBar() {
           <span className="material-symbols-outlined text-sm text-muted-foreground">
             arrow_drop_down
           </span>
-        </button>
+        </div>
       </div>
     </header>
   );
