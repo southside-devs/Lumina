@@ -51,9 +51,9 @@ export function MapToolbar({
   onClusterTuned,
 }: MapToolbarProps) {
   const [showConfig, setShowConfig] = useState(false);
-  const [epsSpatial, setEpsSpatial] = useState(2.5);
-  const [epsTemporal, setEpsTemporal] = useState(30);
-  const [minPts, setMinPts] = useState(5);
+  const [epsSpatial, setEpsSpatial] = useState(12.0);
+  const [epsTemporal, setEpsTemporal] = useState(45);
+  const [minPts, setMinPts] = useState(4);
 
   const handleUpdate = (s: number, t: number, m: number) => {
     setEpsSpatial(s);
@@ -66,11 +66,11 @@ export function MapToolbar({
     <div className="relative">
       {/* Parameter Tuning Popup */}
       {showConfig && (
-        <div className="absolute bottom-full left-1/2 mb-3 -translate-x-1/2 w-80 rounded-2xl border border-zinc-700 bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-2xl z-50 space-y-3.5 animate-in fade-in zoom-in-95">
+        <div className="absolute bottom-full left-1/2 mb-3 -translate-x-1/2 w-84 rounded-2xl border border-zinc-700 bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-2xl z-50 space-y-3.5 animate-in fade-in zoom-in-95">
           <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-sm text-teal-400">tune</span>
-              <span className="font-mono text-xs font-bold uppercase text-white">ST-DBSCAN Parameters</span>
+              <span className="font-mono text-xs font-bold uppercase text-white">ST-DBSCAN Tuning</span>
             </div>
             <button
               type="button"
@@ -89,9 +89,9 @@ export function MapToolbar({
             </div>
             <input
               type="range"
-              min="0.5"
-              max="10.0"
-              step="0.5"
+              min="2.0"
+              max="35.0"
+              step="1.0"
               value={epsSpatial}
               onChange={(e) => handleUpdate(Number(e.target.value), epsTemporal, minPts)}
               className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
@@ -107,7 +107,7 @@ export function MapToolbar({
             <input
               type="range"
               min="7"
-              max="90"
+              max="120"
               step="1"
               value={epsTemporal}
               onChange={(e) => handleUpdate(epsSpatial, Number(e.target.value), minPts)}
@@ -131,6 +131,7 @@ export function MapToolbar({
               className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-slate-400"
             />
           </div>
+
 
           <div className="font-mono text-[9px] text-zinc-500 pt-1 border-t border-zinc-900 flex justify-between">
             <span>AppSail Python Runtime</span>

@@ -138,6 +138,7 @@ interface TacticalMapProps {
   showPatrols?: boolean;
   firs?: FIRItem[];
   mapRef?: React.MutableRefObject<L.Map | null>;
+  clusterParams?: { epsSpatial: number; epsTemporal: number; minPts: number };
 }
 
 export function TacticalMap({
@@ -150,18 +151,22 @@ export function TacticalMap({
   showPatrols = true,
   firs = [],
   mapRef,
+  clusterParams,
 }: TacticalMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>(KARNATAKA_HOTSPOTS);
 
-  // 1. Fetch live ST-DBSCAN ML clusters
+  // 1. Fetch live ST-DBSCAN ML clusters whenever parameters are tuned
   useEffect(() => {
     let mounted = true;
     async function fetchMLClusters() {
       try {
-        const clusters = await api.getHotspotClusters();
+        const epsS = clusterParams?.epsSpatial ?? 12.0;
+        const epsT = clusterParams?.epsTemporal ?? 45;
+        const minP = clusterParams?.minPts ?? 4;
+        const clusters = await api.getHotspotClusters(epsS, epsT, minP);
         if (mounted && clusters && clusters.length > 0) {
           setHotspotsList(clusters);
         }
@@ -173,7 +178,8 @@ export function TacticalMap({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [clusterParams]);
+
 
   // 2. Initialize Leaflet Map with Esri World Dark Gray Canvas
   useEffect(() => {

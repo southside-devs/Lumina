@@ -37,6 +37,8 @@ export function IntelligenceHub() {
   const [cardOpen, setCardOpen] = useState(false);
   const [selectedSpot, setSelectedSpot] = useState<TacticalHotspot | null>(null);
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
+  const [clusterParams, setClusterParams] = useState({ epsSpatial: 12.0, epsTemporal: 45, minPts: 4 });
+
 
 
   const { firCreatedCount } = useFIREvents();
@@ -146,6 +148,7 @@ export function IntelligenceHub() {
             onSelectSpot={handleSelectSpot}
             onSelectFIR={handleSelectFir}
             mapRef={mapRef}
+            clusterParams={clusterParams}
           />
 
           <div className="relative z-10 flex h-full flex-col p-6 pointer-events-none">
@@ -212,9 +215,11 @@ export function IntelligenceHub() {
                 showPatrols={showPatrols}
                 onTogglePatrols={() => setShowPatrols((v) => !v)}
                 onResetView={handleResetView}
+                onClusterTuned={(p) => setClusterParams(p)}
               />
               <div className="hidden w-[88px] lg:block" />
             </div>
+
 
             <div className="mt-3 flex items-center justify-between font-mono text-label-sm text-muted-foreground/70 pointer-events-auto">
               <span>Click any incident pin or sector node to inspect telemetry • Coordinate System: WGS84</span>
