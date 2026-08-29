@@ -5,10 +5,10 @@ import { ReportModal } from "./ReportModal";
 
 const primaryNav = [
   { icon: "grid_view", label: "Command Hub", to: "/" },
-  { icon: "description", label: "Overview", to: "/overview" },
+  { icon: "assessment", label: "Overview", to: "/overview" },
   { icon: "folder_open", label: "FIR Registry", to: "/fir-explorer" },
-  { icon: "share", label: "Network Topology", to: "/network" },
-  { icon: "auto_fix_high", label: "AI Chatbot", to: "/ai-chatbot" },
+  { icon: "hub", label: "Network Topology", to: "/network" },
+  { icon: "auto_awesome", label: "AI Chatbot", to: "/ai-chatbot" },
 ] as const;
 
 const secondaryNav = [
