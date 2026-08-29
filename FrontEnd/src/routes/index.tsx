@@ -34,9 +34,10 @@ export function IntelligenceHub() {
   const [showIncidents, setShowIncidents] = useState(true);
   const [showHotspots, setShowHotspots] = useState(true);
   const [showPatrols, setShowPatrols] = useState(true);
-  const [cardOpen, setCardOpen] = useState(true);
-  const [selectedSpot, setSelectedSpot] = useState<TacticalHotspot | null>(KARNATAKA_HOTSPOTS[0]);
+  const [cardOpen, setCardOpen] = useState(false);
+  const [selectedSpot, setSelectedSpot] = useState<TacticalHotspot | null>(null);
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
+
 
   const { firCreatedCount } = useFIREvents();
   const mapRef = useRef<L.Map | null>(null);
@@ -121,9 +122,11 @@ export function IntelligenceHub() {
 
   const handleResetView = () => {
     mapRef.current?.flyTo([14.8, 76.0], 7, { duration: 1.2 });
-    setSelectedSpot(KARNATAKA_HOTSPOTS[0]);
+    setSelectedSpot(null);
     setSelectedFir(null);
+    setCardOpen(false);
   };
+
 
   return (
     <div className="flex h-screen overflow-hidden bg-shell text-foreground">
