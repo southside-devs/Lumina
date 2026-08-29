@@ -161,24 +161,26 @@ export function TacticalMap({
   // 1. Fetch live ST-DBSCAN ML clusters whenever parameters are tuned
   useEffect(() => {
     let mounted = true;
-    async function fetchMLClusters() {
+    const timer = setTimeout(async () => {
       try {
         const epsS = clusterParams?.epsSpatial ?? 12.0;
         const epsT = clusterParams?.epsTemporal ?? 45;
         const minP = clusterParams?.minPts ?? 4;
         const clusters = await api.getHotspotClusters(epsS, epsT, minP);
-        if (mounted && clusters && clusters.length > 0) {
+        if (mounted && clusters) {
           setHotspotsList(clusters);
         }
       } catch (e) {
         console.warn("Using baseline tactical hotspots:", e);
       }
-    }
-    fetchMLClusters();
+    }, 60);
+
     return () => {
       mounted = false;
+      clearTimeout(timer);
     };
-  }, [clusterParams]);
+  }, [clusterParams?.epsSpatial, clusterParams?.epsTemporal, clusterParams?.minPts]);
+
 
 
   // 2. Initialize Leaflet Map with Esri World Dark Gray Canvas
