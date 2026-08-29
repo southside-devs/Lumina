@@ -1,7 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
+import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
 
 const title = "LUMINA — Network Topology Intelligence";
 const description =
@@ -51,6 +52,7 @@ const INITIAL_NODES: NetworkNode[] = [
 ];
 
 export function NetworkTopologyView() {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<NodeType | "ALL">("ALL");
   const [activeNode, setActiveNode] = useState<NetworkNode>(INITIAL_NODES[0]);
   const [hoveredNode, setHoveredNode] = useState<NetworkNode | null>(null);
@@ -63,16 +65,32 @@ export function NetworkTopologyView() {
   };
 
   const handleIsolateAction = () => {
-    setIsolatedNodeId("s1");
-    showToast("⚡ Action Executed: Compromised suspect link isolated successfully.");
+    setIsolatedNodeId((prev) => (prev ? null : "s1"));
+    showToast(
+      isolatedNodeId
+        ? "⚡ Node link isolation cleared."
+        : "⚡ Action Executed: Compromised suspect link isolated successfully."
+    );
   };
 
   const handleExportPDF = () => {
-    showToast("📄 SmartBrowz PDF Report generated and sent to download queue.");
+    showToast("📄 Catalyst SmartBrowz: Generating printable Intelligence Briefing PDF...");
+    setTimeout(() => {
+      generateIntelligenceBriefingPDF({
+        title: "KARNATAKA STATE POLICE — NETWORK TOPOLOGY INTELLIGENCE BRIEFING",
+        totalFirs: 5000,
+        repeatOffenders: 456,
+        criticalHotspots: 3,
+        topDistrict: "Bengaluru Urban (523 active cases)",
+      });
+    }, 400);
   };
 
   const handleAskAI = () => {
-    showToast("🤖 Querying QuickML AI Assistant for criminal network pattern analysis...");
+    showToast("🤖 Querying Catalyst AI Copilot for criminal network pattern analysis...");
+    setTimeout(() => {
+      navigate({ to: "/ai-chatbot" });
+    }, 500);
   };
 
   // Node color helper
@@ -132,7 +150,7 @@ export function NetworkTopologyView() {
                   </span>
                 </h1>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  Tactical Entity Relational Mapping & ST-DBSCAN Graph Engine
+                  Tactical Entity Relational Mapping &amp; Neo4j Graph Engine
                 </p>
               </div>
 
@@ -180,26 +198,26 @@ export function NetworkTopologyView() {
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div>
-                      <div className="font-mono text-[10px] uppercase text-zinc-500">RECENT</div>
-                      <div className="font-display text-2xl font-bold text-white">22</div>
+                      <div className="font-mono text-[10px] uppercase text-zinc-500">REPEAT OFFENDERS</div>
+                      <div className="font-display text-2xl font-bold text-white">456</div>
                     </div>
                     <div>
-                      <div className="font-mono text-[10px] uppercase text-zinc-500">TOTAL NODES</div>
-                      <div className="font-display text-2xl font-bold text-white">55</div>
+                      <div className="font-mono text-[10px] uppercase text-zinc-500">TOTAL SUSPECTS</div>
+                      <div className="font-display text-2xl font-bold text-white">3,000</div>
                     </div>
                   </div>
                   <div className="mt-4 flex items-center justify-between border-t border-zinc-900 pt-3 font-mono text-xs">
                     <div>
                       <span className="text-zinc-500">LOW </span>
-                      <span className="font-semibold text-zinc-300">5</span>
+                      <span className="font-semibold text-zinc-300">540</span>
                     </div>
                     <div>
                       <span className="text-zinc-500">MEDIUM </span>
-                      <span className="font-semibold text-amber-400">10</span>
+                      <span className="font-semibold text-amber-400">1,240</span>
                     </div>
                     <div>
                       <span className="text-zinc-500">HIGH </span>
-                      <span className="font-semibold text-red-500">40</span>
+                      <span className="font-semibold text-red-500">1,220</span>
                     </div>
                   </div>
                 </div>
@@ -210,9 +228,9 @@ export function NetworkTopologyView() {
                     EXPOSED ENTITIES
                   </div>
                   <div className="mt-2 flex items-baseline gap-3">
-                    <span className="font-display text-3xl font-bold text-white">152</span>
+                    <span className="font-display text-3xl font-bold text-white">3,000</span>
                     <span className="inline-flex items-center text-xs font-medium text-red-400">
-                      ↑ 15 flagged today
+                      ↑ 456 repeat syndicates
                     </span>
                   </div>
                 </div>
@@ -252,15 +270,18 @@ export function NetworkTopologyView() {
                 <div className="relative flex-1 min-h-[140px] rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-3 shadow-lg backdrop-blur-xl flex flex-col">
                   <div className="flex items-center justify-between text-xs font-mono text-zinc-400 uppercase">
                     <span>OVERVIEW MAP</span>
-                    <span className="material-symbols-outlined text-sm">fullscreen</span>
+                    <span
+                      onClick={() => navigate({ to: "/" })}
+                      className="material-symbols-outlined text-sm cursor-pointer hover:text-white"
+                    >
+                      fullscreen
+                    </span>
                   </div>
                   <div className="relative mt-2 flex-1 w-full rounded-lg bg-zinc-900/60 overflow-hidden flex items-center justify-center border border-zinc-800/40">
-                    {/* Mini circular radar representation */}
                     <div className="relative h-24 w-24 rounded-full border border-zinc-700/40 flex items-center justify-center">
                       <div className="h-16 w-16 rounded-full border border-zinc-800" />
                       <div className="absolute h-full w-px bg-zinc-800/60" />
                       <div className="absolute w-full h-px bg-zinc-800/60" />
-                      {/* Purple focus pill */}
                       <div className="absolute top-7 right-3 flex items-center gap-1 rounded bg-purple-600/40 px-1.5 py-0.5 font-mono text-[8px] font-bold text-purple-200 border border-purple-400/30 shadow-[0_0_10px_rgba(168,85,247,0.4)]">
                         Focus
                       </div>
@@ -276,7 +297,6 @@ export function NetworkTopologyView() {
                 
                 {/* Radar Grid Lines Background */}
                 <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                  {/* Radar Circles */}
                   <div className="h-[90%] aspect-square rounded-full border border-zinc-800/40 flex items-center justify-center">
                     <div className="h-[72%] aspect-square rounded-full border border-zinc-800/50 flex items-center justify-center">
                       <div className="h-[48%] aspect-square rounded-full border border-zinc-800/60 flex items-center justify-center">
@@ -285,11 +305,9 @@ export function NetworkTopologyView() {
                     </div>
                   </div>
 
-                  {/* Radar Crosshairs */}
                   <div className="absolute inset-x-8 top-1/2 h-px bg-zinc-800/40" />
                   <div className="absolute inset-y-8 left-1/2 w-px bg-zinc-800/40" />
 
-                  {/* Diagonal Guidelines */}
                   <div className="absolute h-[85%] w-px rotate-45 bg-zinc-900/40" />
                   <div className="absolute h-[85%] w-px -rotate-45 bg-zinc-900/40" />
                 </div>
@@ -310,7 +328,6 @@ export function NetworkTopologyView() {
 
                 {/* SVG Connections & Dynamic Nodes Overlay */}
                 <div className="relative w-full h-full flex-1 min-h-[360px]">
-                  {/* SVG Edges */}
                   <svg className="absolute inset-0 h-full w-full pointer-events-none">
                     {filteredNodes.flatMap((node) =>
                       node.connections.map((targetId) => {
@@ -357,7 +374,6 @@ export function NetworkTopologyView() {
                           isSelected ? "z-30 scale-125" : "z-20 hover:scale-110"
                         }`}
                       >
-                        {/* Glowing Aura / Rings */}
                         {node.isCenter ? (
                           <div className="relative flex items-center justify-center">
                             <div className="absolute h-9 w-9 rounded-full border border-red-500/60 animate-ping opacity-75" />
@@ -379,7 +395,6 @@ export function NetworkTopologyView() {
                           />
                         )}
 
-                        {/* Node Hover Tooltip Card */}
                         {(isHovered || isSelected) && (
                           <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-zinc-800 bg-zinc-950/95 px-3 py-1.5 shadow-2xl backdrop-blur-xl">
                             <div className="font-mono text-[10px] font-bold uppercase text-zinc-400">
@@ -405,7 +420,7 @@ export function NetworkTopologyView() {
                 <div className="flex flex-col h-full rounded-xl border border-zinc-800/80 bg-zinc-950/80 p-4 shadow-lg backdrop-blur-xl">
                   <div className="flex items-center justify-between">
                     <h3 className="font-sans text-sm font-bold text-white">
-                      Action Items <span className="text-zinc-500 font-mono">(20)</span>
+                      Action Items <span className="text-zinc-500 font-mono">(3)</span>
                     </h3>
                   </div>
                   <p className="text-[11px] text-zinc-400 mt-0.5">
@@ -419,14 +434,14 @@ export function NetworkTopologyView() {
                         PRIORITY ACTION
                       </div>
                       <h4 className="mt-1 font-sans text-xs font-semibold text-white">
-                        Isolate compromised suspect link
+                        {isolatedNodeId ? "Restore suspect link" : "Isolate compromised suspect link"}
                       </h4>
                       <button
                         type="button"
                         onClick={handleIsolateAction}
                         className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/80 py-2 font-sans text-xs font-semibold text-zinc-200 transition-all hover:bg-red-500/20 hover:text-red-200 hover:border-red-500/40"
                       >
-                        <span>Execute</span>
+                        <span>{isolatedNodeId ? "Restore Link" : "Execute Isolation"}</span>
                         <span className="text-xs">✦</span>
                       </button>
                     </div>
@@ -444,7 +459,7 @@ export function NetworkTopologyView() {
                         onClick={handleExportPDF}
                         className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/80 py-2 font-sans text-xs font-semibold text-zinc-200 transition-all hover:bg-zinc-700/80 hover:text-white"
                       >
-                        <span>Generate</span>
+                        <span>Generate KSP Briefing</span>
                         <span className="text-xs">⤓</span>
                       </button>
                     </div>
@@ -462,7 +477,7 @@ export function NetworkTopologyView() {
                         onClick={handleAskAI}
                         className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-lg border border-zinc-700/60 bg-zinc-800/80 py-2 font-sans text-xs font-semibold text-zinc-200 transition-all hover:bg-zinc-700/80 hover:text-white"
                       >
-                        <span>Ask AI</span>
+                        <span>Ask AI Copilot</span>
                         <span className="text-xs">🖥</span>
                       </button>
                     </div>
@@ -481,7 +496,7 @@ export function NetworkTopologyView() {
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" />
                   <span className="font-mono text-xs font-semibold text-red-400">
-                    Peak Activity detected
+                    Peak Activity detected across 3,000 suspects
                   </span>
                 </div>
               </div>
@@ -489,7 +504,6 @@ export function NetworkTopologyView() {
               {/* Bar Graph Visual */}
               <div className="mt-3 flex h-14 items-end gap-1 px-1">
                 {Array.from({ length: 48 }).map((_, idx) => {
-                  // Create peak spikes at index 12 (-24h), 28 (-12h), and 46 (Now)
                   const isPeak = idx === 12 || idx === 13 || idx === 28 || idx === 29 || idx === 45 || idx === 46;
                   const heightPercent = isPeak
                     ? Math.floor(Math.random() * 25) + 75

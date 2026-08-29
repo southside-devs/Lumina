@@ -22,7 +22,7 @@ function createWindow() {
     mainWindow.loadURL("http://localhost:5173").catch(() =>
       mainWindow.loadFile(path.join(__dirname, "../dist/index.html")));
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../dist/index.html"));
+    mainWindow.loadFile(distPath);
   }
   mainWindow.webContents.on("did-fail-load", () => {
     setTimeout(() => {

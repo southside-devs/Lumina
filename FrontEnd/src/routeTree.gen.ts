@@ -14,6 +14,7 @@ import { Route as OverviewRouteImport } from './routes/overview'
 import { Route as RiskScoresRouteImport } from './routes/risk-scores'
 import { Route as NetworkRouteImport } from './routes/network'
 import { Route as AIChatbotRouteImport } from './routes/ai-chatbot'
+import { Route as FIRExplorerRouteImport } from './routes/fir-explorer'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -40,6 +41,11 @@ const AIChatbotRoute = AIChatbotRouteImport.update({
   path: '/ai-chatbot',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FIRExplorerRoute = FIRExplorerRouteImport.update({
+  id: '/fir-explorer',
+  path: '/fir-explorer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -47,6 +53,7 @@ export interface FileRoutesByFullPath {
   '/risk-scores': typeof RiskScoresRoute
   '/network': typeof NetworkRoute
   '/ai-chatbot': typeof AIChatbotRoute
+  '/fir-explorer': typeof FIRExplorerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -54,6 +61,7 @@ export interface FileRoutesByTo {
   '/risk-scores': typeof RiskScoresRoute
   '/network': typeof NetworkRoute
   '/ai-chatbot': typeof AIChatbotRoute
+  '/fir-explorer': typeof FIRExplorerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -62,13 +70,14 @@ export interface FileRoutesById {
   '/risk-scores': typeof RiskScoresRoute
   '/network': typeof NetworkRoute
   '/ai-chatbot': typeof AIChatbotRoute
+  '/fir-explorer': typeof FIRExplorerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot'
+  fullPaths: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot'
-  id: '__root__' | '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot'
+  to: '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer'
+  id: '__root__' | '/' | '/overview' | '/risk-scores' | '/network' | '/ai-chatbot' | '/fir-explorer'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -77,6 +86,7 @@ export interface RootRouteChildren {
   RiskScoresRoute: typeof RiskScoresRoute
   NetworkRoute: typeof NetworkRoute
   AIChatbotRoute: typeof AIChatbotRoute
+  FIRExplorerRoute: typeof FIRExplorerRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -116,6 +126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AIChatbotRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/fir-explorer': {
+      id: '/fir-explorer'
+      path: '/fir-explorer'
+      fullPath: '/fir-explorer'
+      preLoaderRoute: typeof FIRExplorerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -125,6 +142,7 @@ const rootRouteChildren: RootRouteChildren = {
   RiskScoresRoute: RiskScoresRoute,
   NetworkRoute: NetworkRoute,
   AIChatbotRoute: AIChatbotRoute,
+  FIRExplorerRoute: FIRExplorerRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

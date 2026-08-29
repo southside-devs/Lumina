@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 function Toggle({
   label,
   on,
@@ -13,7 +15,7 @@ function Toggle({
       role="switch"
       aria-checked={on}
       onClick={onToggle}
-      className="flex items-center gap-2 text-xs text-foreground"
+      className="flex items-center gap-2 text-xs text-foreground cursor-pointer"
     >
       <span>{label}</span>
       <span
@@ -32,6 +34,7 @@ export type MapToolbarProps = {
   onToggleHotspots: () => void;
   showPatrols: boolean;
   onTogglePatrols: () => void;
+  onClusterTuned?: (params: { epsSpatial: number; epsTemporal: number; minPts: number }) => void;
 };
 
 export function MapToolbar({
@@ -39,24 +42,117 @@ export function MapToolbar({
   onToggleHotspots,
   showPatrols,
   onTogglePatrols,
+  onClusterTuned,
 }: MapToolbarProps) {
-  const icons = ["format_list_bulleted", "add", "remove", "my_location", "fullscreen", "layers"];
+  const [showConfig, setShowConfig] = useState(false);
+  const [epsSpatial, setEpsSpatial] = useState(2.5);
+  const [epsTemporal, setEpsTemporal] = useState(30);
+  const [minPts, setMinPts] = useState(5);
+
+  const handleUpdate = (s: number, t: number, m: number) => {
+    setEpsSpatial(s);
+    setEpsTemporal(t);
+    setMinPts(m);
+    onClusterTuned?.({ epsSpatial: s, epsTemporal: t, minPts: m });
+  };
+
   return (
-    <div className="glass-panel flex flex-wrap items-center gap-4 bg-surface-1/80 px-4 py-2 backdrop-blur-xl">
-      <Toggle label="Show Hotspots" on={showHotspots} onToggle={onToggleHotspots} />
-      <Toggle label="Patrol Units" on={showPatrols} onToggle={onTogglePatrols} />
-      <span className="h-5 w-px bg-hairline" />
-      <div className="flex items-center gap-1">
-        {icons.map((icon) => (
-          <button
-            key={icon}
-            type="button"
-            aria-label={icon.replace(/_/g, " ")}
-            className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            <span className="material-symbols-outlined text-base">{icon}</span>
-          </button>
-        ))}
+    <div className="relative">
+      {/* Parameter Tuning Popup */}
+      {showConfig && (
+        <div className="absolute bottom-full left-1/2 mb-3 -translate-x-1/2 w-80 rounded-2xl border border-zinc-700 bg-zinc-950/95 p-4 shadow-2xl backdrop-blur-2xl z-50 space-y-3.5 animate-in fade-in zoom-in-95">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-sm text-teal-400">tune</span>
+              <span className="font-mono text-xs font-bold uppercase text-white">ST-DBSCAN Parameters</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowConfig(false)}
+              className="text-zinc-400 hover:text-white p-0.5"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Spatial Epsilon */}
+          <div className="space-y-1">
+            <div className="flex justify-between font-mono text-[10px] text-zinc-400">
+              <span>Spatial Radius (εs)</span>
+              <span className="font-bold text-sky-400">{epsSpatial} km</span>
+            </div>
+            <input
+              type="range"
+              min="0.5"
+              max="10.0"
+              step="0.5"
+              value={epsSpatial}
+              onChange={(e) => handleUpdate(Number(e.target.value), epsTemporal, minPts)}
+              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-sky-400"
+            />
+          </div>
+
+          {/* Temporal Epsilon */}
+          <div className="space-y-1">
+            <div className="flex justify-between font-mono text-[10px] text-zinc-400">
+              <span>Temporal Window (εt)</span>
+              <span className="font-bold text-amber-400">{epsTemporal} Days</span>
+            </div>
+            <input
+              type="range"
+              min="7"
+              max="90"
+              step="1"
+              value={epsTemporal}
+              onChange={(e) => handleUpdate(epsSpatial, Number(e.target.value), minPts)}
+              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-amber-400"
+            />
+          </div>
+
+          {/* Min Samples */}
+          <div className="space-y-1">
+            <div className="flex justify-between font-mono text-[10px] text-zinc-400">
+              <span>Min Cluster Incidents (MinPts)</span>
+              <span className="font-bold text-red-400">{minPts} points</span>
+            </div>
+            <input
+              type="range"
+              min="2"
+              max="20"
+              step="1"
+              value={minPts}
+              onChange={(e) => handleUpdate(epsSpatial, epsTemporal, Number(e.target.value))}
+              className="w-full h-1 bg-zinc-800 rounded appearance-none cursor-pointer accent-red-400"
+            />
+          </div>
+
+          <div className="font-mono text-[9px] text-zinc-500 pt-1 border-t border-zinc-900 flex justify-between">
+            <span>AppSail Python Runtime</span>
+            <span className="text-emerald-400 font-bold">LIVE RE-CLUSTER</span>
+          </div>
+        </div>
+      )}
+
+      {/* Main Bar */}
+      <div className="glass-panel flex flex-wrap items-center gap-4 bg-surface-1/80 px-4 py-2 backdrop-blur-xl">
+        <Toggle label="Show Hotspots" on={showHotspots} onToggle={onToggleHotspots} />
+        <Toggle label="Patrol Units" on={showPatrols} onToggle={onTogglePatrols} />
+        <span className="h-5 w-px bg-hairline" />
+        
+        {/* ST-DBSCAN Parameters CTA */}
+        <button
+          type="button"
+          onClick={() => setShowConfig(!showConfig)}
+          title="Tune ST-DBSCAN Parameters"
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-mono text-xs transition-colors ${
+            showConfig
+              ? "bg-sky-500/20 text-sky-400 border border-sky-500/40"
+              : "text-muted-foreground hover:bg-accent hover:text-foreground"
+          }`}
+        >
+          <span className="material-symbols-outlined text-sm">tune</span>
+          <span>ST-DBSCAN (ε)</span>
+        </button>
       </div>
     </div>
   );

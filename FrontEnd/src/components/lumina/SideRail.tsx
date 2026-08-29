@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
 import { ReportModal } from "./ReportModal";
 
 const primaryNav = [
@@ -32,7 +33,7 @@ export function SideRail() {
         <button
           type="button"
           onClick={() => setIsReportOpen(true)}
-          title="New Investigation"
+          title="New Investigation / Create FIR"
           aria-label="New Investigation"
           className="group relative mb-2 flex size-10 cursor-pointer items-center justify-center rounded-xl bg-signal-brand font-display text-xl font-bold text-primary-foreground shadow-[0_0_18px_color-mix(in_oklab,var(--signal-brand)_40%,transparent)] transition-transform hover:scale-110"
         >
@@ -62,14 +63,21 @@ export function SideRail() {
 
           <button
             type="button"
-            onClick={() => setIsReportOpen(true)}
-            title="Reports"
-            aria-label="Reports"
+            onClick={() =>
+              generateIntelligenceBriefingPDF({
+                title: "KARNATAKA STATE POLICE — STRATEGIC INTELLIGENCE BRIEFING",
+                totalFirs: 5000,
+                repeatOffenders: 456,
+                criticalHotspots: 3,
+              })
+            }
+            title="Export Intelligence Briefing PDF"
+            aria-label="Export Briefing PDF"
             className={idleClass}
           >
             <span className="material-symbols-outlined text-[22px]">description</span>
             <span className="pointer-events-none absolute left-14 z-50 ml-2 hidden rounded-lg border border-hairline bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground shadow-xl transition-opacity group-hover:block whitespace-nowrap">
-              Reports
+              Reports (Export PDF)
             </span>
           </button>
         </div>
@@ -96,5 +104,4 @@ export function SideRail() {
     </>
   );
 }
-
 
