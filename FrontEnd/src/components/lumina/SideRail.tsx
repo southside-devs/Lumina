@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
 import { ReportModal } from "./ReportModal";
 
@@ -16,13 +17,8 @@ const secondaryLinks = [
   { icon: "help", label: "Help & Docs", to: "/help" as const },
 ] as const;
 
-const secondaryButtons = [
-  { icon: "settings", label: "System Config" },
-  { icon: "logout", label: "Logout" },
-];
-
 const idleClass =
-  "flex h-12 w-full items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-surface-2 hover:text-foreground";
+  "flex h-12 w-full items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-surface-2 hover:text-foreground active:scale-95 cursor-pointer";
 const activeClass =
   "flex h-12 w-full items-center justify-center rounded-xl border border-hairline bg-surface-2 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_8px_rgba(0,0,0,0.55)]";
 
@@ -45,6 +41,20 @@ function RailItem({ label, children }: { label: string; children: ReactNode }) {
 
 export function SideRail() {
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    toast.info("Session Closed", {
+      description: "Signed out of Karnataka State Police Command Center.",
+    });
+    navigate({ to: "/login" });
+  };
+
+  const handleConfig = () => {
+    toast.info("System Configuration", {
+      description: "Lumina Core Engine v3.4.2 · Node KA-01-HQ · AES-256 Enabled.",
+    });
+  };
 
   return (
     <>
@@ -57,7 +67,7 @@ export function SideRail() {
             type="button"
             onClick={() => setIsReportOpen(true)}
             aria-label="Create New FIR Incident Report"
-            className="mb-2 flex size-10 items-center justify-center rounded-xl border border-amber-500/30 bg-[#f59e0b] font-display text-xl font-bold text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-2px_4px_rgba(0,0,0,0.25)]"
+            className="mb-2 flex size-10 items-center justify-center rounded-xl border border-amber-500/30 bg-[#f59e0b] font-display text-xl font-bold text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-2px_4px_rgba(0,0,0,0.25)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
           >
             +
           </button>
@@ -110,13 +120,28 @@ export function SideRail() {
               </Link>
             </RailItem>
           ))}
-          {secondaryButtons.map((item) => (
-            <RailItem key={item.label} label={item.label}>
-              <button type="button" aria-label={item.label} className={idleClass}>
-                <span className="material-symbols-outlined">{item.icon}</span>
-              </button>
-            </RailItem>
-          ))}
+
+          <RailItem label="System Config">
+            <button
+              type="button"
+              onClick={handleConfig}
+              aria-label="System Config"
+              className={idleClass}
+            >
+              <span className="material-symbols-outlined">settings</span>
+            </button>
+          </RailItem>
+
+          <RailItem label="Logout">
+            <button
+              type="button"
+              onClick={handleLogout}
+              aria-label="Logout"
+              className={`${idleClass} text-rose-400 hover:text-rose-300 hover:bg-rose-500/10`}
+            >
+              <span className="material-symbols-outlined">logout</span>
+            </button>
+          </RailItem>
         </div>
       </nav>
 
