@@ -49,13 +49,6 @@ export function TopBar() {
     setPanel((current) => (current === next ? "none" : next));
   };
 
-  const handleShare = () => {
-    navigator.clipboard?.writeText?.(window.location.href);
-    toast.success("Intelligence Link Copied", {
-      description: "Secure tactical briefing link copied to clipboard.",
-    });
-  };
-
   return (
     <header className="fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar/90 px-5 backdrop-blur-xl ui-no-select">
       {/* Brand & Security Status */}
@@ -113,16 +106,6 @@ export function TopBar() {
           <span className="material-symbols-outlined absolute right-2.5 text-xs text-muted-foreground/60 transition-colors group-hover:text-white">
             keyboard_command_key
           </span>
-        </button>
-
-        {/* Share Button */}
-        <button
-          type="button"
-          aria-label="Share intelligence overview"
-          onClick={handleShare}
-          className="flex size-9 items-center justify-center rounded-xl border border-hairline bg-surface-1/80 text-muted-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:border-white/20 hover:bg-surface-2 hover:text-foreground active:scale-95 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-[18px]">share</span>
         </button>
 
         {/* Notifications Popover Toggle */}

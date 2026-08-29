@@ -54,6 +54,8 @@ const CAPABILITIES = [
 ];
 
 const STACK = [
+  { label: "Developed By", value: "Southside Devs" },
+  { label: "Deployment Partner", value: "Karnataka State Police" },
   { label: "Data Engine", value: "Zoho Catalyst Serverless + AppSail" },
   { label: "Graph DB", value: "Neo4j (ST-DBSCAN spatial clustering)" },
   { label: "ML Forecasting", value: "Zia AutoML" },
@@ -163,6 +165,14 @@ function AboutPage() {
                 cognitive load on officers and analysts, enabling them to focus on what matters most:
                 protecting communities.
               </p>
+            </section>
+
+            {/* Engineering & Attribution */}
+            <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-hairline bg-surface-1 px-5 py-3.5 text-xs font-mono text-muted-foreground">
+              <span>
+                Engineered & Developed by <strong className="text-foreground">Southside Devs</strong>
+              </span>
+              <span className="text-signal-ok">Official Deployment · Karnataka State Police</span>
             </section>
 
             <div className="h-4" />
