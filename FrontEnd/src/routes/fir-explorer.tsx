@@ -359,14 +359,16 @@ function FIRExplorerView() {
               <button
                 type="button"
                 onClick={() => {
+                  const targetFirId = selectedFir.ROWID;
                   setSelectedFir(null);
-                  navigate({ to: "/network" });
+                  navigate({ to: "/network", search: { fir_id: targetFirId } as any });
                 }}
                 className="flex items-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3.5 py-2 font-medium text-zinc-200 hover:bg-zinc-800 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-sm">hub</span>
                 <span>Inspect in Graph</span>
               </button>
+
 
               <button
                 type="button"

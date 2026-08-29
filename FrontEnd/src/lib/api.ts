@@ -462,6 +462,18 @@ export const api = {
   },
 
   /**
+   * Fetch suspects and case details for a specific incident / FIR ID
+   */
+  async getIncidentNetwork(firId: number): Promise<{ incident: FIRItem; suspects: any[] } | null> {
+    const data = await fetchJson<{ incident: FIRItem; suspects: any[] }>(`/graph/incident/${firId}`);
+    if (data && data.incident) {
+      return data;
+    }
+    return null;
+  },
+
+
+  /**
    * Send a query to the Catalyst AI Chatbot / Copilot
    */
   async sendAIChat(

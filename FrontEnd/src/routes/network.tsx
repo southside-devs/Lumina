@@ -71,7 +71,7 @@ export function NetworkTopologyView() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-  // 1. Fetch top repeat offenders list on mount
+  // 1. Fetch top repeat offenders list and check for ?fir_id= or ?suspect_id= on mount
   useEffect(() => {
     let mounted = true;
     async function loadTopSuspects() {
@@ -79,11 +79,22 @@ export function NetworkTopologyView() {
         const list = await api.getTopSuspects();
         if (mounted && list.length > 0) {
           setTopSuspects(list);
-          // If URL has ?suspect_id=X use it, otherwise use list[0]
+
           const params = new URLSearchParams(window.location.search);
           const urlSuspect = params.get("suspect_id");
+          const urlFir = params.get("fir_id");
+
           if (urlSuspect) {
             setSelectedSuspectId(parseInt(urlSuspect, 10));
+          } else if (urlFir) {
+            const inc = await api.getIncidentNetwork(parseInt(urlFir, 10));
+            if (mounted && inc && inc.suspects && inc.suspects.length > 0) {
+              const primary = inc.suspects[0];
+              setSelectedSuspectId(primary.ROWID);
+              showToast(`🎯 Linked FIR #${inc.incident.FIR_Number} — Targeting ${primary.Name}`);
+            } else {
+              setSelectedSuspectId(parseInt(list[0].id, 10));
+            }
           } else {
             setSelectedSuspectId(parseInt(list[0].id, 10));
           }
@@ -97,6 +108,7 @@ export function NetworkTopologyView() {
       mounted = false;
     };
   }, []);
+
 
   // 2. Fetch specific network graph when target suspect changes
   useEffect(() => {

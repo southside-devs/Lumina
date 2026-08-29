@@ -69,8 +69,16 @@ export function IncidentCard({ onClose, spot, fir }: IncidentCardProps) {
           </div>
         </div>
 
-        {/* Action Link to Full Explorer */}
+        {/* Action Links */}
         <div className="mt-3 flex items-center justify-between gap-2 pt-1">
+          <Link
+            to="/network"
+            search={{ fir_id: fir.ROWID } as any}
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs font-semibold text-zinc-200 hover:bg-zinc-800 transition-colors"
+          >
+            <span className="material-symbols-outlined text-sm text-red-400">hub</span>
+            <span>Graph</span>
+          </Link>
           <Link
             to="/fir-explorer"
             className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
@@ -80,6 +88,7 @@ export function IncidentCard({ onClose, spot, fir }: IncidentCardProps) {
           </Link>
         </div>
       </aside>
+
     );
   }
 
