@@ -125,23 +125,31 @@ export function IntelligenceHub() {
 
 
   const handleSelectSpot = (spot: TacticalHotspot | null) => {
+    if (!spot || selectedSpot?.id === spot.id) {
+      setSelectedSpot(null);
+      setSelectedFir(null);
+      setCardOpen(false);
+      return;
+    }
     setSelectedSpot(spot);
     setSelectedFir(null);
-    if (spot) {
-      setCardOpen(true);
-      mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
-    }
+    setCardOpen(true);
+    mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
   };
 
   const handleSelectFir = (fir: FIRItem | null) => {
+    if (!fir || selectedFir?.ROWID === fir.ROWID) {
+      setSelectedFir(null);
+      setSelectedSpot(null);
+      setCardOpen(false);
+      return;
+    }
     setSelectedFir(fir);
     setSelectedSpot(null);
-    if (fir) {
-      setCardOpen(true);
-      mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
-        duration: 0.5,
-      });
-    }
+    setCardOpen(true);
+    mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
+      duration: 0.5,
+    });
   };
 
   const handleResetView = () => {

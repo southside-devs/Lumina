@@ -308,6 +308,11 @@ export function TacticalMap({
     mapInstanceRef.current = map;
     layerGroupRef.current = layers;
 
+    map.on("click", () => {
+      onSelectSpot?.(null);
+      onSelectFIR?.(null);
+    });
+
     if (mapRef) {
       mapRef.current = map;
     }
@@ -318,7 +323,7 @@ export function TacticalMap({
       layerGroupRef.current = null;
       if (mapRef) mapRef.current = null;
     };
-  }, [mapRef]);
+  }, [mapRef, onSelectSpot, onSelectFIR]);
 
   // 3. Update Layers (Live FIRs, Markers, Hotspot Circles, Patrol Routes)
   useEffect(() => {
@@ -349,7 +354,7 @@ export function TacticalMap({
         const customIcon = L.divIcon({
           className: "custom-tactical-marker",
           html: `
-            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none" style="width:${outerRingSize}px; height:${outerRingSize}px;">
+            <div class="relative flex items-center justify-center cursor-pointer select-none" style="width:${outerRingSize}px; height:${outerRingSize}px;">
               <!-- Outer concentric thin radar ring -->
               <div class="absolute rounded-full border pointer-events-none transition-transform"
                 style="width:${outerRingSize}px; height:${outerRingSize}px; border-color: ${ringBorderColor}; border-width: 1px;"></div>
@@ -364,7 +369,8 @@ export function TacticalMap({
               </div>
             </div>
           `,
-          iconSize: [0, 0],
+          iconSize: [outerRingSize, outerRingSize],
+          iconAnchor: [Math.round(outerRingSize / 2), Math.round(outerRingSize / 2)],
         });
 
         const tooltipHtml = `
@@ -394,7 +400,10 @@ export function TacticalMap({
           marker.setZIndexOffset(0);
         });
 
-        marker.on("click", () => { onSelectSpot?.(spot); });
+        marker.on("click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          onSelectSpot?.(spot);
+        });
       });
     }
 
@@ -429,7 +438,10 @@ export function TacticalMap({
           opacity: 1,
         }).addTo(layerGroup);
 
-        circle.on("click", () => { onSelectFIR?.(fir); });
+        circle.on("click", (e) => {
+          L.DomEvent.stopPropagation(e);
+          onSelectFIR?.(fir);
+        });
 
         circle.bindTooltip(
           `<span style="font-family:monospace;font-size:10px;color:#e2e8f0;">FIR ${fir.FIR_Number || fir.ROWID} · ${fir.Crime_Group || "Incident"}</span>`,
