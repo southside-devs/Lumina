@@ -211,11 +211,12 @@ export function IntelligenceHub() {
                 <div
                   role="tablist"
                   aria-label="Incident filters"
-                  className="glass-panel relative flex items-center rounded-full bg-zinc-950/70 p-1.5 shadow-2xl backdrop-blur-2xl border border-white/10"
+                  className="relative inline-flex items-center p-[5px] rounded-full border border-white/[0.12] bg-white/[0.05] backdrop-blur-xl shadow-[0_12px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]"
                 >
-                  {/* Smooth sliding indicator pill */}
+                  {/* Sliding Frosted Glass Piece */}
                   <div
-                    className="absolute top-1.5 bottom-1.5 rounded-full bg-slate-200 shadow-md transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none"
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-[5px] bottom-[5px] rounded-full border border-white/[0.16] bg-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_12px_rgba(0,0,0,0.25)] transition-all duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
                     style={{
                       left: `${sliderStyle.left}px`,
                       width: `${sliderStyle.width}px`,
@@ -234,18 +235,18 @@ export function IntelligenceHub() {
                         role="tab"
                         aria-selected={isActive}
                         onClick={() => handleFilterChange(f.label)}
-                        className={`relative z-10 flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-200 cursor-pointer select-none ${
+                        className={`relative z-10 flex items-center gap-2.5 rounded-full px-4 py-2 font-mono text-xs font-semibold transition-colors duration-200 cursor-pointer select-none ${
                           isActive
-                            ? "text-slate-950 font-bold"
-                            : "text-zinc-400 hover:text-zinc-200"
+                            ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                            : "text-[#94A3B8] hover:text-white"
                         }`}
                       >
                         <span>{f.label}</span>
                         <span
                           className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors duration-200 ${
                             isActive
-                              ? "bg-slate-900/15 text-slate-950 font-bold"
-                              : "bg-zinc-800/80 text-zinc-400"
+                              ? "bg-white/[0.14] border border-white/[0.22] text-white shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+                              : "bg-white/[0.04] border border-white/[0.08] text-[#94A3B8]"
                           }`}
                         >
                           {f.count}
