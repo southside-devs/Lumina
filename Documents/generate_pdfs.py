@@ -575,12 +575,149 @@ def generate_evolution_pdf(output_path):
     print(f"Generated: {output_path}")
 
 
+def generate_read_off_script_pdf(output_path):
+    doc = SimpleDocTemplate(
+        output_path,
+        pagesize=letter,
+        leftMargin=54,
+        rightMargin=54,
+        topMargin=54,
+        bottomMargin=54,
+    )
+
+    styles = get_styles()
+    story = []
+
+    # Title Banner
+    story.append(Paragraph("🎙️ LUMINA — Verbatim Read-Off Presentation Script", styles["DocTitle"]))
+    story.append(Paragraph("Word-for-Word Evaluator Presentation Script · Karnataka State Police Datathon 2026", styles["DocSubtitle"]))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#0284c7"), spaceAfter=12))
+
+    # Instructions box
+    story.append(Paragraph("<b>Presenter Instructions:</b> Read the italicized quotes aloud word-for-word. Follow the blue action cues on screen in real time. Total timing: 5–6 minutes.", styles["ActionBox"]))
+    story.append(Spacer(1, 6))
+
+    # Section 1
+    story.append(Paragraph("⏱️ 0:00 – 0:45 | Introduction & The Problem Statement", styles["SectionHeader"]))
+    story.append(Paragraph("<b>[ACTION: Open the browser to the Lumina Command Hub (`/`). Keep the screen clean with the map loaded.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Good morning, respected judges and senior officers.<br/><br/>"
+        "Across 31 districts and 209 police stations in Karnataka, our officers handle thousands of First Information Reports every single week. "
+        "But here is the challenge: most of this critical data sits locked away in static spreadsheets and disconnected station logs.<br/><br/>"
+        "When a crime occurs, identifying whether a suspect is a repeat offender from another district, or recognizing an emerging crime corridor, "
+        "takes hours of manual dossier searching.<br/><br/>"
+        "That is why we built <b>LUMINA</b> — an AI-powered Crime Intelligence and Spatiotemporal Analytics Platform developed natively on Zoho Catalyst for the Karnataka State Police.<br/><br/>"
+        "Lumina transforms raw case records into sub-second predictive intelligence, visual criminal network graphs, and automated tactical patrol routing. "
+        "Let me show you how it works in real time.\"",
+        styles["SpeakerScript"]
+    ))
+
+    # Section 2
+    story.append(Paragraph("⏱️ 0:45 – 2:00 | Tactical Command Center & Hotspot GIS", styles["SectionHeader"]))
+    story.append(Paragraph("<b>[ACTION: Pan across the Karnataka state map displaying the 5,005 FIR markers and precinct clusters.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Right now, on our primary Command Hub, Lumina is monitoring <b>5,005 live FIR records</b> across all 31 Karnataka districts.<br/><br/>"
+        "Rather than showing a static, historical heatmap, Lumina runs a custom spatiotemporal clustering algorithm called <b>ST-DBSCAN</b> directly in the background. "
+        "It analyzes both geographic distance and temporal frequency to detect active, emerging crime corridors.\"",
+        styles["SpeakerScript"]
+    ))
+    story.append(Paragraph("<b>[ACTION: Click the amber/red cluster in Bengaluru Urban (Indiranagar – MG Road). The Tactical Patrol Dispatch card will expand.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"For example, looking at this active cluster in the Indiranagar–MG Road corridor: with one click, Lumina calculates the threat score — <b>94 out of 100</b> — "
+        "and isolates the primary crime pattern, which is Cybercrime and Extortion.<br/><br/>"
+        "But Lumina doesn't stop at analytics. Look at the bottom of the card: it automatically generates an <b>Automated Tactical Patrol Route</b>. "
+        "It assigns <b>Patrol Unit Alpha-4</b> with a recommended corridor path and an estimated response time of just <b>6 minutes</b>.\"",
+        styles["SpeakerScript"]
+    ))
+    story.append(Paragraph("<b>[ACTION: Switch map layer styles on toolbar: Tactical Midnight → Satellite → Esri Dark.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Field officers and dispatch commanders can instantly toggle between our high-contrast Esri Dark Canvas for night operations, "
+        "tactical midnight, and high-resolution satellite terrain.\"",
+        styles["SpeakerScript"]
+    ))
+
+    # Section 3
+    story.append(Paragraph("⏱️ 2:00 – 3:15 | Universal Search Intelligence & Neural Voice Debriefing", styles["SectionHeader"]))
+    story.append(Paragraph("<b>[ACTION: Press `Ctrl + K` to open the Universal Search Intelligence modal.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"When an officer is on patrol or investigating a case, speed is everything. By pressing <b>Ctrl + K</b>, we launch the <b>Universal Search Intelligence Center</b>.<br/><br/>"
+        "This indexes across case numbers, accused aliases, victim demographics, IPC sections, and incident narratives with under 45 milliseconds of keystroke latency.\"",
+        styles["SpeakerScript"]
+    ))
+    story.append(Paragraph("<b>[ACTION: Type `\"1693\"` into the search box. Click ⭐ Pin to add to Priority Dossiers.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Let’s search for FIR #1693/2026. Instantly, the complete dossier appears: the station jurisdiction, primary accused, and threat classification.<br/><br/>"
+        "Officers can pin critical cases to their <b>Priority Dossiers Watchlist</b>, which is encrypted and saved to their active shift session so high-priority suspects are always one click away.\"",
+        styles["SpeakerScript"]
+    ))
+    story.append(Paragraph("<b>[ACTION: Click '🎙️ Audio Intelligence Briefing'. Let English audio play for 4s. Toggle to 'ಕನ್ನಡ' (Kannada) and play for 4s. Close with ESC.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Now, listen to this: patrol officers driving or on the move cannot always read small screens. Lumina integrates Google Neural Speech Synthesis to provide an instant, hands-free spoken debriefing.<br/><br/>"
+        "And with a single tap, Lumina translates and speaks the entire intelligence briefing in <b>pure Kannada</b>, ensuring complete regional accessibility for every constable and officer across the state.\"",
+        styles["SpeakerScript"]
+    ))
+
+    # Section 4
+    story.append(Paragraph("⏱️ 3:15 – 4:15 | Strategic Analytics & Predictive Risk Scoreboard", styles["SectionHeader"]))
+    story.append(Paragraph("<b>[ACTION: Click 'Overview' on the left sidebar. Then click 'Risk Scores' in the top tab bar.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Moving to the strategic level, our <b>Overview Module</b> gives supervisory officers and the State Crime Records Bureau complete situational awareness.<br/><br/>"
+        "Here we track live statewide KPIs: 5,005 total FIRs, 456 flagged repeat offenders, and district-by-district breakdown percentages.<br/><br/>"
+        "Under the <b>Risk Scores</b> scoreboard, our predictive weighting algorithm calculates a dynamic threat index based on arrest counts, violent crime severity, and case status. "
+        "Any suspect with a score of <b>85 or higher</b> is automatically promoted to the statewide supervisory watchlist for immediate inter-district tracking.\"",
+        styles["SpeakerScript"]
+    ))
+
+    # Section 5
+    story.append(Paragraph("⏱️ 4:15 – 5:00 | Criminal Network Topology Graph", styles["SectionHeader"]))
+    story.append(Paragraph("<b>[ACTION: Click 'Network Topology' on sidebar (`/network`). Click a red central accused node to highlight connected cases & co-conspirators.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Organized crime rings rarely operate within a single jurisdiction. In our <b>Network Topology</b> module, Lumina maps multi-accused syndicates and co-conspirator networks.<br/><br/>"
+        "By clicking on any primary accused, Lumina immediately highlights their connected accomplices and shared FIRs across different police stations — "
+        "revealing criminal syndicates that would otherwise remain hidden across separate spreadsheet files.\"",
+        styles["SpeakerScript"]
+    ))
+
+    # Section 6
+    story.append(Paragraph("⏱️ 5:00 – 5:45 | AI Copilot (Bilingual Ground-Truth RAG)", styles["SectionHeader"]))
+    story.append(Paragraph("<b>[ACTION: Click 'AI Chatbot' on sidebar (`/ai-chatbot`). Click a prompt or ask a question. Show live database citations.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Lumina also features an intelligent <b>AI Copilot</b> powered by Gemini 2.5 Flash.<br/><br/>"
+        "But unlike generic chat tools, our copilot uses a strict <b>Retrieval-Augmented Generation (RAG)</b> pipeline. "
+        "It extracts case numbers, queries our live database first, and injects real records as ground truth — guaranteeing <b>zero hallucinations</b>.<br/><br/>"
+        "Notice how the copilot cites exact FIR numbers, station names, and threat metrics directly from our database. "
+        "When toggled to Kannada mode, it automatically communicates strictly in Kannada script using official Karnataka State Police terminology.\"",
+        styles["SpeakerScript"]
+    ))
+
+    # Section 7
+    story.append(Paragraph("⏱️ 5:45 – 6:30 | Official Sealed PDF Briefing & Conclusion", styles["SectionHeader"]))
+    story.append(Paragraph("<b>[ACTION: Return to `/overview`, click '[ 📄 Export Briefing ]', and open the downloaded PDF on screen.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"Finally, when senior officers prepare for morning briefings or court submissions, they can click <b>Export Briefing</b>.<br/><br/>"
+        "In less than a second, Lumina generates an official, sealed Karnataka State Police Intelligence Dossier — complete with state emblems, live metrics, top crime categories, and authorized signature blocks.\"",
+        styles["SpeakerScript"]
+    ))
+    story.append(Paragraph("<b>[ACTION: Open '⚙️ System Config' on sidebar. Show voice speed presets and cluster settings. Make eye contact with judges for closing.]</b>", styles["ActionBox"]))
+    story.append(Paragraph(
+        "\"In the <b>System Configuration Center</b>, officers can tune spatiotemporal cluster sensitivity, threat thresholds, and customize neural voice playback speed from Ultra Slow to Ultra Fast.<br/><br/>"
+        "To conclude: Lumina is <b>100% deployed and live on Zoho Catalyst serverless infrastructure</b> — scalable, resilient, zero-server maintenance, and ready for immediate deployment across the Karnataka State Police.<br/><br/>"
+        "<b>Thank you, and we are now open for questions!</b>\"",
+        styles["SpeakerScript"]
+    ))
+
+    doc.build(story, canvasmaker=NumberedCanvas)
+    print(f"Generated: {output_path}")
+
+
 if __name__ == "__main__":
     docs_dir = os.path.dirname(os.path.abspath(__file__))
     demo_pdf = os.path.join(docs_dir, "Lumina_Demo_Script.pdf")
     tech_pdf = os.path.join(docs_dir, "Lumina_Tech_Stack.pdf")
     evolution_pdf = os.path.join(docs_dir, "Lumina_Evolution_Comparison.pdf")
+    read_off_pdf = os.path.join(docs_dir, "Lumina_Read_Off_Demo_Script.pdf")
 
     generate_demo_script_pdf(demo_pdf)
     generate_tech_stack_pdf(tech_pdf)
     generate_evolution_pdf(evolution_pdf)
+    generate_read_off_script_pdf(read_off_pdf)
