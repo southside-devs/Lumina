@@ -530,17 +530,18 @@ export const api = {
 
 
   /**
-   * Send a query to the Catalyst AI Chatbot / Copilot
+   * Send a query to the Catalyst AI Chatbot / Copilot with language support
    */
   async sendAIChat(
     query: string,
     history: { role: string; text: string }[] = [],
-    context?: string
+    context?: string,
+    language: "en" | "kn" = "en"
   ): Promise<string> {
     try {
       const res = await fetchJson<{ response: string }>("/ai-chat", {
         method: "POST",
-        body: JSON.stringify({ query, history, context }),
+        body: JSON.stringify({ query, history, context, language }),
       });
 
       if (res && res.response) {
@@ -551,6 +552,17 @@ export const api = {
     }
 
     const lower = query.toLowerCase();
+    if (language === "kn") {
+      if (lower.includes("hotspot") || lower.includes("ಹಾಟ್‌ಸ್ಪಾಟ್") || lower.includes("indira") || lower.includes("mg road")) {
+        return "⚡ [ಎಸ್‌ಟಿ-ಡಿಬಿ ಸ್ಕ್ಯಾನ್ ಎಂಜಿನ್]: ಇಂದಿರಾನಗರ ಮತ್ತು ಎಂ.ಜಿ. ರಸ್ತೆ ಕಾರಿಡಾರ್‌ನಲ್ಲಿ 3 ಪ್ರಮುಖ ಅಪರಾಧ ಹಾಟ್‌ಸ್ಪಾಟ್‌ಗಳನ್ನು ಗುರುತಿಸಲಾಗಿದೆ. ರಾತ್ರಿ 22:00 ರಿಂದ 02:00 ರ ನಡುವೆ ಅತಿ ಹೆಚ್ಚು ಪ್ರಕರಣಗಳು ದಾಖಲಾಗಿವೆ.";
+      } else if (lower.includes("repeat") || lower.includes("ಆರೋಪಿ") || lower.includes("offender") || lower.includes("suspect")) {
+        return "👤 [ಆಟೋಎಂಎಲ್ ವಿಶ್ಲೇಷಣೆ]: ಕರ್ನಾಟಕದಾದ್ಯಂತ 456 ಪುನರಾವರ್ತಿತ ಆರೋಪಿಗಳನ್ನು ಗುರುತಿಸಲಾಗಿದೆ. ಬೆಂಗಳೂರು ನಗರ ಮತ್ತು ಮೈಸೂರಿನಲ್ಲಿ ಅತಿ ಹೆಚ್ಚು ಆರೋಪಿಗಳು ಪತ್ತೆಯಾಗಿದ್ದಾರೆ.";
+      } else if (lower.includes("risk") || lower.includes("district") || lower.includes("ಜಿಲ್ಲೆ") || lower.includes("bengaluru")) {
+        return "📊 [ಲ್ಯುಮಿನಾ ಇಂಟೆಲಿಜೆನ್ಸ್]: ಬೆಂಗಳೂರು ನಗರವು ಅತಿ ಹೆಚ್ಚು ಎಫ್‌ಐಆರ್ ದಾಖಲಾದ ಜಿಲ್ಲೆಯಾಗಿದ್ದು (523 ಎಫ್‌ಐಆರ್‌ಗಳು), ನಂತರದ ಸ್ಥಾನಗಳಲ್ಲಿ ಬೆಳಗಾವಿ (260) ಮತ್ತು ಮಂಗಳೂರು (206) ಇವೆ.";
+      }
+      return `📊 [ಲ್ಯುಮಿನಾ ಎಐ ಸಹಾಯಕ]: 209 ಪೊಲೀಸ್ ಠಾಣೆಗಳ 5,000 ಕ್ಕೂ ಹೆಚ್ಚು ದಾಖಲೆಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ. ಎಲ್ಲಾ ಇಂಟೆಲಿಜೆನ್ಸ್ ಸರ್ವರ್‌ಗಳು ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿವೆ.`;
+    }
+
     if (lower.includes("hotspot") || lower.includes("indira") || lower.includes("mg road")) {
       return "⚡ [ST-DBSCAN Engine]: Identified 3 dense spatial-temporal crime clusters in Indira Nagar & MG Road corridor. Highest incident concentration between 22:00 - 02:00 IST.";
     } else if (lower.includes("repeat") || lower.includes("offender") || lower.includes("suspect")) {

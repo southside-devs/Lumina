@@ -164,8 +164,8 @@ export function AIChatbotView() {
         text: m.text,
       }));
 
-      // Call live backend AI service with language awareness
-      const aiReply = await api.sendAIChat(promptText, history);
+      // Call live backend AI service with explicit language awareness
+      const aiReply = await api.sendAIChat(promptText, history, undefined, language);
 
       let summaryData;
       const lower = promptText.toLowerCase();
