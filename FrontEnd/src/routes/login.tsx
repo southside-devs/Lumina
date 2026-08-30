@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { KspEmblem } from "@/components/lumina/KspEmblem";
+import { LuminaLogo } from "@/components/lumina/LuminaLogo";
 import { TacticalLoader } from "@/components/lumina/TacticalLoader";
 
 export const Route = createFileRoute("/login")({
@@ -80,10 +81,8 @@ export function LoginPage() {
 
             {/* Lumina Platform Big Typography */}
             <div className="mt-8">
-              <h1 className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-white">
-                LUMINA
-              </h1>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-500">
+              <LuminaLogo className="h-9 sm:h-11 w-auto text-white drop-shadow-[0_0_16px_rgba(255,255,255,0.2)]" />
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-[0.3em] text-zinc-500">
                 PLATFORM
               </p>
             </div>

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { LuminaLogo } from "@/components/lumina/LuminaLogo";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 
@@ -77,10 +78,7 @@ function AboutPage() {
             {/* Hero */}
             <section className="flex flex-col items-start gap-4">
               <div className="flex items-center gap-3 ui-no-select">
-                <div className="flex items-center gap-2 rounded-full border border-hairline bg-surface-1 px-5 py-2">
-                  <span className="material-symbols-outlined text-sm text-muted-foreground">lock</span>
-                  <span className="font-mono text-label-md tracking-[0.2em] text-foreground">LUMINA</span>
-                </div>
+                <LuminaLogo className="h-5 w-auto text-foreground" />
                 <span className="inline-flex items-center rounded-full border border-signal-brand/30 bg-signal-brand/10 px-3 py-0.5 font-mono text-[10px] font-semibold text-signal-brand">
                   v2.0.0-dev
                 </span>

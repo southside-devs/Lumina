@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { ProfileMenu } from "./ProfileMenu";
 import { SearchIntelligenceModal } from "./SearchIntelligenceModal";
+import { LuminaLogo } from "./LuminaLogo";
 import { INITIAL_NOTICES, useNoticeCounts, type IntelligenceNotice, type NotifTab } from "./notice-data";
 
 const statuses = [
@@ -56,7 +57,7 @@ export function TopBar() {
   return (
     <header className="fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar/90 px-5 backdrop-blur-xl ui-no-select">
       {/* Brand & Security Status */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center">
         <button
           type="button"
           onClick={() =>
@@ -64,12 +65,10 @@ export function TopBar() {
               description: "End-to-end encrypted tactical command node #KA-01-HQ.",
             })
           }
-          className="group flex items-center gap-2 rounded-full border border-hairline bg-surface-1 px-4 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_2px_rgba(0,0,0,0.45)] transition-all hover:border-white/20 hover:bg-surface-2 active:scale-95 cursor-pointer"
+          className="group flex items-center px-1 py-1 transition-opacity hover:opacity-80 active:scale-95 cursor-pointer"
+          aria-label="Lumina Intelligence Grid"
         >
-          <span className="material-symbols-outlined text-sm text-muted-foreground transition-colors group-hover:text-amber-400">
-            lock
-          </span>
-          <span className="font-mono text-label-md tracking-[0.2em] text-foreground">LUMINA</span>
+          <LuminaLogo className="h-4.5 w-auto object-contain brightness-100" />
         </button>
       </div>
 
@@ -144,13 +143,11 @@ export function TopBar() {
                 setNotices((prev) => prev.map((n) => ({ ...n, read: true })));
                 toast.success("All intelligence briefs marked read");
               }}
-              onToggleArchive={(id) => {
-                setNotices((prev) =>
-                  prev.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n))
-                );
-              }}
-              onAction={(n) => {
-                toast.info(`Reviewing ${n.callsign}`, { description: n.title });
+              onOpenNotice={(id) => {
+                const found = notices.find((n) => n.id === id);
+                if (found) {
+                  toast.info(found.title, { description: found.body });
+                }
                 setPanel("none");
               }}
             />
