@@ -174,7 +174,7 @@ export const api = {
       return data;
     }
     return {
-      total_firs: 5000,
+      total_firs: 5005,
       total_accused: 3000,
       total_victims: 6254,
       total_stations: 209,

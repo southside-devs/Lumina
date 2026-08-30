@@ -260,7 +260,7 @@ function FIRExplorerView() {
                           <td className="px-5 py-2.5 text-zinc-300 font-sans">
                             <div>{fir.District_Name || `Station #${fir.Station_ID}`}</div>
                             <div className="text-[11px] text-zinc-500 font-mono">
-                              {fir.Latitude?.toFixed(2)}°N, {fir.Longitude?.toFixed(2)}°E
+                              {(Number(fir.Latitude) || 12.97).toFixed(2)}°N, {(Number(fir.Longitude) || 77.59).toFixed(2)}°E
                             </div>
                           </td>
                           <td className="px-5 py-2.5 text-center">
