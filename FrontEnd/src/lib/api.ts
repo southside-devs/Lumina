@@ -534,7 +534,7 @@ export const api = {
     epsSpatial = 15.0,
     epsTemporal = 60,
     minSamples = 4,
-    limit = 2000
+    limit = 5000
   ): Promise<SpatiotemporalCluster[]> {
     const data = await fetchJson<HotspotClustersResponse>(
       `/hotspots?eps_spatial=${epsSpatial}&eps_temporal=${epsTemporal}&min_samples=${minSamples}&limit=${limit}`

@@ -254,6 +254,7 @@ export function TacticalMap({
       maxZoom: 16,
       zoomControl: false,
       attributionControl: false,
+      preferCanvas: true,
       zoomAnimation: true,
       zoomAnimationThreshold: 8,
     });
