@@ -191,7 +191,7 @@ export function SystemConfigModal({ isOpen, onClose }: SystemConfigModalProps) {
                   </button>
                 </div>
 
-                {/* 5 Discrete Presets */}
+                {/* 5 Discrete Presets (Clean text labels without raw multipliers) */}
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 pt-1 font-mono">
                   {(Object.keys(VOICE_SPEED_MAP) as VoiceSpeedOption[]).map((key) => {
                     const item = VOICE_SPEED_MAP[key];
@@ -202,21 +202,21 @@ export function SystemConfigModal({ isOpen, onClose }: SystemConfigModalProps) {
                         type="button"
                         onClick={() => {
                           updateConfig({ voiceSpeed: key });
-                          toast.success(`Voice speed set to ${item.label} (${item.multiplier})`);
+                          toast.success(`Voice speed set to ${item.label}`);
                         }}
-                        className={`flex flex-col items-center justify-center p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        className={`flex items-center justify-center py-3 px-2 rounded-xl border text-xs transition-all cursor-pointer ${
                           isSelected
                             ? "bg-emerald-950/70 border-emerald-500/80 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)] font-bold"
                             : "bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700"
                         }`}
                       >
-                        <span className="text-xs">{item.label}</span>
-                        <span className="text-[10px] text-zinc-500 mt-0.5 font-normal">{item.multiplier}</span>
+                        <span>{item.label}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
+
 
               {/* Default Language Preference */}
               <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-4 space-y-3">

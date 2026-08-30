@@ -838,13 +838,14 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                   type="button"
                   onClick={() => handleToggleVoiceAudio(aiAnswer)}
                   className="flex items-center gap-1.5 text-xs text-emerald-300 hover:text-emerald-100 bg-emerald-900/50 border border-emerald-500/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-sm"
-                  title={`Listen to briefing (Google Neural Voice ${VOICE_SPEED_MAP[config.voiceSpeed].multiplier})`}
+                  title="Listen to briefing (Google Neural Voice)"
                 >
                   <span className="material-symbols-outlined text-sm">
                     {isPlayingAudio ? "stop_circle" : "volume_up"}
                   </span>
-                  <span>{isPlayingAudio ? "Stop Audio" : `Listen (${VOICE_SPEED_MAP[config.voiceSpeed].multiplier})`}</span>
+                  <span>{isPlayingAudio ? "Stop Audio" : "Listen"}</span>
                 </button>
+
 
 
                 <button
