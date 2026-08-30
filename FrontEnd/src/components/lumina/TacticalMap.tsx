@@ -149,7 +149,7 @@ export function TacticalMap({
   onSelectFIR,
   activeSpot,
   selectedFIR,
-  showIncidents = true,
+  showIncidents = false,
   showHotspots = true,
   showPatrols = true,
   firs = [],
@@ -197,14 +197,17 @@ export function TacticalMap({
     // Target center and zoom for Karnataka
     const targetCenter: [number, number] = [14.8, 76.0];
     const targetZoom = 8;
+
+    // Pan-India overview center and zoom
+    const indiaCenter: [number, number] = [20.5937, 78.9629];
+    const indiaZoom = 5;
     
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const initialZoom = prefersReducedMotion ? targetZoom : targetZoom - 1;
 
     const map = L.map(mapContainerRef.current, {
-      center: targetCenter,
-      zoom: initialZoom,
-      minZoom: 6,
+      center: prefersReducedMotion ? targetCenter : indiaCenter,
+      zoom: prefersReducedMotion ? targetZoom : indiaZoom,
+      minZoom: 4,
       maxZoom: 16,
       zoomControl: false,
       attributionControl: false,
@@ -216,11 +219,11 @@ export function TacticalMap({
       setTimeout(() => {
         if (mapInstanceRef.current === map) {
           map.flyTo(targetCenter, targetZoom, {
-            duration: 0.6,
-            easeLinearity: 0.5,
+            duration: 1.8,
+            easeLinearity: 0.25,
           });
         }
-      }, 100);
+      }, 400);
     }
 
     // 1. Official Esri Dark Gray Base Map Layer (100% Native Dark Military GIS)
@@ -299,74 +302,41 @@ export function TacticalMap({
     if (showHotspots) {
       hotspotsList.forEach((spot) => {
         const isSelected = activeSpot?.id === spot.id;
-        const isHigh     = spot.threatScore >= 85;
-        const isMed      = spot.threatScore >= 75 && spot.threatScore < 85;
-
-        // Dynamic spatial radius from ML model or fallback calculation
-        const baseRadiusMeters = spot.radius_km 
-          ? Math.max(spot.radius_km * 750, 15000) 
-          : isSelected ? 28000 : isHigh ? 23000 : isMed ? 18000 : 14000;
-        const innerRadius = baseRadiusMeters * 0.45;
-
-        // Inner subtle concentric circular ring
-        L.circle([spot.lat, spot.lng], {
-          radius: innerRadius,
-          color: isSelected ? "#e2e8f0" : isHigh ? "#94a3b8" : "#475569",
-          fillColor: "#09090b",
-          fillOpacity: isSelected ? 0.35 : isHigh ? 0.25 : 0.12,
-          weight: isSelected ? 1.2 : 0.8,
-        }).addTo(layerGroup);
-
-        // Outer concentric circular boundary (spatial footprint)
-        L.circle([spot.lat, spot.lng], {
-          radius: baseRadiusMeters,
-          color: isSelected ? "#ffffff" : isHigh ? "#cbd5e1" : isMed ? "#64748b" : "#334155",
-          fillColor: "#09090b",
-          fillOpacity: isSelected ? 0.15 : isHigh ? 0.08 : 0.03,
-          weight: isSelected ? 1.4 : isHigh ? 1.1 : 0.7,
-          dashArray: isSelected || isHigh ? undefined : "3 6",
-        }).addTo(layerGroup);
-
-        // Balanced circular node sizing
-        const coreSize    = isSelected ? 29 : isHigh ? 25 : isMed ? 22 : 19;
-        const borderColor = isSelected ? "#ffffff" : isHigh ? "#e2e8f0" : isMed ? "#94a3b8" : "#64748b";
-        const ringColor   = isSelected ? "#cbd5e1" : isHigh ? "#94a3b8" : "#475569";
         
-        // Threat Score badge on hotspot pin (e.g. 94, 85, 78, 62, 45)
-        const displayScore = spot.threatScore || 75;
+        // Count to display (e.g. 13, 7, 5, 4, 3)
+        const count = spot.firCount || (spot.threatScore >= 90 ? 13 : spot.threatScore >= 85 ? 7 : spot.threatScore >= 80 ? 5 : spot.threatScore >= 70 ? 4 : 3);
+        const isDominant = count >= 10 || isSelected;
 
-        // Perfect 1:1 circular beacon animation ONLY for hotspots
-        const beaconOuter = coreSize + 14;
-        const beaconInner = coreSize + 7;
-        const beaconHtml = `
-          <div class="absolute rounded-full border opacity-30 animate-ping pointer-events-none shrink-0" 
-            style="width:${beaconOuter}px; height:${beaconOuter}px; min-width:${beaconOuter}px; min-height:${beaconOuter}px; border-color:${borderColor}; animation-duration: 2.8s;"></div>
-          <div class="absolute rounded-full border opacity-20 pointer-events-none shrink-0" 
-            style="width:${beaconInner}px; height:${beaconInner}px; min-width:${beaconInner}px; min-height:${beaconInner}px; border-color:${ringColor};"></div>
-        `;
+        // Extra compact, refined node sizes
+        const coreSize = isDominant ? 20 : count >= 7 ? 17 : count >= 5 ? 15 : 13;
+        const outerRingSize = coreSize + (isDominant ? 5 : 4);
+
+        // Muted, less bright color scheme
+        const borderColor = isDominant ? "rgba(226, 232, 240, 0.8)" : "rgba(148, 163, 184, 0.6)";
+        const ringBorderColor = isDominant ? "rgba(203, 213, 225, 0.35)" : "rgba(148, 163, 184, 0.2)";
+        const textColor = isDominant ? "#f1f5f9" : "#cbd5e1";
 
         const customIcon = L.divIcon({
           className: "custom-tactical-marker",
           html: `
-            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group" style="width:${coreSize}px; height:${coreSize}px;">
-              ${beaconHtml}
-              <!-- Outer concentric separation ring -->
-              <div class="absolute rounded-full border pointer-events-none shrink-0"
-                style="width:${coreSize + 5}px; height:${coreSize + 5}px; min-width:${coreSize + 5}px; min-height:${coreSize + 5}px; border-color:${ringColor}; opacity: 0.5;"></div>
+            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group select-none" style="width:${outerRingSize}px; height:${outerRingSize}px;">
+              <!-- Outer concentric thin muted ring -->
+              <div class="absolute rounded-full border pointer-events-none transition-transform group-hover:scale-105"
+                style="width:${outerRingSize}px; height:${outerRingSize}px; border-color: ${ringBorderColor}; border-width: 1px;"></div>
               
-              <!-- Perfect Dark circular core with centered clean white typography -->
-              <div class="relative z-10 flex items-center justify-center rounded-full border bg-black shadow-lg shrink-0 transition-transform group-hover:scale-110"
-                style="width:${coreSize}px; height:${coreSize}px; min-width:${coreSize}px; min-height:${coreSize}px; border-color:${borderColor}; ${isSelected ? "outline: 1.5px solid #ffffff; outline-offset: 2px;" : ""}">
-                <span class="font-mono font-bold text-white text-center leading-none select-none flex items-center justify-center" style="font-size: ${coreSize >= 24 ? "10px" : "9px"}; width:${coreSize}px; height:${coreSize}px;">
-                  ${displayScore}
+              <!-- Dark circular core with softened border and muted text -->
+              <div class="relative z-10 flex items-center justify-center rounded-full bg-zinc-950/90 shadow-sm transition-transform group-hover:scale-110"
+                style="width:${coreSize}px; height:${coreSize}px; border: 1px solid ${borderColor};">
+                <span class="font-sans font-semibold text-center leading-none select-none flex items-center justify-center" 
+                  style="color: ${textColor}; font-size: ${isDominant ? '9px' : count >= 7 ? '8px' : count >= 5 ? '7.5px' : '7px'};">
+                  ${count}
                 </span>
               </div>
 
-
               <!-- Minimal hover label -->
-              <div class="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                <span class="font-mono text-[9px] text-zinc-300 bg-black/90 px-1.5 py-0.5 rounded border border-zinc-800 shadow-md">
-                  ${spot.name} (${spot.threatScore})
+              <div class="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
+                <span class="font-mono text-[9px] text-zinc-300 bg-zinc-950/90 px-1.5 py-0.5 rounded border border-zinc-800 shadow-lg">
+                  ${spot.name} · ${count} Incidents
                 </span>
               </div>
             </div>

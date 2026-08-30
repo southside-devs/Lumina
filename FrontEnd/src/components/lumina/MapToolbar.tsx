@@ -15,14 +15,20 @@ function Toggle({
       role="switch"
       aria-checked={on}
       onClick={onToggle}
-      className="flex items-center gap-2 text-xs text-foreground cursor-pointer"
+      className="flex items-center gap-2.5 text-sm text-foreground cursor-pointer select-none"
     >
-      <span>{label}</span>
+      <span className={`transition-colors duration-200 ${on ? "text-foreground" : "text-muted-foreground"}`}>
+        {label}
+      </span>
       <span
-        className={`relative h-4 w-8 rounded-full transition-colors ${on ? "bg-slate-400" : "bg-surface-3"}`}
+        className={`relative inline-flex h-[22px] w-[42px] shrink-0 rounded-full transition-colors duration-200 ease-in-out ${
+          on ? "bg-blue-500" : "bg-zinc-700"
+        }`}
       >
         <span
-          className={`absolute top-0.5 size-3 rounded-full transition-all ${on ? "left-4 bg-slate-900" : "left-0.5 bg-foreground"}`}
+          className={`pointer-events-none inline-block size-[18px] rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out self-center ${
+            on ? "translate-x-[22px]" : "translate-x-[2px]"
+          }`}
         />
       </span>
     </button>
@@ -41,7 +47,7 @@ export type MapToolbarProps = {
 };
 
 export function MapToolbar({
-  showIncidents = true,
+  showIncidents = false,
   onToggleIncidents,
   showHotspots,
   onToggleHotspots,
@@ -54,7 +60,7 @@ export function MapToolbar({
   const [epsSpatial, setEpsSpatial] = useState(12.0);
   const [epsTemporal, setEpsTemporal] = useState(45);
   const [minPts, setMinPts] = useState(4);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounced parent notification for silky-smooth 60fps dragging
   const notifyParent = useCallback(
