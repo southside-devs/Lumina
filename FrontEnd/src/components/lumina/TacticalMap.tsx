@@ -166,6 +166,18 @@ export function TacticalMap({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>(DEFAULT_ST_DBSCAN_CLUSTERS);
 
+  const onSelectSpotRef = useRef(onSelectSpot);
+  onSelectSpotRef.current = onSelectSpot;
+
+  const onSelectFIRRef = useRef(onSelectFIR);
+  onSelectFIRRef.current = onSelectFIR;
+
+  const activeSpotRef = useRef(activeSpot);
+  activeSpotRef.current = activeSpot;
+
+  const selectedFIRRef = useRef(selectedFIR);
+  selectedFIRRef.current = selectedFIR;
+
   const createTileLayerForStyle = (style: string) => {
     let tileUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
     let tileOptions: L.TileLayerOptions = {
@@ -402,7 +414,12 @@ export function TacticalMap({
 
         marker.on("click", (e) => {
           L.DomEvent.stopPropagation(e);
-          onSelectSpot?.(spot);
+          const currentActive = activeSpotRef.current;
+          if (currentActive?.id === spot.id) {
+            onSelectSpotRef.current?.(null);
+          } else {
+            onSelectSpotRef.current?.(spot);
+          }
         });
       });
     }
@@ -440,7 +457,12 @@ export function TacticalMap({
 
         circle.on("click", (e) => {
           L.DomEvent.stopPropagation(e);
-          onSelectFIR?.(fir);
+          const currentFir = selectedFIRRef.current;
+          if (currentFir?.ROWID === fir.ROWID) {
+            onSelectFIRRef.current?.(null);
+          } else {
+            onSelectFIRRef.current?.(fir);
+          }
         });
 
         circle.bindTooltip(
@@ -449,12 +471,21 @@ export function TacticalMap({
         );
       });
     }
-  }, [showIncidents, showHotspots, activeSpot, selectedFIR, firs, hotspotsList, onSelectSpot, onSelectFIR]);
+  }, [showIncidents, showHotspots, activeSpot, selectedFIR, firs, hotspotsList]);
 
 
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-black">
+    <div
+      onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (!target.closest(".custom-tactical-marker, .leaflet-marker-icon, .leaflet-interactive, button, a, aside, [role='tablist']")) {
+          onSelectSpotRef.current?.(null);
+          onSelectFIRRef.current?.(null);
+        }
+      }}
+      className="absolute inset-0 overflow-hidden bg-black"
+    >
       {/* Real Geographic Map Tile Container */}
       <div ref={mapContainerRef} className="absolute inset-0 h-full w-full z-0" />
 
