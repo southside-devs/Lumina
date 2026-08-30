@@ -337,53 +337,32 @@ export function TacticalMap({
       hotspotsList.forEach((spot) => {
         const isSelected = activeSpot?.id === spot.id;
         
-        // Threat Score to display on the pin (e.g. 94, 88, 85, 78)
+        // Threat Score to display on the pin (e.g. 59, 56, 51, 46, 28)
         const score = spot.threatScore || (spot.firCount >= 10 ? 94 : spot.firCount >= 6 ? 88 : 82);
-        const isCritical = score >= 85 || isSelected;
-        const isElevated = score >= 70 && score < 85;
+        const isDominant = score >= 90 || isSelected;
 
-        // Visual Colors calibrated for military intelligence HUD
-        const primaryColor = isCritical ? "#ef4444" : isElevated ? "#f59e0b" : "#38bdf8";
-        const borderColor = isCritical
-          ? "rgba(239, 68, 68, 0.9)"
-          : isElevated
-          ? "rgba(245, 158, 11, 0.85)"
-          : "rgba(56, 189, 248, 0.8)";
-        const ringBorderColor = isCritical
-          ? "rgba(239, 68, 68, 0.4)"
-          : isElevated
-          ? "rgba(245, 158, 11, 0.3)"
-          : "rgba(56, 189, 248, 0.25)";
-        const textColor = isCritical ? "#fecaca" : isElevated ? "#fef3c7" : "#e0f2fe";
+        // Sized cleanly for 2-digit threat score numbers (e.g. 94, 88)
+        const coreSize = isDominant ? 24 : score >= 85 ? 22 : 20;
+        const outerRingSize = coreSize + (isDominant ? 6 : 5);
 
-        // Ambient spatial heat circle matching ST-DBSCAN cluster radius (in meters)
-        const radiusMeters = Math.max((spot.radius_km || 15) * 1000, 10000);
-        L.circle([spot.lat, spot.lng], {
-          radius: radiusMeters,
-          color: primaryColor,
-          fillColor: primaryColor,
-          fillOpacity: isSelected ? 0.22 : 0.08,
-          weight: isSelected ? 1.5 : 1,
-          dashArray: "4, 6",
-        }).addTo(layerGroup);
-
-        // Dynamic pin sizes
-        const coreSize = isCritical ? 26 : 22;
-        const outerRingSize = coreSize + (isCritical ? 8 : 6);
+        // High-contrast, refined military GIS styling — 100% Pure Monochrome
+        const borderColor = isDominant ? "rgba(241, 245, 249, 0.9)" : "rgba(148, 163, 184, 0.65)";
+        const ringBorderColor = isDominant ? "rgba(226, 232, 240, 0.35)" : "rgba(148, 163, 184, 0.2)";
+        const textColor = isDominant ? "#ffffff" : "#cbd5e1";
 
         const customIcon = L.divIcon({
           className: "custom-tactical-marker",
           html: `
             <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none" style="width:${outerRingSize}px; height:${outerRingSize}px;">
-              <!-- Outer concentric radar pulse ring -->
-              <div class="absolute rounded-full border pointer-events-none ${isCritical ? 'animate-ping opacity-60' : ''}"
-                style="width:${outerRingSize}px; height:${outerRingSize}px; border-color: ${ringBorderColor}; border-width: 1.5px;"></div>
+              <!-- Outer concentric thin radar ring -->
+              <div class="absolute rounded-full border pointer-events-none transition-transform"
+                style="width:${outerRingSize}px; height:${outerRingSize}px; border-color: ${ringBorderColor}; border-width: 1px;"></div>
               
-              <!-- Dark circular core showing Threat Score with glow -->
-              <div class="relative z-10 flex items-center justify-center rounded-full bg-zinc-950/95 transition-transform hover:scale-110"
-                style="width:${coreSize}px; height:${coreSize}px; border: 1.5px solid ${borderColor}; box-shadow: 0 0 14px ${primaryColor}55;">
+              <!-- Dark circular core showing Threat Score -->
+              <div class="relative z-10 flex items-center justify-center rounded-full bg-zinc-950/95 shadow-md transition-transform hover:scale-110"
+                style="width:${coreSize}px; height:${coreSize}px; border: 1.5px solid ${borderColor};">
                 <span class="font-mono font-bold text-center leading-none select-none flex items-center justify-center tracking-tighter" 
-                  style="color: ${textColor}; font-size: ${isCritical ? '11px' : '9.5px'};">
+                  style="color: ${textColor}; font-size: ${isDominant ? '10px' : '9px'};">
                   ${score}
                 </span>
               </div>
@@ -394,10 +373,10 @@ export function TacticalMap({
 
         const tooltipHtml = `
           <div style="font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; color: #f1f5f9; background: rgba(9, 9, 11, 0.96); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: ${primaryColor};"></span>
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: #e2e8f0;"></span>
             <span style="font-weight: 600; color: #ffffff;">${spot.name}</span>
             <span style="color: #52525b;">·</span>
-            <span style="color: ${primaryColor}; font-weight: 700;">Threat: ${score}/100</span>
+            <span style="color: #cbd5e1; font-weight: 700;">Threat: ${score}/100</span>
             <span style="color: #52525b;">·</span>
             <span style="color: #a1a1aa;">${spot.firCount || 10} FIRs</span>
           </div>
