@@ -224,7 +224,7 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
     "opsz" 24;
 }
 
-/* Esri Dark Canvas Layering */
+/* Base Map GIS Tile Layering */
 .esri-dark-tiles {
   filter: brightness(0.68) contrast(1.2) saturate(0) !important;
 }
@@ -233,9 +233,10 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
   filter: brightness(0.85) contrast(1.15) !important;
 }
 
-.carto-midnight-tiles {
-  filter: brightness(0.85) contrast(1.2) !important;
+.osm-tactical-midnight {
+  filter: invert(100%) hue-rotate(180deg) brightness(85%) contrast(125%) saturate(0) !important;
 }
+
 
 
 .karnataka-state-boundary {

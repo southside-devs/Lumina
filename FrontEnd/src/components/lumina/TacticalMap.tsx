@@ -181,15 +181,16 @@ export function TacticalMap({
         className: "esri-satellite-tiles",
       };
     } else if (style === "midnight") {
-      tileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+      tileUrl = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
       tileOptions = {
         maxZoom: 19,
-        subdomains: ["a", "b", "c", "d"],
-        className: "carto-midnight-tiles",
+        subdomains: ["a", "b", "c"],
+        className: "osm-tactical-midnight",
       };
     }
 
     return L.tileLayer(tileUrl, tileOptions);
+
   };
 
   // 1. Fetch live ST-DBSCAN ML clusters whenever parameters are tuned
