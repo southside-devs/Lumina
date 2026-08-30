@@ -183,46 +183,61 @@ export function IntelligenceHub() {
 
 
           <div className="relative z-10 flex h-full flex-col p-6 pointer-events-none">
-            <header className="pointer-events-auto">
-              <h1 className="font-display text-headline-lg tracking-tight">
-                Strategic Intelligence Hub
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Lumina Ops • Real-time Threat Assessment across 209 Karnataka Police Stations
-              </p>
-            </header>
+            {/* Top Bar Area: Header on Left, Filter Tabs on Right */}
+            <div className="flex items-start justify-between gap-4">
+              <header className="pointer-events-auto">
+                <h1 className="font-display text-headline-lg tracking-tight">
+                  Strategic Intelligence Hub
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Lumina Ops • Real-time Threat Assessment across 209 Karnataka Police Stations
+                </p>
+              </header>
 
-            <div className="mt-5 flex items-center gap-3 pointer-events-auto">
-              <div
-                role="tablist"
-                aria-label="Incident filters"
-                className="glass-panel flex gap-1 rounded-full bg-surface-1/70 p-1 backdrop-blur-xl border border-hairline"
-              >
-                {filters.map((f) => (
-                  <button
-                    key={f.label}
-                    type="button"
-                    role="tab"
-                    aria-selected={activeFilter === f.label}
-                    onClick={() => handleFilterChange(f.label)}
-                    className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-colors cursor-pointer ${
-                      activeFilter === f.label
-                        ? "bg-slate-200 text-slate-900"
-                        : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                    }`}
-                  >
-                    <span>{f.label}</span>
-                    <span
-                      className={`rounded px-1.5 font-mono text-label-sm ${
+              {/* Right Side Container: Filter Tabs on top, IncidentCard stacked cleanly right below */}
+              <div className="pointer-events-auto flex flex-col items-end gap-3">
+                <div
+                  role="tablist"
+                  aria-label="Incident filters"
+                  className="glass-panel flex gap-1 rounded-full bg-surface-1/85 p-1 shadow-lg backdrop-blur-xl border border-hairline"
+                >
+                  {filters.map((f) => (
+                    <button
+                      key={f.label}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeFilter === f.label}
+                      onClick={() => handleFilterChange(f.label)}
+                      className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
                         activeFilter === f.label
-                          ? "bg-slate-900/15 text-slate-700"
-                          : "bg-surface-2 text-muted-foreground"
+                          ? "bg-slate-200 text-slate-900 shadow-sm"
+                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
                       }`}
                     >
-                      {f.count}
-                    </span>
-                  </button>
-                ))}
+                      <span>{f.label}</span>
+                      <span
+                        className={`rounded px-1.5 font-mono text-[10px] ${
+                          activeFilter === f.label
+                            ? "bg-slate-900/15 text-slate-700 font-bold"
+                            : "bg-surface-2 text-muted-foreground"
+                        }`}
+                      >
+                        {f.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Pop-up Incident Card cleanly positioned right below filter tabs */}
+                {cardOpen && (selectedSpot || selectedFir) && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                    <IncidentCard
+                      spot={selectedSpot || undefined}
+                      fir={selectedFir || undefined}
+                      onClose={() => setCardOpen(false)}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -247,16 +262,6 @@ export function IntelligenceHub() {
                 <span className="material-symbols-outlined text-[18px]">remove</span>
               </button>
             </div>
-
-            {cardOpen && (selectedSpot || selectedFir) && (
-              <div className="pointer-events-auto absolute top-6 right-6 z-20">
-                <IncidentCard
-                  spot={selectedSpot || undefined}
-                  fir={selectedFir || undefined}
-                  onClose={() => setCardOpen(false)}
-                />
-              </div>
-            )}
 
             <div className="mt-auto flex items-end justify-between gap-4 pointer-events-auto">
               <div className="hidden w-[88px] lg:block" />
