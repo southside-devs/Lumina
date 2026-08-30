@@ -144,11 +144,22 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Allow text selection where appropriate (inputs, textareas, and explicitly marked selectable text) */
+input,
+textarea,
+[contenteditable="true"],
+.selectable,
+.select-text {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ── Text-selection utilities ──────────────────────────────────────────────
-   Apply .ui-no-select to nav labels, buttons, tabs, badges, decorative labels.
-   Never apply to inputs, textareas, data values, IDs, logs, or user content.
+   Explicit classes for fine-grained selection control if needed.
 */
 .ui-no-select,
 .ui-no-select * {
