@@ -299,6 +299,20 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
   color: #e2e8f0 !important;
 }
 
+/* Tactical Hotspot Tooltip (Native Leaflet tooltipPane - above all pins) */
+.lumina-tactical-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+}
+
+.lumina-tactical-tooltip::before {
+  display: none !important;
+}
+
+
 .lumina-fir-tooltip::before {
   border-top-color: rgba(9, 9, 11, 0.95) !important;
 }

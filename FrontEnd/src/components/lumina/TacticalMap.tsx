@@ -316,29 +316,17 @@ export function TacticalMap({
         const customIcon = L.divIcon({
           className: "custom-tactical-marker",
           html: `
-            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group select-none" style="width:${outerRingSize}px; height:${outerRingSize}px;">
+            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer select-none" style="width:${outerRingSize}px; height:${outerRingSize}px;">
               <!-- Outer concentric thin radar ring -->
-              <div class="absolute rounded-full border pointer-events-none transition-transform group-hover:scale-110"
+              <div class="absolute rounded-full border pointer-events-none transition-transform"
                 style="width:${outerRingSize}px; height:${outerRingSize}px; border-color: ${ringBorderColor}; border-width: 1px;"></div>
               
               <!-- Dark circular core showing Threat Score -->
-              <div class="relative z-10 flex items-center justify-center rounded-full bg-zinc-950/95 shadow-md transition-transform group-hover:scale-110"
+              <div class="relative z-10 flex items-center justify-center rounded-full bg-zinc-950/95 shadow-md transition-transform hover:scale-110"
                 style="width:${coreSize}px; height:${coreSize}px; border: 1.5px solid ${borderColor};">
                 <span class="font-mono font-bold text-center leading-none select-none flex items-center justify-center tracking-tighter" 
                   style="color: ${textColor}; font-size: ${isDominant ? '10px' : '9px'};">
                   ${score}
-                </span>
-              </div>
-
-              <!-- Minimal hover label -->
-              <div class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
-                <span class="font-mono text-[10px] text-zinc-200 bg-zinc-950/95 px-2 py-1 rounded-md border border-zinc-800 shadow-xl flex items-center gap-1.5">
-                  <span class="inline-block size-1.5 rounded-full ${score >= 90 ? 'bg-red-400' : 'bg-amber-400'}"></span>
-                  <span>${spot.name}</span>
-                  <span class="text-zinc-500">·</span>
-                  <span class="${score >= 90 ? 'text-red-400' : 'text-amber-400'} font-bold">Threat: ${score}/100</span>
-                  <span class="text-zinc-500">·</span>
-                  <span class="text-zinc-400">${spot.firCount || 10} FIRs</span>
                 </span>
               </div>
             </div>
@@ -346,11 +334,37 @@ export function TacticalMap({
           iconSize: [0, 0],
         });
 
+        const tooltipHtml = `
+          <div style="font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; color: #f1f5f9; background: rgba(9, 9, 11, 0.96); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: ${score >= 90 ? '#f87171' : '#fbbf24'};"></span>
+            <span style="font-weight: 600; color: #ffffff;">${spot.name}</span>
+            <span style="color: #52525b;">·</span>
+            <span style="color: ${score >= 90 ? '#f87171' : '#fbbf24'}; font-weight: 700;">Threat: ${score}/100</span>
+            <span style="color: #52525b;">·</span>
+            <span style="color: #a1a1aa;">${spot.firCount || 10} FIRs</span>
+          </div>
+        `;
 
         const marker = L.marker([spot.lat, spot.lng], { icon: customIcon }).addTo(layerGroup);
+        
+        marker.bindTooltip(tooltipHtml, {
+          direction: "bottom",
+          offset: [0, Math.round(outerRingSize / 2) + 4],
+          opacity: 1,
+          className: "lumina-tactical-tooltip",
+        });
+
+        marker.on("mouseover", () => {
+          marker.setZIndexOffset(10000);
+        });
+        marker.on("mouseout", () => {
+          marker.setZIndexOffset(0);
+        });
+
         marker.on("click", () => { onSelectSpot?.(spot); });
       });
     }
+
 
     // 3. Draw Live Incident Markers — Monochrome circles, clearly visible at all zoom levels
     if (showIncidents && firs && firs.length > 0) {
