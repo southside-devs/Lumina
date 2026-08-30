@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { ProfileMenu } from "./ProfileMenu";
+import { SearchIntelligenceModal } from "./SearchIntelligenceModal";
 import { INITIAL_NOTICES, useNoticeCounts, type IntelligenceNotice, type NotifTab } from "./notice-data";
 
 const statuses = [
@@ -16,6 +17,7 @@ type OpenPanel = "none" | "notifications" | "profile";
 export function TopBar() {
   const navigate = useNavigate();
   const [panel, setPanel] = useState<OpenPanel>("none");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [tab, setTab] = useState<NotifTab>("unread");
   const [notices, setNotices] = useState<IntelligenceNotice[]>(INITIAL_NOTICES);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -29,12 +31,13 @@ export function TopBar() {
       }
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setPanel("none");
-      if ((event.metaKey || event.ctrlKey) && event.key === "k") {
+      if (event.key === "Escape") {
+        setPanel("none");
+        setIsSearchOpen(false);
+      }
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        toast.info("Search Intelligence", {
-          description: "Global FIR index, suspect database & tactical network search ready.",
-        });
+        setIsSearchOpen((prev) => !prev);
       }
     }
     document.addEventListener("mousedown", onPointerDown);
@@ -44,6 +47,7 @@ export function TopBar() {
       document.removeEventListener("keydown", onKey);
     };
   }, []);
+
 
   const toggle = (next: OpenPanel) => {
     setPanel((current) => (current === next ? "none" : next));
@@ -92,11 +96,7 @@ export function TopBar() {
         {/* Search Trigger */}
         <button
           type="button"
-          onClick={() =>
-            toast.info("Search Intelligence", {
-              description: "Search indexed across 5,000+ FIR records and tactical nodes.",
-            })
-          }
+          onClick={() => setIsSearchOpen(true)}
           className="group relative hidden items-center md:flex rounded-full border border-hairline bg-surface-1/90 py-1.5 pr-8 pl-8 text-xs text-muted-foreground transition-all hover:border-white/20 hover:bg-surface-2 hover:text-foreground hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_2px_rgba(0,0,0,0.45)] active:scale-[0.98] cursor-pointer"
         >
           <span className="material-symbols-outlined absolute left-2.5 text-[17px] text-muted-foreground transition-colors group-hover:text-white">
@@ -134,40 +134,45 @@ export function TopBar() {
               tab={tab}
               onTabChange={setTab}
               onClose={() => setPanel("none")}
-              onMarkAllRead={() =>
-                setNotices((prev) => prev.map((item) => ({ ...item, read: true })))
-              }
-              onOpenNotice={(id) =>
+              onMarkAllRead={() => {
+                setNotices((prev) => prev.map((n) => ({ ...n, read: true })));
+                toast.success("All intelligence briefs marked read");
+              }}
+              onToggleArchive={(id) => {
                 setNotices((prev) =>
-                  prev.map((item) => (item.id === id ? { ...item, read: true } : item)),
-                )
-              }
+                  prev.map((n) => (n.id === id ? { ...n, archived: !n.archived } : n))
+                );
+              }}
+              onAction={(n) => {
+                toast.info(`Reviewing ${n.callsign}`, { description: n.title });
+                setPanel("none");
+              }}
             />
           )}
         </div>
 
-        {/* Profile Menu Toggle */}
+        {/* Tactical User Profile Menu Toggle */}
         <div className="relative">
           <button
             type="button"
-            aria-label="User menu"
+            aria-label="Inspector Profile"
             aria-expanded={panel === "profile"}
-            aria-haspopup="dialog"
+            aria-haspopup="menu"
             onClick={() => toggle("profile")}
-            className={`flex items-center gap-2.5 rounded-xl border p-1 pl-2 pr-2.5 transition-all active:scale-[0.98] cursor-pointer ${
+            className={`flex items-center gap-2 rounded-xl border py-1 pr-2.5 pl-1.5 transition-all active:scale-95 cursor-pointer ${
               panel === "profile"
-                ? "border-indigo-500/40 bg-surface-2 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_0_14px_rgba(99,102,241,0.3)]"
+                ? "border-amber-500/40 bg-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_0_14px_rgba(245,158,11,0.25)]"
                 : "border-hairline bg-surface-1/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/20 hover:bg-surface-2"
             }`}
           >
-            <span className="relative flex size-7 items-center justify-center rounded-full bg-signal-agent text-[11px] font-bold text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]">
+            <div className="relative flex size-7 items-center justify-center rounded-lg bg-surface-2 border border-hairline font-mono text-[11px] font-bold text-foreground">
               RK
-              <span className="absolute -bottom-0.5 -right-0.5 size-2 rounded-full border border-[#07070a] bg-[#34C759]" />
-            </span>
-            <span className="hidden flex-col items-start sm:flex">
-              <span className="text-xs leading-none font-semibold text-zinc-100">Insp. R. Kumar</span>
-              <span className="mt-0.5 text-[10px] leading-none text-muted-foreground">Cmd Center</span>
-            </span>
+              <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full border border-topbar bg-signal-ok" />
+            </div>
+            <div className="hidden text-left font-mono text-[11px] xl:block">
+              <div className="font-semibold leading-tight text-foreground">Insp. R. Kumar</div>
+              <div className="text-[10px] text-muted-foreground">KSP-HQ · On Duty</div>
+            </div>
             <span className="material-symbols-outlined text-sm text-muted-foreground transition-transform">
               {panel === "profile" ? "arrow_drop_up" : "arrow_drop_down"}
             </span>
@@ -193,6 +198,12 @@ export function TopBar() {
           )}
         </div>
       </div>
+
+      {/* Spotlight Search Intelligence Command Palette Modal */}
+      <SearchIntelligenceModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </header>
   );
 }
