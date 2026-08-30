@@ -65,6 +65,8 @@ const SUGGESTIONS_KN = [
 export function AIChatbotView() {
   const [language, setLanguage] = useState<"en" | "kn">("en");
   const [isListening, setIsListening] = useState(false);
+  const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
+  const [autoSpeak, setAutoSpeak] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       const saved = sessionStorage.getItem(CHAT_STORAGE_KEY);
@@ -78,6 +80,7 @@ export function AIChatbotView() {
   const [selectedHistory, setSelectedHistory] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -95,57 +98,119 @@ export function AIChatbotView() {
     }
   }, [messages]);
 
-  useEffect(() => {
-    try {
-      const pending = sessionStorage.getItem("lumina_pending_prompt");
-      if (pending) {
-        sessionStorage.removeItem("lumina_pending_prompt");
-        handleSendPrompt(pending);
-      }
-    } catch {
-      // Ignore storage errors
-    }
-  }, []);
-
-  const handleToggleLanguage = (lang: "en" | "kn") => {
-    setLanguage(lang);
+  // Clean text before sending to Speech Synthesis (remove markdown, URLs, tables)
+  const cleanForSpeech = (raw: string) => {
+    return raw
+      .replace(/[*#_`~>[\]()]/g, " ")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/===.*?===/g, "")
+      .replace(/\|/g, " ")
+      .replace(/⚡|👤|📊|🚨|🇮🇳|🇬🇧/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   };
 
-  const handleVoiceInput = () => {
+  // Play / Stop Text-to-Speech for a specific message
+  const handleToggleSpeak = (text: string, msgId: string) => {
+    if (!("speechSynthesis" in window)) {
+      alert(language === "kn" ? "ನಿಮ್ಮ ಬ್ರೌಸರ್ ಧ್ವನಿ ಸಂಶ್ಲೇಷಣೆಯನ್ನು ಬೆಂಬಲಿಸುವುದಿಲ್ಲ" : "Speech synthesis is not supported in this browser.");
+      return;
+    }
+
+    if (speakingMsgId === msgId) {
+      window.speechSynthesis.cancel();
+      setSpeakingMsgId(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = cleanForSpeech(text);
+    if (!cleanText) return;
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = language === "kn" ? "kn-IN" : "en-IN";
+    utterance.rate = language === "kn" ? 0.95 : 1.0;
+    utterance.pitch = 1.0;
+
+    // Pick best available native voice
+    const voices = window.speechSynthesis.getVoices();
+    if (voices && voices.length > 0) {
+      const match = voices.find(
+        (v) =>
+          (language === "kn" && (v.lang.startsWith("kn") || v.name.toLowerCase().includes("kannada"))) ||
+          (language === "en" && (v.lang.startsWith("en-IN") || v.lang.startsWith("en")))
+      );
+      if (match) utterance.voice = match;
+    }
+
+    utterance.onstart = () => setSpeakingMsgId(msgId);
+    utterance.onend = () => setSpeakingMsgId(null);
+    utterance.onerror = () => setSpeakingMsgId(null);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // Speech-to-Text (STT) Voice Recognition Toggle
+  const handleToggleVoiceInput = () => {
     const SpeechRecognition =
       (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).SpeechRecognition ||
       (window as unknown as { SpeechRecognition?: any; webkitSpeechRecognition?: any }).webkitSpeechRecognition;
 
-    if (SpeechRecognition) {
-      try {
-        const recognition = new SpeechRecognition();
-        recognition.lang = language === "kn" ? "kn-IN" : "en-IN";
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
+    if (!SpeechRecognition) {
+      handleSendPrompt(language === "kn" ? "ಧ್ವನಿ ಹುಡುಕಾಟ: ಬೆಂಗಳೂರು ಅಪರಾಧಗಳ ವಿವರ" : "Voice search: Bengaluru crime breakdown");
+      return;
+    }
 
-        setIsListening(true);
-        recognition.onstart = () => setIsListening(true);
-        recognition.onend = () => setIsListening(false);
-        recognition.onerror = () => setIsListening(false);
-        recognition.onresult = (event: any) => {
-          setIsListening(false);
-          const transcript = event.results?.[0]?.[0]?.transcript;
-          if (transcript) {
-            setInputText(transcript);
-          }
-        };
-        recognition.start();
-      } catch (e) {
-        setIsListening(false);
-        handleSendPrompt(language === "kn" ? "ಧ್ವನಿ ಇನ್‌ಪುಟ್: ಬೆಂಗಳೂರು ಅಪರಾಧಗಳ ವಿವರ" : "Voice search: Bengaluru crime breakdown");
-      }
-    } else {
-      handleSendPrompt(language === "kn" ? "ಧ್ವನಿ ಇನ್‌ಪುಟ್: ಬೆಂಗಳೂರು ಅಪರಾಧಗಳ ವಿವರ" : "Voice search: Bengaluru crime breakdown");
+    if (isListening) {
+      try {
+        recognitionRef.current?.stop();
+      } catch {}
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.lang = language === "kn" ? "kn-IN" : "en-IN";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      setIsListening(true);
+      recognition.onstart = () => setIsListening(true);
+      recognition.onend = () => setIsListening(false);
+      recognition.onerror = () => setIsListening(false);
+      recognition.onresult = (event: any) => {
+        const transcript = Array.from(event.results || [])
+          .map((res: any) => res[0]?.transcript || "")
+          .join("");
+        if (transcript) {
+          setInputText(transcript);
+        }
+      };
+      recognition.start();
+    } catch (e) {
+      setIsListening(false);
+      handleSendPrompt(language === "kn" ? "ಧ್ವನಿ ಹುಡುಕಾಟ: ಬೆಂಗಳೂರು ಅಪರಾಧಗಳ ವಿವರ" : "Voice search: Bengaluru crime breakdown");
     }
   };
 
+  useEffect(() => {
+    return () => {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
+
   const handleSendPrompt = async (promptText: string) => {
     if (!promptText.trim() || isAnalyzing) return;
+
+    if (isListening) {
+      try { recognitionRef.current?.stop(); } catch {}
+      setIsListening(false);
+    }
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -189,8 +254,9 @@ export function AIChatbotView() {
         };
       }
 
+      const newId = (Date.now() + 1).toString();
       const aiMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: newId,
         sender: "ai",
         text: aiReply,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -198,10 +264,18 @@ export function AIChatbotView() {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
+
+      // If Auto-Speak is enabled, read response aloud
+      if (autoSpeak) {
+        setTimeout(() => {
+          handleToggleSpeak(aiReply, newId);
+        }, 150);
+      }
     } catch (err) {
       console.error("AI Chatbot error:", err);
+      const errorId = (Date.now() + 1).toString();
       const errorMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
+        id: errorId,
         sender: "ai",
         text: language === "kn"
           ? "⚡ [ಲ್ಯುಮಿನಾ ಎಐ]: 209 ಪೊಲೀಸ್ ಠಾಣೆಗಳ ರಾಜ್ಯಾದ್ಯಂತ ದಾಖಲೆಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ. ಎಲ್ಲಾ ಇಂಟೆಲಿಜೆನ್ಸ್ ಸರ್ವರ್‌ಗಳು ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿವೆ."
@@ -263,7 +337,7 @@ export function AIChatbotView() {
 
           <main className="relative mt-14 flex flex-1 flex-col items-center justify-between overflow-hidden bg-[#07080c] px-4 py-6">
             
-            {/* Top Bar Language Selector Pill */}
+            {/* Top Bar Language & Voice Controls */}
             <div className="w-full max-w-2xl flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -272,32 +346,57 @@ export function AIChatbotView() {
                 </span>
               </div>
 
-              {/* Language Switcher Toggle */}
-              <div className="flex items-center rounded-full border border-zinc-800 bg-zinc-900/90 p-0.5 shadow-inner">
+              <div className="flex items-center gap-2">
+                {/* Auto-Speak Read Aloud Toggle */}
                 <button
                   type="button"
-                  onClick={() => handleToggleLanguage("en")}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
-                    language === "en"
-                      ? "bg-white text-black shadow"
-                      : "text-zinc-400 hover:text-white"
+                  onClick={() => setAutoSpeak((prev) => !prev)}
+                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-mono transition-all cursor-pointer ${
+                    autoSpeak
+                      ? "border-emerald-500/50 bg-emerald-950/40 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
+                      : "border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white"
                   }`}
+                  title="Auto read-aloud responses"
                 >
-                  <span>🇬🇧</span>
-                  <span>English</span>
+                  <span className="material-symbols-outlined text-xs">
+                    {autoSpeak ? "volume_up" : "volume_off"}
+                  </span>
+                  <span>{autoSpeak ? "Voice: ON" : "Voice: OFF"}</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleToggleLanguage("kn")}
-                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
-                    language === "kn"
-                      ? "bg-white text-black shadow"
-                      : "text-zinc-400 hover:text-white"
-                  }`}
-                >
-                  <span>🇮🇳</span>
-                  <span>ಕನ್ನಡ</span>
-                </button>
+
+                {/* Language Switcher Toggle */}
+                <div className="flex items-center rounded-full border border-zinc-800 bg-zinc-900/90 p-0.5 shadow-inner">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLanguage("en");
+                      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+                    }}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
+                      language === "en"
+                        ? "bg-white text-black shadow"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🇬🇧</span>
+                    <span>English</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLanguage("kn");
+                      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+                    }}
+                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
+                      language === "kn"
+                        ? "bg-white text-black shadow"
+                        : "text-zinc-400 hover:text-white"
+                    }`}
+                  >
+                    <span>🇮🇳</span>
+                    <span>ಕನ್ನಡ</span>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -305,8 +404,12 @@ export function AIChatbotView() {
             {messages.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center text-center">
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs font-mono text-zinc-400">
-                  <span className="material-symbols-outlined text-sm text-yellow-400">translate</span>
-                  <span>{language === "kn" ? "ದ್ವಿಭಾಷಾ ಬೆಂಬಲ: ಇಂಗ್ಲಿಷ್ ಮತ್ತು ಕನ್ನಡ" : "Bilingual Copilot: English & Kannada"}</span>
+                  <span className="material-symbols-outlined text-sm text-yellow-400">record_voice_over</span>
+                  <span>
+                    {language === "kn"
+                      ? "ಧ್ವನಿ ಇನ್‌ಪುಟ್ & ರೀಡ್-ಅಲೌಡ್ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"
+                      : "Speech-to-Text & Text-to-Speech Enabled"}
+                  </span>
                 </div>
 
                 <h1 className="font-sans text-3xl md:text-4xl lg:text-[44px] font-semibold tracking-tight leading-[1.18] text-transparent bg-clip-text bg-gradient-to-b from-white via-[#e2e8f0] to-[#8e8e93] max-w-xl mx-auto">
@@ -335,55 +438,80 @@ export function AIChatbotView() {
             ) : (
               /* Chat Conversation History */
               <div className="flex-1 min-h-0 w-full max-w-2xl overflow-y-auto custom-scrollbar space-y-4 px-2 py-4 mb-2">
-                {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex flex-col ${
-                      msg.sender === "user" ? "items-end" : "items-start"
-                    }`}
-                  >
+                {messages.map((msg) => {
+                  const isSpeaking = speakingMsgId === msg.id;
+                  return (
                     <div
-                      className={`max-w-xl rounded-2xl p-4 shadow-lg ${
-                        msg.sender === "user"
-                          ? "bg-white text-black font-medium"
-                          : "border border-zinc-800/90 bg-[#1c1c1e] text-zinc-100"
+                      key={msg.id}
+                      className={`flex flex-col ${
+                        msg.sender === "user" ? "items-end" : "items-start"
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-4 font-mono text-[10px] opacity-70 mb-1">
-                        <span>
-                          {msg.sender === "user"
-                            ? (language === "kn" ? "ತನಿಖಾಧಿಕಾರಿ" : "Investigator")
-                            : (language === "kn" ? "ಲ್ಯುಮಿನಾ ಎಐ ಸಹಾಯಕ" : "Lumina AI Engine")}
-                        </span>
-                        <span>{msg.timestamp}</span>
-                      </div>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-
-                      {msg.dataSummary && (
-                        <div className="mt-3 rounded-xl border border-zinc-800 bg-[#141416] p-3 font-mono text-xs text-zinc-300 grid grid-cols-3 gap-2">
-                          <div>
-                            <span className="text-[10px] text-zinc-500 uppercase block">
-                              {language === "kn" ? "ದಾಖಲಿತ ಎಫ್‌ಐಆರ್" : "FIR Volume"}
-                            </span>
-                            <span className="font-bold text-white">{msg.dataSummary.totalFIRs}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-zinc-500 uppercase block">
-                              {language === "kn" ? "ವಲಯ / ಜಿಲ್ಲೆ" : "Region"}
-                            </span>
-                            <span className="font-bold text-white">{msg.dataSummary.topDistrict}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-zinc-500 uppercase block">
-                              {language === "kn" ? "ಅಪಾಯ ಸೂಚ್ಯಂಕ" : "Threat Index"}
-                            </span>
-                            <span className="font-bold text-red-400">{msg.dataSummary.threatScore} / 100</span>
+                      <div
+                        className={`max-w-xl rounded-2xl p-4 shadow-lg ${
+                          msg.sender === "user"
+                            ? "bg-white text-black font-medium"
+                            : "border border-zinc-800/90 bg-[#1c1c1e] text-zinc-100"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-4 font-mono text-[10px] opacity-70 mb-1">
+                          <span>
+                            {msg.sender === "user"
+                              ? (language === "kn" ? "ತನಿಖಾಧಿಕಾರಿ" : "Investigator")
+                              : (language === "kn" ? "ಲ್ಯುಮಿನಾ ಎಐ ಸಹಾಯಕ" : "Lumina AI Engine")}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span>{msg.timestamp}</span>
+                            {/* Read Aloud TTS Button for AI responses */}
+                            {msg.sender === "ai" && (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleSpeak(msg.text, msg.id)}
+                                className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                                  isSpeaking
+                                    ? "bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40 animate-pulse"
+                                    : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                }`}
+                                title={isSpeaking ? "Stop voice briefing" : "Read aloud"}
+                              >
+                                <span className="material-symbols-outlined text-[13px]">
+                                  {isSpeaking ? "volume_up" : "volume_mute"}
+                                </span>
+                                <span className="text-[9px] uppercase">
+                                  {isSpeaking ? (language === "kn" ? "ಆಲಿಸುತ್ತಿದೆ..." : "Playing...") : (language === "kn" ? "ಧ್ವನಿ" : "Listen")}
+                                </span>
+                              </button>
+                            )}
                           </div>
                         </div>
-                      )}
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+
+                        {msg.dataSummary && (
+                          <div className="mt-3 rounded-xl border border-zinc-800 bg-[#141416] p-3 font-mono text-xs text-zinc-300 grid grid-cols-3 gap-2">
+                            <div>
+                              <span className="text-[10px] text-zinc-500 uppercase block">
+                                {language === "kn" ? "ದಾಖಲಿತ ಎಫ್‌ಐಆರ್" : "FIR Volume"}
+                              </span>
+                              <span className="font-bold text-white">{msg.dataSummary.totalFIRs}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-zinc-500 uppercase block">
+                                {language === "kn" ? "ವಲಯ / ಜಿಲ್ಲೆ" : "Region"}
+                              </span>
+                              <span className="font-bold text-white">{msg.dataSummary.topDistrict}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] text-zinc-500 uppercase block">
+                                {language === "kn" ? "ಅಪಾಯ ಸೂಚ್ಯಂಕ" : "Threat Index"}
+                              </span>
+                              <span className="font-bold text-red-400">{msg.dataSummary.threatScore} / 100</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {isAnalyzing && (
                   <div className="flex items-center gap-2 font-mono text-xs text-zinc-400">
@@ -403,8 +531,12 @@ export function AIChatbotView() {
             <div className="w-full max-w-[620px]">
               <div className="rounded-[22px] border border-[#2c2c2e] bg-[#1c1c1e] p-3.5 shadow-2xl flex flex-col gap-2.5">
                 {/* Inset Top Input Field */}
-                <div className="flex items-center gap-3 rounded-[14px] bg-[#141416] px-3.5 py-2.5 border border-[#26262a]">
-                  <span className="material-symbols-outlined text-[#8e8e93] text-lg select-none">search</span>
+                <div className={`flex items-center gap-3 rounded-[14px] bg-[#141416] px-3.5 py-2.5 border transition-all ${
+                  isListening ? "border-red-500/60 shadow-[0_0_12px_rgba(239,68,68,0.25)]" : "border-[#26262a]"
+                }`}>
+                  <span className="material-symbols-outlined text-[#8e8e93] text-lg select-none">
+                    {isListening ? "mic" : "search"}
+                  </span>
                   <input
                     type="text"
                     value={inputText}
@@ -413,23 +545,25 @@ export function AIChatbotView() {
                       if (e.key === "Enter") handleSendPrompt(inputText);
                     }}
                     placeholder={
-                      language === "kn"
-                        ? "FIR ಸಂಖ್ಯೆ, ಅಪರಾಧ ಹಾಟ್‌ಸ್ಪಾಟ್ ಅಥವಾ ಆರೋಪಿಗಳ ಬಗ್ಗೆ ಪ್ರಶ್ನೆ ಕೇಳಿ..."
+                      isListening
+                        ? (language === "kn" ? "ಮಾತನಾಡಿ, ಧ್ವನಿ ದಾಖಲಾಗುತ್ತಿದೆ..." : "Listening... Speak now...")
+                        : language === "kn"
+                        ? "FIR ಸಂಖ್ಯೆ, ಅಪರಾಧ ಹಾಟ್‌ಸ್ಪಾಟ್ ಅಥವಾ ಆರೋಪಿಗಳ ಬಗ್ಗೆ ಕೇಳಿ..."
                         : "Query databases, analyze networks, or generate reports..."
                     }
                     className="w-full bg-transparent text-[13px] font-sans text-white placeholder-[#636366] focus:outline-none"
                   />
                   {isListening && (
-                    <span className="flex items-center gap-1 text-[11px] font-mono text-red-400 animate-pulse">
-                      <span className="h-2 w-2 rounded-full bg-red-500" />
-                      Listening...
+                    <span className="flex items-center gap-1.5 text-[11px] font-mono text-red-400 shrink-0">
+                      <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
+                      <span>{language === "kn" ? "ಧ್ವನಿ ರೆಕಾರ್ಡಿಂಗ್..." : "Listening..."}</span>
                     </span>
                   )}
                 </div>
 
                 {/* Bottom Bar Actions */}
                 <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-5 text-xs font-sans text-[#d4d4d8]">
+                  <div className="flex items-center gap-4 text-xs font-sans text-[#d4d4d8]">
                     <button
                       type="button"
                       onClick={() =>
@@ -445,23 +579,27 @@ export function AIChatbotView() {
                       <span>{language === "kn" ? "ಕಡತ ಲಗತ್ತಿಸಿ" : "Attach FIR"}</span>
                     </button>
 
+                    {/* Microphone Speech-to-Text Button */}
                     <button
                       type="button"
-                      onClick={handleVoiceInput}
-                      className={`flex items-center gap-1.5 font-medium transition-colors hover:text-white cursor-pointer ${
-                        isListening ? "text-red-400" : ""
+                      onClick={handleToggleVoiceInput}
+                      className={`flex items-center gap-1.5 font-medium px-2 py-0.5 rounded-full transition-all cursor-pointer ${
+                        isListening
+                          ? "bg-red-500 text-white font-bold animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.5)]"
+                          : "hover:text-white text-[#d4d4d8]"
                       }`}
                     >
-                      <span className={`material-symbols-outlined text-base ${isListening ? "text-red-400 animate-bounce" : "text-[#8e8e93]"}`}>
-                        mic
+                      <span className={`material-symbols-outlined text-base ${isListening ? "text-white" : "text-[#8e8e93]"}`}>
+                        {isListening ? "graphic_eq" : "mic"}
                       </span>
-                      <span>{language === "kn" ? "ಧ್ವನಿ ಹುಡುಕಾಟ" : "Voice"}</span>
+                      <span>{isListening ? (language === "kn" ? "ನಿಲ್ಲಿಸಿ" : "Stop") : (language === "kn" ? "ಧ್ವನಿ ಇನ್‌ಪುಟ್" : "Voice Input")}</span>
                     </button>
 
                     {messages.length > 0 && (
                       <button
                         type="button"
                         onClick={() => {
+                          if ("speechSynthesis" in window) window.speechSynthesis.cancel();
                           setMessages([]);
                           try { sessionStorage.removeItem(CHAT_STORAGE_KEY); } catch {}
                         }}
@@ -491,6 +629,7 @@ export function AIChatbotView() {
                 </div>
               </div>
             </div>
+
 
           </main>
         </div>
