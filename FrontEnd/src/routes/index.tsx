@@ -119,16 +119,8 @@ export function IntelligenceHub() {
 
   const handleFilterChange = (filterName: string) => {
     setActiveFilter(filterName);
-    if (filterName === "All Incidents") {
-      setShowIncidents(true);
-      setShowHotspots(true);
-    } else if (filterName === "Critical Threats") {
-      setShowIncidents(true);
-      setShowHotspots(true);
-    } else if (filterName === "Recent (2026)") {
-      setShowIncidents(true);
-      setShowHotspots(false);
-    }
+    setShowIncidents(true);
+    setShowHotspots(true);
   };
 
 
