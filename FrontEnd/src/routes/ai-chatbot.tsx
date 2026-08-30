@@ -88,6 +88,7 @@ export function AIChatbotView() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // Load FIRs when modal is opened
   useEffect(() => {
@@ -134,54 +135,111 @@ export function AIChatbotView() {
   // Clean text before sending to Speech Synthesis (remove markdown, URLs, tables)
   const cleanForSpeech = (raw: string) => {
     return raw
-      .replace(/[*#_`~>[\]()]/g, " ")
+      .replace(/[*#_`~>[\]()|]/g, " ")
       .replace(/https?:\/\/\S+/g, "")
       .replace(/===.*?===/g, "")
-      .replace(/\|/g, " ")
-      .replace(/⚡|👤|📊|🚨|🇮🇳|🇬🇧/g, "")
+      .replace(/⚡|👤|📊|🚨|🇮🇳|🇬🇧|📋/g, "")
       .replace(/\s+/g, " ")
       .trim();
   };
 
-  // Play / Stop Text-to-Speech for a specific message
+  // Play / Stop Text-to-Speech for a specific message (High-Fidelity Kannada & English)
   const handleToggleSpeak = (text: string, msgId: string) => {
-    if (!("speechSynthesis" in window)) {
-      alert(language === "kn" ? "ನಿಮ್ಮ ಬ್ರೌಸರ್ ಧ್ವನಿ ಸಂಶ್ಲೇಷಣೆಯನ್ನು ಬೆಂಬಲಿಸುವುದಿಲ್ಲ" : "Speech synthesis is not supported in this browser.");
-      return;
-    }
-
+    // If currently speaking this message, stop immediately
     if (speakingMsgId === msgId) {
-      window.speechSynthesis.cancel();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
       setSpeakingMsgId(null);
       return;
     }
 
-    window.speechSynthesis.cancel();
+    // Stop any other active audio/speech
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current = null;
+    }
+    if ("speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+
     const cleanText = cleanForSpeech(text);
     if (!cleanText) return;
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = language === "kn" ? "kn-IN" : "en-IN";
-    utterance.rate = language === "kn" ? 0.95 : 1.0;
-    utterance.pitch = 1.0;
+    // 1. In Kannada mode: Use backend streaming neural synthesis for pure native Kannada voice
+    if (language === "kn") {
+      try {
+        const audioUrl = api.getTTSAudioUrl(cleanText, "kn");
+        const audio = new Audio(audioUrl);
+        audioPlayerRef.current = audio;
+        setSpeakingMsgId(msgId);
 
-    // Pick best available native voice
-    const voices = window.speechSynthesis.getVoices();
-    if (voices && voices.length > 0) {
-      const match = voices.find(
-        (v) =>
-          (language === "kn" && (v.lang.startsWith("kn") || v.name.toLowerCase().includes("kannada"))) ||
-          (language === "en" && (v.lang.startsWith("en-IN") || v.lang.startsWith("en")))
-      );
-      if (match) utterance.voice = match;
+        audio.onplay = () => setSpeakingMsgId(msgId);
+        audio.onended = () => {
+          setSpeakingMsgId(null);
+          audioPlayerRef.current = null;
+        };
+        audio.onerror = (e) => {
+          console.warn("Kannada audio streaming note:", e);
+          setSpeakingMsgId(null);
+          audioPlayerRef.current = null;
+        };
+        audio.play().catch((err) => {
+          console.warn("Audio playback note:", err);
+          setSpeakingMsgId(null);
+          audioPlayerRef.current = null;
+        });
+      } catch (err) {
+        console.error("Kannada TTS error:", err);
+        setSpeakingMsgId(null);
+      }
+      return;
     }
 
-    utterance.onstart = () => setSpeakingMsgId(msgId);
-    utterance.onend = () => setSpeakingMsgId(null);
-    utterance.onerror = () => setSpeakingMsgId(null);
+    // 2. In English mode: Try native browser synthesis first, fallback to streaming TTS
+    if ("speechSynthesis" in window) {
+      try {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = "en-IN";
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
 
-    window.speechSynthesis.speak(utterance);
+        const voices = window.speechSynthesis.getVoices();
+        if (voices && voices.length > 0) {
+          const match = voices.find((v) => v.lang.startsWith("en-IN") || v.lang.startsWith("en"));
+          if (match) utterance.voice = match;
+        }
+
+        utterance.onstart = () => setSpeakingMsgId(msgId);
+        utterance.onend = () => setSpeakingMsgId(null);
+        utterance.onerror = () => setSpeakingMsgId(null);
+
+        window.speechSynthesis.speak(utterance);
+        return;
+      } catch {}
+    }
+
+    // Fallback streaming TTS for English
+    const audioUrl = api.getTTSAudioUrl(cleanText, "en");
+    const audio = new Audio(audioUrl);
+    audioPlayerRef.current = audio;
+    setSpeakingMsgId(msgId);
+    audio.onplay = () => setSpeakingMsgId(msgId);
+    audio.onended = () => {
+      setSpeakingMsgId(null);
+      audioPlayerRef.current = null;
+    };
+    audio.onerror = () => {
+      setSpeakingMsgId(null);
+      audioPlayerRef.current = null;
+    };
+    audio.play().catch(() => setSpeakingMsgId(null));
   };
+
 
   // Speech-to-Text (STT) Voice Recognition Toggle
   const handleToggleVoiceInput = () => {
@@ -507,26 +565,36 @@ export function AIChatbotView() {
                           </span>
                           <div className="flex items-center gap-2">
                             <span>{msg.timestamp}</span>
-                            {/* Read Aloud TTS Button for AI responses */}
+                            {/* Read Aloud TTS Button for AI responses (Kannada & English) */}
                             {msg.sender === "ai" && (
                               <button
                                 type="button"
                                 onClick={() => handleToggleSpeak(msg.text, msg.id)}
-                                className={`flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors cursor-pointer ${
+                                className={`flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-mono transition-all cursor-pointer ${
                                   isSpeaking
-                                    ? "bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40 animate-pulse"
-                                    : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                                    ? "bg-emerald-950/80 text-emerald-300 font-bold border border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                                    : "text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
                                 }`}
-                                title={isSpeaking ? "Stop voice briefing" : "Read aloud"}
+                                title={isSpeaking ? "Stop voice narration" : "Read aloud response"}
                               >
-                                <span className="material-symbols-outlined text-[13px]">
-                                  {isSpeaking ? "volume_up" : "volume_mute"}
-                                </span>
-                                <span className="text-[9px] uppercase">
-                                  {isSpeaking ? (language === "kn" ? "ಆಲಿಸುತ್ತಿದೆ..." : "Playing...") : (language === "kn" ? "ಧ್ವನಿ" : "Listen")}
-                                </span>
+                                {isSpeaking ? (
+                                  <>
+                                    <span className="flex items-center gap-0.5 h-3">
+                                      <span className="w-0.5 h-2 bg-emerald-400 animate-pulse" />
+                                      <span className="w-0.5 h-3.5 bg-emerald-300 animate-bounce" />
+                                      <span className="w-0.5 h-2.5 bg-emerald-400 animate-pulse" />
+                                    </span>
+                                    <span>{language === "kn" ? "ನಿಲ್ಲಿಸಿ" : "Stop"}</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="material-symbols-outlined text-[12px]">volume_up</span>
+                                    <span>{language === "kn" ? "ಧ್ವನಿ ವಿವರಣೆ" : "Listen"}</span>
+                                  </>
+                                )}
                               </button>
                             )}
+
                           </div>
                         </div>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>

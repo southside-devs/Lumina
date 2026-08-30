@@ -572,7 +572,15 @@ export const api = {
     }
     return `📊 [LUMINA AI Copilot]: Processed 5,000 statewide records across 209 mapped police stations. All intelligence feeds are live and operational.`;
   },
+
+  /**
+   * Get direct audio synthesis stream URL for Kannada / English TTS
+   */
+  getTTSAudioUrl(text: string, lang: "en" | "kn" = "kn"): string {
+    return `${API_BASE}/tts?lang=${lang}&text=${encodeURIComponent(text)}`;
+  },
 };
+
 
 export interface TopSuspectItem {
   id: string;

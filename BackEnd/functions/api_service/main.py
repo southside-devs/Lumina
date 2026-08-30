@@ -14,7 +14,7 @@ from flask import Request, make_response, jsonify
 
 from routes import districts, stations, firs, accused, victims
 from routes import case_accused, risk_scores, dashboard
-from routes import graph, hotspots, uploads, ai_chat
+from routes import graph, hotspots, uploads, ai_chat, tts
 
 # ── Logging ─────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -41,7 +41,10 @@ ROUTES = {
     "uploads":      uploads,    # → Catalyst Stratus
     # ── AI Copilot ────────────────────────────────────────
     "ai-chat":      ai_chat,
+    # ── Voice Speech Synthesis (Bilingual Kannada & English) ──
+    "tts":          tts,
 }
+
 
 
 def handler(request: Request):
