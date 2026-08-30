@@ -225,9 +225,16 @@ def _fetch_db_context(query, db):
     except Exception:
         pass
 
-    # 3. District / hotspot queries
+    # 3. District / hotspot queries (English & Kannada terms)
     lower_q = query.lower()
-    if any(w in lower_q for w in ['hotspot', 'district', 'bengaluru', 'mysuru', 'belagavi', 'high risk', 'crime rate', 'breakdown']):
+    kannada_district_terms = [
+        'hotspot', 'district', 'bengaluru', 'mysuru', 'belagavi', 'mangaluru', 'kalaburagi',
+        'hubballi', 'tumakuru', 'shivamogga', 'ballari', 'hassan', 'kolar', 'high risk',
+        'crime rate', 'breakdown', 'trend',
+        'ಹಾಟ್‌ಸ್ಪಾಟ್', 'ಜಿಲ್ಲೆ', 'ಬೆಂಗಳೂರು', 'ಮೈಸೂರು', 'ಬೆಳಗಾವಿ', 'ಮಂಗಳೂರು', 'ಕಲಬುರಗಿ',
+        'ಹುಬ್ಬಳ್ಳಿ', 'ತುಮಕೂರು', 'ಶಿವಮೊಗ್ಗ', 'ಬಳ್ಳಾರಿ', 'ಹಾಸನ', 'ಕೋಲಾರ', 'ಅಪರಾಧ', 'ಪ್ರಮಾಣ'
+    ]
+    if any(w in lower_q for w in kannada_district_terms):
         try:
             rows = db.execute_query(
                 "SELECT Crime_Group, COUNT(*) as cnt FROM FIR GROUP BY Crime_Group ORDER BY cnt DESC LIMIT 8"
@@ -240,8 +247,12 @@ def _fetch_db_context(query, db):
         except Exception:
             pass
 
-    # 4. Accused / suspect queries
-    if any(w in lower_q for w in ['accused', 'suspect', 'offender', 'repeat', 'criminal', 'arrested']):
+    # 4. Accused / suspect queries (English & Kannada terms)
+    kannada_accused_terms = [
+        'accused', 'suspect', 'offender', 'repeat', 'criminal', 'arrested',
+        'ಆರೋಪಿ', 'ಅಪರಾಧಿ', 'ಬಂಧನ', 'ಖೈದಿ', 'ಕಳ್ಳತನ', 'ಕೊಲೆ', 'ದರೋಡೆ', 'ವಂಚನೆ'
+    ]
+    if any(w in lower_q for w in kannada_accused_terms):
         try:
             rows = db.execute_query(
                 "SELECT Name, Arrest_Count, Age, Gender FROM Accused "
@@ -285,17 +296,32 @@ def process_chat(request):
             print(f"DB context fetch warning: {db_err}")
 
         system_instruction = (
-            "You are Lumina AI, an elite intelligence and crime analytics assistant for the Karnataka State Police (KSP).\n"
-            "You have DIRECT ACCESS to the live Karnataka FIR database with 5,000+ records across 209 police stations and 31 districts.\n"
-            "CRITICAL RULES:\n"
+            "You are Lumina AI (ಲ್ಯುಮಿನಾ ಎಐ), an elite bilingual intelligence and crime analytics assistant for the Karnataka State Police (KSP - ಕರ್ನಾಟಕ ರಾಜ್ಯ ಪೊಲೀಸ್).\n"
+            "You are fully bilingual in both English and Kannada (ಕನ್ನಡ). You seamlessly understand and process queries in English, Kannada script (ಕನ್ನಡ), and transliterated Kannada (Kanglish).\n\n"
+            "LANGUAGE & LOCALIZATION RULES:\n"
+            "- If the user asks in Kannada (ಕನ್ನಡ), respond in natural, professional, grammatically fluent Kannada.\n"
+            "- If the user asks in English, respond in clear, professional English.\n"
+            "- If the user asks in transliterated Kannada (Kanglish) or mixed terms, provide a natural response matching their intent.\n"
+            "- Use official Karnataka Police terminology:\n"
+            "  * FIR -> ಪ್ರಥಮ ವರ್ತಮಾನ ವರದಿ (FIR)\n"
+            "  * Police Station -> ಪೊಲೀಸ್ ಠಾಣೆ\n"
+            "  * Accused / Suspect -> ಆರೋಪಿ\n"
+            "  * Victim -> ಸಂತ್ರಸ್ತರು\n"
+            "  * Crime Category -> ಅಪರಾಧ ವಿಭಾಗ\n"
+            "  * Threat Index -> ಅಪಾಯ ಸೂಚ್ಯಂಕ\n"
+            "  * Hotspot -> ಅಪರಾಧ ಕೇಂದ್ರ / ಹಾಟ್‌ಸ್ಪಾಟ್\n"
+            "  * Patrol Unit -> ಗಸ್ತು ಪಡೆ / ಚೆಕ್‌ಪಾಯಿಂಟ್\n\n"
+            "CRITICAL OPERATIONAL RULES:\n"
+            "- You have DIRECT ACCESS to the live Karnataka FIR database with 5,000+ records across 209 police stations and 31 districts.\n"
             "- When '=== LIVE DATABASE CONTEXT ===' is provided, you MUST base your answer ONLY on those records. "
             "Do NOT invent, fabricate, or guess case details that are not in the provided context.\n"
             "- If a record says 'NOT found in the Lumina database', tell the user that FIR does not exist — do not make up data.\n"
             "- Respond DIRECTLY and professionally with precise, investigative reasoning.\n"
             "- NEVER output internal scratchpads, reasoning tokens, or bullets starting with '* User input:' or '* Instruction:'.\n"
-            "- For greetings, respond in 1-2 friendly professional sentences.\n"
+            "- For greetings, respond in 1-2 friendly professional sentences (e.g. 'ನಮಸ್ಕಾರ! ನಾನು ಕರ್ನಾಟಕ ರಾಜ್ಯ ಪೊಲೀಸ್‌ನ ಲ್ಯುಮಿನಾ ಎಐ ಸಹಾಯಕ...' or 'Greetings Officer! I am Lumina AI...').\n"
             "- For investigative queries, use structured Markdown formatting."
         )
+
 
         if db_context:
             system_instruction += (
