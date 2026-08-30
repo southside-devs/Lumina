@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReportModal } from "./ReportModal";
@@ -16,9 +16,9 @@ const secondaryLinks = [
   { icon: "help", label: "Help & Docs", to: "/help" as const },
 ] as const;
 
-const idleClass =
+const idleSecondaryClass =
   "flex h-12 w-full items-center justify-center rounded-xl text-muted-foreground transition-all hover:bg-surface-2 hover:text-foreground active:scale-95 cursor-pointer";
-const activeClass =
+const activeSecondaryClass =
   "flex h-12 w-full items-center justify-center rounded-xl border border-hairline bg-surface-2 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_8px_rgba(0,0,0,0.55)]";
 
 function RailTip({ label }: { label: string }) {
@@ -38,16 +38,33 @@ function RailItem({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function getActiveNavIndex(path: string): number {
+  if (path === "/" || path === "") return 0;
+  if (path === "/overview" || path === "/risk-scores") return 1;
+  if (path === "/fir-explorer") return 2;
+  if (path === "/network") return 3;
+  if (path === "/ai-chatbot") return 4;
+  return -1;
+}
+
 export function SideRail() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const isItemActive = (to: string) => {
-    if (to === "/overview") {
-      return pathname === "/overview" || pathname === "/risk-scores";
-    }
-    return pathname === to;
+  const [activeIndex, setActiveIndex] = useState<number>(() => getActiveNavIndex(pathname));
+
+  useEffect(() => {
+    setActiveIndex(getActiveNavIndex(pathname));
+  }, [pathname]);
+
+  const handleNavClick = (e: React.MouseEvent, to: string, idx: number) => {
+    e.preventDefault();
+    if (activeIndex === idx) return;
+    setActiveIndex(idx);
+    setTimeout(() => {
+      navigate({ to });
+    }, 180);
   };
 
   const handleLogout = () => {
@@ -69,6 +86,7 @@ export function SideRail() {
         aria-label="Primary"
         className="fixed left-0 top-0 z-50 flex h-full w-16 flex-col items-center gap-6 overflow-visible border-r border-hairline bg-rail/70 py-4 backdrop-blur-2xl ui-no-select"
       >
+        {/* Incident Reporting Action Trigger */}
         <RailItem label="New FIR Report">
           <button
             type="button"
@@ -80,37 +98,49 @@ export function SideRail() {
           </button>
         </RailItem>
 
-        <div className="flex w-full flex-1 flex-col gap-3 px-2">
-          {primaryNav.map((item) => {
-            const active = isItemActive(item.to);
+        {/* Primary Nav List with Vertical Sliding Glass Indicator */}
+        <div className="relative flex w-full flex-1 flex-col gap-3 px-2">
+          {/* Absolute Sliding Glass Highlight Square */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-2 right-2 top-0 h-12 rounded-xl border border-hairline bg-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_8px_rgba(0,0,0,0.55)] transition-all duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
+            style={{
+              transform: `translateY(${activeIndex >= 0 ? activeIndex * 60 : 0}px)`,
+              opacity: activeIndex >= 0 ? 1 : 0,
+            }}
+          />
+
+          {primaryNav.map((item, idx) => {
+            const active = activeIndex === idx;
             return (
               <RailItem key={item.label} label={item.label}>
-                <Link
-                  to={item.to}
+                <a
+                  href={item.to}
                   aria-label={item.label}
                   aria-current={active ? "page" : undefined}
-                  className={active ? activeClass : idleClass}
+                  onClick={(e) => handleNavClick(e, item.to, idx)}
+                  className={`relative z-10 flex h-12 w-full items-center justify-center rounded-xl transition-colors duration-200 cursor-pointer ${
+                    active ? "text-white" : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <span className={`material-symbols-outlined ${active ? "filled text-white" : ""}`}>
+                  <span className={`material-symbols-outlined text-[20px] transition-colors ${active ? "filled text-white" : ""}`}>
                     {item.icon}
                   </span>
-                </Link>
+                </a>
               </RailItem>
             );
           })}
         </div>
 
-
-
-
+        {/* Secondary Links at Bottom */}
         <div className="mt-auto flex w-full flex-col gap-3 px-2">
           {secondaryLinks.map((item) => (
             <RailItem key={item.label} label={item.label}>
               <Link
                 to={item.to}
                 aria-label={item.label}
-                className={idleClass}
-                activeProps={{ className: activeClass }}
+                className={idleSecondaryClass}
+                activeProps={{ className: activeSecondaryClass }}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
               </Link>
@@ -122,7 +152,7 @@ export function SideRail() {
               type="button"
               onClick={handleConfig}
               aria-label="System Config"
-              className={idleClass}
+              className={idleSecondaryClass}
             >
               <span className="material-symbols-outlined">settings</span>
             </button>
@@ -133,7 +163,7 @@ export function SideRail() {
               type="button"
               onClick={handleLogout}
               aria-label="Logout"
-              className={`${idleClass} text-rose-400 hover:text-rose-300 hover:bg-rose-500/10`}
+              className={`${idleSecondaryClass} text-rose-400 hover:text-rose-300 hover:bg-rose-500/10`}
             >
               <span className="material-symbols-outlined">logout</span>
             </button>
