@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
 export function IntelligenceHub() {
   const [firs, setFirs] = useState<FIRItem[]>([]);
   const [activeFilter, setActiveFilter] = useState("All Incidents");
-  const [showIncidents, setShowIncidents] = useState(true);
+  const [showIncidents, setShowIncidents] = useState(false);
   const [showHotspots, setShowHotspots] = useState(true);
   const [cardOpen, setCardOpen] = useState(false);
   const [selectedSpot, setSelectedSpot] = useState<TacticalHotspot | null>(null);
@@ -199,7 +199,7 @@ export function IntelligenceHub() {
                 <div
                   role="tablist"
                   aria-label="Incident filters"
-                  className="glass-panel flex gap-1 rounded-full bg-surface-1/85 p-1 shadow-lg backdrop-blur-xl border border-hairline"
+                  className="glass-panel flex items-center gap-1 rounded-full bg-surface-1/80 p-1.5 shadow-2xl backdrop-blur-xl border border-hairline transition-all duration-200"
                 >
                   {filters.map((f) => (
                     <button
@@ -208,18 +208,18 @@ export function IntelligenceHub() {
                       role="tab"
                       aria-selected={activeFilter === f.label}
                       onClick={() => handleFilterChange(f.label)}
-                      className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors cursor-pointer ${
+                      className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer ${
                         activeFilter === f.label
-                          ? "bg-slate-200 text-slate-900 shadow-sm"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          ? "bg-slate-200 text-slate-950 shadow-md font-semibold"
+                          : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground"
                       }`}
                     >
                       <span>{f.label}</span>
                       <span
-                        className={`rounded px-1.5 font-mono text-[10px] ${
+                        className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors ${
                           activeFilter === f.label
-                            ? "bg-slate-900/15 text-slate-700 font-bold"
-                            : "bg-surface-2 text-muted-foreground"
+                            ? "bg-slate-900/15 text-slate-950"
+                            : "bg-surface-2/80 text-muted-foreground"
                         }`}
                       >
                         {f.count}
