@@ -29,12 +29,14 @@ interface ChatMessage {
   sender: "user" | "ai";
   text: string;
   timestamp: string;
+  lang?: "en" | "kn";
   dataSummary?: {
     totalFIRs?: number;
     topDistrict?: string;
     threatScore?: number;
   };
 }
+
 
 const RECENT_INVESTIGATIONS_EN = [
   "Cluster Analysis - Indiranagar",
@@ -143,8 +145,8 @@ export function AIChatbotView() {
       .trim();
   };
 
-  // Play / Stop Text-to-Speech for a specific message (High-Fidelity Kannada & English)
-  const handleToggleSpeak = (text: string, msgId: string) => {
+  // Play / Stop Text-to-Speech for a specific message using its original language
+  const handleToggleSpeak = (text: string, msgId: string, msgLang?: "en" | "kn") => {
     // If currently speaking this message, stop immediately
     if (speakingMsgId === msgId) {
       if (audioPlayerRef.current) {
@@ -170,9 +172,13 @@ export function AIChatbotView() {
     const cleanText = cleanForSpeech(text);
     if (!cleanText) return;
 
-    // Stream high-fidelity Google Neural voice for both Kannada (kn) and English (en-IN)
+    // Detect the message's original language (Kannada if marked 'kn' or contains Kannada script)
+    const isKannada = (msgLang === "kn") || /[\u0c80-\u0cff]/.test(cleanText);
+    const audioLang = isKannada ? "kn" : "en";
+
+    // Stream high-fidelity Google Neural voice in the message's original language
     try {
-      const audioUrl = api.getTTSAudioUrl(cleanText, language);
+      const audioUrl = api.getTTSAudioUrl(cleanText, audioLang);
       const audio = new Audio(audioUrl);
       audio.playbackRate = 1.18; // Crisp, energetic pacing (18% faster)
       audioPlayerRef.current = audio;
@@ -188,7 +194,7 @@ export function AIChatbotView() {
         // Fallback to native browser synthesis if streaming has network error
         if ("speechSynthesis" in window) {
           const utterance = new SpeechSynthesisUtterance(cleanText);
-          utterance.lang = language === "kn" ? "kn-IN" : "en-IN";
+          utterance.lang = isKannada ? "kn-IN" : "en-IN";
           utterance.rate = 1.1;
           utterance.onend = () => setSpeakingMsgId(null);
           utterance.onerror = () => setSpeakingMsgId(null);
@@ -208,6 +214,7 @@ export function AIChatbotView() {
       setSpeakingMsgId(null);
     }
   };
+
 
 
 
@@ -277,6 +284,7 @@ export function AIChatbotView() {
       id: Date.now().toString(),
       sender: "user",
       text: promptText,
+      lang: language,
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     };
 
@@ -320,6 +328,7 @@ export function AIChatbotView() {
         id: newId,
         sender: "ai",
         text: aiReply,
+        lang: language,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         dataSummary: summaryData,
       };
@@ -334,6 +343,7 @@ export function AIChatbotView() {
         text: language === "kn"
           ? "⚡ [ಲ್ಯುಮಿನಾ ಎಐ]: 209 ಪೊಲೀಸ್ ಠಾಣೆಗಳ ರಾಜ್ಯಾದ್ಯಂತ ದಾಖಲೆಗಳನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗಿದೆ. ಎಲ್ಲಾ ಇಂಟೆಲಿಜೆನ್ಸ್ ಸರ್ವರ್‌ಗಳು ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತಿವೆ."
           : "⚡ [LUMINA AI Copilot]: Processed statewide records across 209 mapped police stations. All intelligence feeds are operational.",
+        lang: language,
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -341,6 +351,7 @@ export function AIChatbotView() {
       setIsAnalyzing(false);
     }
   };
+
 
   const filteredFirs = availableFirs.filter((f) => {
     const q = firSearchQuery.toLowerCase();
@@ -513,6 +524,7 @@ export function AIChatbotView() {
               <div className="flex-1 min-h-0 w-full max-w-2xl overflow-y-auto custom-scrollbar space-y-4 px-2 py-4 mb-2">
                 {messages.map((msg) => {
                   const isSpeaking = speakingMsgId === msg.id;
+                  const isMsgKn = msg.lang === "kn" || /[\u0c80-\u0cff]/.test(msg.text);
                   return (
                     <div
                       key={msg.id}
@@ -530,16 +542,16 @@ export function AIChatbotView() {
                         <div className="flex items-center justify-between gap-4 font-mono text-[10px] opacity-70 mb-1">
                           <span>
                             {msg.sender === "user"
-                              ? (language === "kn" ? "ತನಿಖಾಧಿಕಾರಿ" : "Investigator")
-                              : (language === "kn" ? "ಲ್ಯುಮಿನಾ ಎಐ ಸಹಾಯಕ" : "Lumina AI Engine")}
+                              ? (isMsgKn ? "ತನಿಖಾಧಿಕಾರಿ" : "Investigator")
+                              : (isMsgKn ? "ಲ್ಯುಮಿನಾ ಎಐ ಸಹಾಯಕ" : "Lumina AI Engine")}
                           </span>
                           <div className="flex items-center gap-2">
                             <span>{msg.timestamp}</span>
-                            {/* Read Aloud TTS Button for AI responses (Kannada & English) */}
+                            {/* Read Aloud TTS Button for AI responses (Original Message Language) */}
                             {msg.sender === "ai" && (
                               <button
                                 type="button"
-                                onClick={() => handleToggleSpeak(msg.text, msg.id)}
+                                onClick={() => handleToggleSpeak(msg.text, msg.id, msg.lang)}
                                 className={`flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[10px] font-mono transition-all cursor-pointer ${
                                   isSpeaking
                                     ? "bg-emerald-950/80 text-emerald-300 font-bold border border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
@@ -554,12 +566,12 @@ export function AIChatbotView() {
                                       <span className="w-0.5 h-3.5 bg-emerald-300 animate-bounce" />
                                       <span className="w-0.5 h-2.5 bg-emerald-400 animate-pulse" />
                                     </span>
-                                    <span>{language === "kn" ? "ನಿಲ್ಲಿಸಿ" : "Stop"}</span>
+                                    <span>{isMsgKn ? "ನಿಲ್ಲಿಸಿ" : "Stop"}</span>
                                   </>
                                 ) : (
                                   <>
                                     <span className="material-symbols-outlined text-[12px]">volume_up</span>
-                                    <span>{language === "kn" ? "ಧ್ವನಿ ವಿವರಣೆ" : "Listen"}</span>
+                                    <span>{isMsgKn ? "ಧ್ವನಿ ವಿವರಣೆ" : "Listen"}</span>
                                   </>
                                 )}
                               </button>
@@ -568,6 +580,7 @@ export function AIChatbotView() {
                           </div>
                         </div>
                         <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+
 
                         {msg.dataSummary && (
                           <div className="mt-3 rounded-xl border border-zinc-800 bg-[#141416] p-3 font-mono text-xs text-zinc-300 grid grid-cols-3 gap-2">

@@ -69,9 +69,17 @@ def _clean_for_speech(raw: str) -> str:
 def _synthesize_audio(text: str, lang: str) -> bytes:
     """
     Split text into sentence chunks (< 150 chars) and fetch natural Google TTS audio stream.
-    Supports Kannada ('kn') and high-fidelity Indian English ('en-IN').
+    Intelligently auto-detects Kannada Unicode characters to always speak in native Kannada voice.
     """
-    target_lang = "kn" if lang in ("kn", "kannada") else "en-IN"
+    # Detect if text contains Kannada Unicode characters (\u0c80-\u0cff)
+    has_kannada_chars = bool(re.search(r'[\u0c80-\u0cff]', text))
+    if has_kannada_chars:
+        target_lang = "kn"
+    elif lang in ("kn", "kannada"):
+        target_lang = "kn"
+    else:
+        target_lang = "en-IN"
+
 
 
     # Split on sentence end punctuation
