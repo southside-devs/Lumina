@@ -1,6 +1,4 @@
 {
   "name": "FrontEnd",
-  "client": {
-    "output_directory": "dist"
-  }
+  "client": { "output_directory": "dist" }
 }

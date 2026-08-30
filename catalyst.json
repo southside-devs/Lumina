@@ -8,6 +8,6 @@
   },
 
   "client": {
-    "source": "FrontEnd"
+    "source": "FrontEnd/dist"
   }
 }

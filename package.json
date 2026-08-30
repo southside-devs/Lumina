@@ -3,8 +3,14 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix FrontEnd",
-    "build": "npm run build --prefix FrontEnd",
-    "preview": "npm run preview --prefix FrontEnd"
+    "dev": "cd FrontEnd && npm run dev",
+    "dev:frontend": "cd FrontEnd && npm run dev",
+    "dev:backend": "python BackEnd/functions/api_service/server.py",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build": "cd FrontEnd && npm run build",
+    "preview": "cd FrontEnd && npm run preview"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }
