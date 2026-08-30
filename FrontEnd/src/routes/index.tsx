@@ -33,16 +33,14 @@ export function IntelligenceHub() {
   const [activeFilter, setActiveFilter] = useState("All Incidents");
   const [showIncidents, setShowIncidents] = useState(false);
   const [showHotspots, setShowHotspots] = useState(true);
-  const [showPatrols, setShowPatrols] = useState(true);
   const [cardOpen, setCardOpen] = useState(false);
   const [selectedSpot, setSelectedSpot] = useState<TacticalHotspot | null>(null);
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
   const [clusterParams, setClusterParams] = useState({ epsSpatial: 12.0, epsTemporal: 45, minPts: 4 });
 
-
-
   const { firCreatedCount } = useFIREvents();
   const mapRef = useRef<L.Map | null>(null);
+
 
   // Fetch live FIR records and refresh when a new FIR is filed
   useEffect(() => {
@@ -179,7 +177,6 @@ export function IntelligenceHub() {
             firs={filteredFirs}
             showIncidents={showIncidents}
             showHotspots={showHotspots}
-            showPatrols={showPatrols}
             activeSpot={selectedSpot}
             selectedFIR={selectedFir}
             onSelectSpot={handleSelectSpot}
@@ -273,13 +270,12 @@ export function IntelligenceHub() {
                 onToggleIncidents={() => setShowIncidents((v) => !v)}
                 showHotspots={showHotspots}
                 onToggleHotspots={() => setShowHotspots((v) => !v)}
-                showPatrols={showPatrols}
-                onTogglePatrols={() => setShowPatrols((v) => !v)}
                 onResetView={handleResetView}
                 onClusterTuned={(p) => setClusterParams(p)}
               />
               <div className="hidden w-[88px] lg:block" />
             </div>
+
 
 
             <div className="mt-3 flex items-center justify-between font-mono text-label-sm text-muted-foreground/70 pointer-events-auto">

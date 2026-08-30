@@ -137,7 +137,6 @@ interface TacticalMapProps {
   selectedFIR?: FIRItem | null;
   showIncidents?: boolean;
   showHotspots?: boolean;
-  showPatrols?: boolean;
   firs?: FIRItem[];
   mapRef?: React.MutableRefObject<L.Map | null>;
   clusterParams?: { epsSpatial: number; epsTemporal: number; minPts: number };
@@ -151,12 +150,12 @@ export function TacticalMap({
   selectedFIR,
   showIncidents = false,
   showHotspots = true,
-  showPatrols = true,
   firs = [],
   mapRef,
   clusterParams,
   onClustersLoaded,
 }: TacticalMapProps) {
+
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
@@ -404,7 +403,8 @@ export function TacticalMap({
         );
       });
     }
-  }, [showIncidents, showHotspots, showPatrols, activeSpot, selectedFIR, firs, hotspotsList, onSelectSpot, onSelectFIR]);
+  }, [showIncidents, showHotspots, activeSpot, selectedFIR, firs, hotspotsList, onSelectSpot, onSelectFIR]);
+
 
 
   return (

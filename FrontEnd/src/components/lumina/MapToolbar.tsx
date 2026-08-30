@@ -40,9 +40,8 @@ export type MapToolbarProps = {
   onToggleIncidents?: () => void;
   showHotspots: boolean;
   onToggleHotspots: () => void;
-  showPatrols: boolean;
-  onTogglePatrols: () => void;
   onResetView?: () => void;
+
   onClusterTuned?: (params: { epsSpatial: number; epsTemporal: number; minPts: number }) => void;
 };
 
@@ -242,8 +241,8 @@ export function MapToolbar({
           <Toggle label="Live Incidents" on={showIncidents} onToggle={onToggleIncidents} />
         )}
         <Toggle label="Hotspot Zones" on={showHotspots} onToggle={onToggleHotspots} />
-        <Toggle label="Patrol Units" on={showPatrols} onToggle={onTogglePatrols} />
         <span className="h-5 w-px bg-hairline" />
+
 
         {/* ST-DBSCAN Parameters CTA */}
         <button
