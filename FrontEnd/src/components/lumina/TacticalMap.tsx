@@ -3,6 +3,8 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { FIRItem } from "@/lib/api";
 
+import karnatakaGeoJson from "./karnataka-boundary.json";
+
 export interface TacticalHotspot {
   id: string;
   name: string;
@@ -170,17 +172,19 @@ export function TacticalMap({
       maxZoom: 16,
       zoomControl: false,
       attributionControl: false,
+      zoomAnimation: true,
+      zoomAnimationThreshold: 8,
     });
 
     if (!prefersReducedMotion) {
       setTimeout(() => {
         if (mapInstanceRef.current === map) {
           map.flyTo(targetCenter, targetZoom, {
-            duration: 1.5,
-            easeLinearity: 0.25,
+            duration: 0.6,
+            easeLinearity: 0.5,
           });
         }
-      }, 250);
+      }, 100);
     }
 
     // 1. Official Esri Dark Gray Base Map Layer (100% Native Dark Military GIS)
@@ -192,14 +196,21 @@ export function TacticalMap({
       }
     ).addTo(map);
 
-    // 2. Official Esri Dark Reference Labels & Boundaries Overlay Layer
-    L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 16,
-        className: "esri-dark-labels",
-      }
-    ).addTo(map);
+    // 2. Karnataka State Administrative Boundary GeoJSON Layer (Subtle, Thinner, Classy Dashed Outline)
+    L.geoJSON(karnatakaGeoJson as any, {
+      interactive: false,
+      style: {
+        color: "#cbd5e1",         // Soft muted silver-white (less bright)
+        weight: 1.5,              // Sleek, thinner outline
+        opacity: 0.55,            // Refined subtle opacity
+        dashArray: "4, 6",        // Classy fine dashed tactical line
+        fillColor: "transparent",
+        fillOpacity: 0,
+        lineCap: "round",
+        lineJoin: "round",
+        className: "karnataka-state-boundary",
+      },
+    }).addTo(map);
 
     // Zoom control at bottom right
     L.control.zoom({ position: "bottomright" }).addTo(map);
@@ -329,7 +340,7 @@ export function TacticalMap({
       });
     }
 
-    // 3. Draw Live Incident Markers — Refined, static monochrome circular pins
+    // 3. Draw Live Incident Markers — Monochrome circles, clearly visible at all zoom levels
     if (showIncidents && firs && firs.length > 0) {
       firs.forEach((fir, idx) => {
         const lat = Number(fir.Latitude);
@@ -339,46 +350,32 @@ export function TacticalMap({
 
         const isSelected = selectedFIR?.ROWID === fir.ROWID;
         const group = fir.Crime_Group?.toLowerCase() || "";
-        const isRecent = fir.Date?.includes("2026") || fir.FIR_Number?.includes("2026") || idx < 5;
         const isCritical = group.includes("assault") || group.includes("murder")
                          || group.includes("robbery") || group.includes("arson")
                          || group.includes("extortion");
 
-        // Balanced 1:1 circle dimensions:
-        const outerDiameter = isSelected ? 15 : isCritical ? 11 : isRecent ? 9 : 7;
-        const coreDiameter  = isSelected ? 9 : isCritical ? 6 : isRecent ? 5 : 4;
-        
-        const outerBorderColor = isSelected ? "#ffffff" : isCritical ? "#cbd5e1" : isRecent ? "#64748b" : "#3f3f46";
-        const whiteSeparation  = isSelected ? "1px solid #ffffff" : isCritical ? "0.75px solid rgba(255,255,255,0.7)" : "0.5px solid rgba(255,255,255,0.25)";
-        const coreBgColor      = isSelected ? "#e2e8f0" : isCritical ? "#cbd5e1" : isRecent ? "#64748b" : "#3f3f46";
-        const opacity          = isSelected ? 1.0 : isCritical ? 0.95 : isRecent ? 0.75 : 0.55;
+        // Clearly visible radii — no colour, pure monochrome
+        const radius      = isSelected ? 10 : isCritical ? 8 : 6;
+        const fillColor   = isSelected ? "#ffffff" : isCritical ? "#e2e8f0" : "#94a3b8";
+        const fillOpacity = isSelected ? 1.0 : isCritical ? 0.9 : 0.75;
+        const strokeColor = "#1e293b";
+        const weight      = isSelected ? 2.5 : 1.5;
 
-        // Selected state adds second concentric circular ring
-        const selectedConcentricHtml = isSelected
-          ? `<div class="absolute rounded-full border pointer-events-none shrink-0" style="width:${outerDiameter + 5}px; height:${outerDiameter + 5}px; min-width:${outerDiameter + 5}px; min-height:${outerDiameter + 5}px; border-color: rgba(255,255,255,0.6); border-width: 0.75px;"></div>`
-          : "";
+        const circle = L.circleMarker([lat, lng], {
+          radius,
+          color: strokeColor,
+          fillColor,
+          fillOpacity,
+          weight,
+          opacity: 1,
+        }).addTo(layerGroup);
 
-        const incidentIcon = L.divIcon({
-          className: "custom-fir-incident-pin",
-          html: `
-            <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group" style="width:${outerDiameter}px; height:${outerDiameter}px; opacity:${opacity};">
-              ${selectedConcentricHtml}
-              <!-- Outer circular border (Guaranteed 1:1 circle) -->
-              <div class="flex items-center justify-center rounded-full shrink-0 transition-transform group-hover:scale-125"
-                style="width:${outerDiameter}px; height:${outerDiameter}px; min-width:${outerDiameter}px; min-height:${outerDiameter}px; background-color: #000000; border: 1px solid ${outerBorderColor}; box-shadow: 0 1px 2px rgba(0,0,0,0.8); ${isSelected ? "box-shadow: 0 0 5px rgba(255,255,255,0.4);" : ""}">
-                
-                <!-- Inner solid dark-grey/white core with thin circular separation ring -->
-                <div class="flex items-center justify-center rounded-full shrink-0"
-                  style="width:${coreDiameter}px; height:${coreDiameter}px; min-width:${coreDiameter}px; min-height:${coreDiameter}px; background-color:${coreBgColor}; border: ${whiteSeparation};">
-                </div>
-              </div>
-            </div>
-          `,
-          iconSize: [0, 0],
-        });
+        circle.on("click", () => { onSelectFIR?.(fir); });
 
-        const incidentMarker = L.marker([lat, lng], { icon: incidentIcon }).addTo(layerGroup);
-        incidentMarker.on("click", () => { onSelectFIR?.(fir); });
+        circle.bindTooltip(
+          `<span style="font-family:monospace;font-size:10px;color:#e2e8f0;">FIR ${fir.FIR_Number || fir.ROWID} · ${fir.Crime_Group || "Incident"}</span>`,
+          { direction: "top", opacity: 1, className: "lumina-fir-tooltip" }
+        );
       });
     }
   }, [showIncidents, showHotspots, showPatrols, activeSpot, selectedFIR, firs, onSelectSpot, onSelectFIR]);

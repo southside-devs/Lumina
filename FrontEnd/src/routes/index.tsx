@@ -107,7 +107,7 @@ export function IntelligenceHub() {
     setSelectedSpot(spot);
     setSelectedFir(null);
     setCardOpen(true);
-    mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 1.2 });
+    mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
   };
 
   const handleSelectFir = (fir: FIRItem) => {
@@ -115,12 +115,12 @@ export function IntelligenceHub() {
     setSelectedSpot(null);
     setCardOpen(true);
     mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
-      duration: 1.2,
+      duration: 0.5,
     });
   };
 
   const handleResetView = () => {
-    mapRef.current?.flyTo([14.8, 76.0], 7, { duration: 1.2 });
+    mapRef.current?.flyTo([14.8, 76.0], 8, { duration: 0.5 });
     setSelectedSpot(KARNATAKA_HOTSPOTS[0]);
     setSelectedFir(null);
   };
