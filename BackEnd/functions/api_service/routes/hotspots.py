@@ -13,7 +13,6 @@ from collections import deque
 from datetime import datetime
 import math
 from flask import request
-import numpy as np
 
 from utils.db import DataStore
 from utils.response import success, bad_request, server_error
@@ -55,36 +54,37 @@ def _days_to_date(days: float) -> str:
     return dt.strftime("%Y-%m-%d")
 
 
-def haversine_vectorized(lat1, lon1, lat2_arr, lon2_arr):
-    """Calculate Haversine distance in km between a point and an array of points."""
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate Haversine distance in km between two points in pure Python."""
     r = 6371.0  # Earth radius in km
-    dlat = np.radians(lat2_arr - lat1)
-    dlon = np.radians(lon2_arr - lon1)
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
     a = (
-        np.sin(dlat / 2.0) ** 2
-        + np.cos(np.radians(lat1))
-        * np.cos(np.radians(lat2_arr))
-        * np.sin(dlon / 2.0) ** 2
+        math.sin(delta_phi / 2.0) ** 2
+        + math.cos(phi1) * math.cos(phi2) * (math.sin(delta_lambda / 2.0) ** 2)
     )
-    c = 2 * np.arcsin(np.clip(np.sqrt(a), 0, 1))
+    c = 2 * math.atan2(math.sqrt(max(0.0, a)), math.sqrt(max(0.0, 1.0 - a)))
     return r * c
 
 
 def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
     """
-    Run ST-DBSCAN on a list of crime events.
+    Run ST-DBSCAN on a list of crime events in pure Python.
     Each event must have: 'lat', 'lon', 'days', 'fir_id', 'crime_group', 'station_name'.
     """
     n = len(events)
     if n < min_samples:
         return [], 0
 
-    lats = np.array([e["lat"] for e in events], dtype=np.float64)
-    lons = np.array([e["lon"] for e in events], dtype=np.float64)
-    days = np.array([e["days"] for e in events], dtype=np.float64)
+    lats = [float(e["lat"]) for e in events]
+    lons = [float(e["lon"]) for e in events]
+    days = [float(e["days"]) for e in events]
 
-    labels = np.full(n, -1, dtype=int)
-    visited = np.zeros(n, dtype=bool)
+    labels = [-1] * n
+    visited = [False] * n
     cluster_id = 0
 
     for i in range(n):
@@ -93,12 +93,11 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
         visited[i] = True
 
         # Find spatial and temporal neighbors of point i
-        spatial_dists = haversine_vectorized(lats[i], lons[i], lats, lons)
-        temporal_dists = np.abs(days - days[i])
-
-        neighbors = np.where(
-            (spatial_dists <= eps_spatial) & (temporal_dists <= eps_temporal)
-        )[0]
+        neighbors = []
+        for k in range(n):
+            if abs(days[k] - days[i]) <= eps_temporal:
+                if haversine_distance(lats[i], lons[i], lats[k], lons[k]) <= eps_spatial:
+                    neighbors.append(k)
 
         if len(neighbors) < min_samples:
             continue
@@ -110,11 +109,11 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
             j = seed_set.popleft()
             if not visited[j]:
                 visited[j] = True
-                j_spatial = haversine_vectorized(lats[j], lons[j], lats, lons)
-                j_temporal = np.abs(days - days[j])
-                j_neighbors = np.where(
-                    (j_spatial <= eps_spatial) & (j_temporal <= eps_temporal)
-                )[0]
+                j_neighbors = []
+                for k in range(n):
+                    if abs(days[k] - days[j]) <= eps_temporal:
+                        if haversine_distance(lats[j], lons[j], lats[k], lons[k]) <= eps_spatial:
+                            j_neighbors.append(k)
 
                 if len(j_neighbors) >= min_samples:
                     seed_set.extend(j_neighbors)
@@ -139,25 +138,25 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
         ("Patrol Western-2", "Durgigudi -> Bypass Junction", "~10m"),
     ]
 
-
     # Find max cluster size for normalization
-    max_size = max([len(np.where(labels == cid)[0]) for cid in unique_clusters]) if unique_clusters else 1
+    cluster_sizes = [labels.count(cid) for cid in unique_clusters]
+    max_size = max(cluster_sizes) if cluster_sizes else 1
 
     for cid in unique_clusters:
-        indices = np.where(labels == cid)[0]
-        c_lats = lats[indices]
-        c_lons = lons[indices]
-        c_days = days[indices]
+        indices = [idx for idx, l in enumerate(labels) if l == cid]
+        c_lats = [lats[idx] for idx in indices]
+        c_lons = [lons[idx] for idx in indices]
+        c_days = [days[idx] for idx in indices]
 
-        centroid_lat = float(np.mean(c_lats))
-        centroid_lon = float(np.mean(c_lons))
+        centroid_lat = float(sum(c_lats) / len(c_lats))
+        centroid_lon = float(sum(c_lons) / len(c_lons))
 
         # Cluster radius in km (max distance from centroid)
-        dists_from_centroid = haversine_vectorized(
-            centroid_lat, centroid_lon, c_lats, c_lons
-        )
-        radius_km = float(np.max(dists_from_centroid))
-        radius_km = max(round(radius_km, 2), 1.5)
+        dists_from_centroid = [
+            haversine_distance(centroid_lat, centroid_lon, lat, lon)
+            for lat, lon in zip(c_lats, c_lons)
+        ]
+        radius_km = max(round(max(dists_from_centroid) if dists_from_centroid else 1.5, 2), 1.5)
 
         # Crime type counts
         crime_counts = {}

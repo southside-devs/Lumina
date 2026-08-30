@@ -1,6 +1,8 @@
 import os
 import json
 import re
+import urllib.request
+import urllib.error
 from utils.response import success, bad_request, server_error
 from utils.auth import check_any_authenticated
 from utils.db import DataStore
@@ -379,16 +381,66 @@ def process_chat(request):
 
         for model_name in candidates:
             try:
-                try:
-                    model = genai.GenerativeModel(model_name, system_instruction=system_instruction)
-                except Exception:
-                    model = genai.GenerativeModel(model_name)
+                # 1. Direct REST API call (fast, zero external SDK dependencies)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                contents = []
+                for msg in formatted_history:
+                    contents.append({
+                        "role": msg["role"],
+                        "parts": [{"text": p} for p in msg["parts"]]
+                    })
+                contents.append({
+                    "role": "user",
+                    "parts": [{"text": query}]
+                })
 
-                chat = model.start_chat(history=formatted_history)
-                response = chat.send_message(query)
-                cleaned_text = clean_ai_response(response)
-                if cleaned_text:
-                    return success({'response': cleaned_text})
+                payload = {
+                    "contents": contents,
+                    "systemInstruction": {
+                        "parts": [{"text": system_instruction}]
+                    },
+                    "generationConfig": {
+                        "temperature": 0.2,
+                        "maxOutputTokens": 2048
+                    }
+                }
+
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST"
+                )
+
+                try:
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        res_data = json.loads(resp.read().decode("utf-8"))
+                        if "candidates" in res_data and len(res_data["candidates"]) > 0:
+                            cand = res_data["candidates"][0]
+                            if "content" in cand and "parts" in cand["content"]:
+                                non_thought_parts = []
+                                for p in cand["content"]["parts"]:
+                                    if not p.get("thought", False) and "text" in p:
+                                        non_thought_parts.append(p["text"])
+                                if non_thought_parts:
+                                    cleaned_text = clean_ai_response("\n".join(non_thought_parts))
+                                    if cleaned_text:
+                                        return success({'response': cleaned_text})
+                except urllib.error.HTTPError as http_err:
+                    err_body = http_err.read().decode('utf-8', errors='ignore')
+                    print(f"Gemini REST HTTP {http_err.code} on '{model_name}': {err_body}")
+                    # If REST returned 404 or other error, try next candidate or genai fallback
+                    if HAS_GENAI:
+                        try:
+                            model = genai.GenerativeModel(model_name, system_instruction=system_instruction)
+                            chat = model.start_chat(history=formatted_history)
+                            response = chat.send_message(query)
+                            cleaned_text = clean_ai_response(response)
+                            if cleaned_text:
+                                return success({'response': cleaned_text})
+                        except Exception as genai_err:
+                            print(f"GenAI fallback failed: {genai_err}")
+
             except Exception as model_err:
                 print(f"Model '{model_name}' failed: {model_err}")
                 last_error = model_err

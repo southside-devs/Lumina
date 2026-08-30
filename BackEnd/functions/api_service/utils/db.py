@@ -9,7 +9,7 @@ Supports dual-mode execution:
 import os
 import sqlite3
 import threading
-import pandas as pd
+import csv
 import logging
 
 logger = logging.getLogger("lumina.db")
@@ -58,15 +58,34 @@ def _get_local_sqlite_connection():
             file_path = os.path.join(csv_dir, file_name)
             if os.path.exists(file_path):
                 try:
-                    df = pd.read_csv(file_path)
-                    # Add ROWID column matching Catalyst Data Store convention
-                    if "ROWID" not in df.columns:
-                        if "ID" in df.columns:
-                            df["ROWID"] = df["ID"]
-                        else:
-                            df["ROWID"] = df.index + 1
-                    df.to_sql(table_name, conn, if_exists="replace", index=False)
-                    logger.info(f"Loaded table '{table_name}' with {len(df)} rows.")
+                    with open(file_path, "r", encoding="utf-8-sig") as f:
+                        reader = csv.DictReader(f)
+                        headers = list(reader.fieldnames or [])
+                        if not headers:
+                            continue
+
+                        has_rowid = "ROWID" in headers
+                        cols = list(headers)
+                        if not has_rowid:
+                            cols.append("ROWID")
+
+                        col_defs = [f'"{c}" TEXT' for c in cols]
+                        conn.execute(f'CREATE TABLE IF NOT EXISTS "{table_name}" ({", ".join(col_defs)})')
+
+                        rows_to_insert = []
+                        for idx, row in enumerate(reader, start=1):
+                            if not has_rowid:
+                                row["ROWID"] = row.get("ID") or str(idx)
+                            rows_to_insert.append([row.get(c, "") for c in cols])
+
+                        if rows_to_insert:
+                            placeholders = ", ".join(["?"] * len(cols))
+                            col_names = ", ".join([f'"{c}"' for c in cols])
+                            conn.executemany(
+                                f'INSERT INTO "{table_name}" ({col_names}) VALUES ({placeholders})',
+                                rows_to_insert
+                            )
+                    logger.info(f"Loaded table '{table_name}'.")
                 except Exception as e:
                     logger.warning(f"Failed to load {file_name} into SQLite: {e}")
     else:

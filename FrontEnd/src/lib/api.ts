@@ -4,7 +4,15 @@
  * Includes resilient fallbacks for offline presentation & development resilience.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
+  if (typeof window !== "undefined" && window.location.hostname.includes("catalystserverless")) {
+    return "/server/api_service/api";
+  }
+  return "/api";
+};
+
+const API_BASE = getApiBase();
 const DEMO_KEY = "lumina-demo-ksp-2026";
 
 export interface DashboardOverview {
