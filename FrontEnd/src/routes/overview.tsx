@@ -68,7 +68,7 @@ function Overview() {
     };
   }, [firCreatedCount]); // refetch whenever a new FIR is created
 
-  const totalFirs = overview?.total_firs ?? 1245;
+  const totalFirs = 500;
   const repeatOffenders = overview?.repeat_offenders ?? 4;
   const totalDistricts = overview?.total_districts ?? 31;
   const totalStations = overview?.total_stations ?? 120;

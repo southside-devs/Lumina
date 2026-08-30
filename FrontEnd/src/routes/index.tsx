@@ -47,7 +47,7 @@ export function IntelligenceHub() {
     let mounted = true;
     async function loadLiveData() {
       try {
-        const res = await api.getFirs({ limit: 5000 });
+        const res = await api.getFirs({ limit: 200 });
         if (mounted && res && res.firs) {
           setFirs(res.firs);
         }
