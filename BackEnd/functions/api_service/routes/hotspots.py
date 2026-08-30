@@ -231,6 +231,8 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
     return clusters, noise_count
 
 
+_HOTSPOT_CACHE = {}
+
 def get_clusters(request, db):
     """
     Fetch FIRs from DataStore and compute ST-DBSCAN hotspots.
@@ -245,6 +247,10 @@ def get_clusters(request, db):
         eps_temporal = int(request.args.get("eps_temporal", 60))
         min_samples = int(request.args.get("min_samples", 4))
         limit = int(request.args.get("limit", 2000))
+
+        cache_key = (round(eps_spatial, 2), eps_temporal, min_samples, limit)
+        if cache_key in _HOTSPOT_CACHE:
+            return success(_HOTSPOT_CACHE[cache_key])
 
         # Query recent FIRs with lat/lon — use explicit column names compatible with SQLite
         query = (
@@ -288,19 +294,19 @@ def get_clusters(request, db):
             min_samples=min_samples,
         )
 
-        return success(
-            {
-                "total_events_analyzed": len(events),
-                "total_clusters": len(clusters),
-                "noise_events": noise_count,
-                "parameters": {
-                    "eps_spatial_km": eps_spatial,
-                    "eps_temporal_days": eps_temporal,
-                    "min_samples": min_samples,
-                },
-                "clusters": clusters,
-            }
-        )
+        result_payload = {
+            "total_events_analyzed": len(events),
+            "total_clusters": len(clusters),
+            "noise_events": noise_count,
+            "parameters": {
+                "eps_spatial_km": eps_spatial,
+                "eps_temporal_days": eps_temporal,
+                "min_samples": min_samples,
+            },
+            "clusters": clusters,
+        }
+        _HOTSPOT_CACHE[cache_key] = result_payload
+        return success(result_payload)
 
     except Exception as e:
         return server_error(f"Hotspot clustering error: {str(e)}")

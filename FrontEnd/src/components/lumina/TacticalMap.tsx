@@ -3,6 +3,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { api, type FIRItem, type SpatiotemporalCluster } from "@/lib/api";
 import { useSystemConfig } from "@/lib/config";
+import { DEFAULT_ST_DBSCAN_CLUSTERS } from "@/lib/default-hotspots";
 
 import karnatakaGeoJson from "./karnataka-boundary.json";
 
@@ -163,7 +164,7 @@ export function TacticalMap({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>([]);
+  const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>(DEFAULT_ST_DBSCAN_CLUSTERS);
 
   const createTileLayerForStyle = (style: string) => {
     let tileUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
