@@ -93,20 +93,25 @@ export function TopBar() {
 
       {/* Right Interactive Controls */}
       <div ref={clusterRef} className="flex items-center gap-2.5">
-        {/* Search Trigger */}
+        {/* Search Trigger with clear Ctrl+K shortcut badge */}
         <button
           type="button"
           onClick={() => setIsSearchOpen(true)}
-          className="group relative hidden items-center md:flex rounded-full border border-hairline bg-surface-1/90 py-1.5 pr-8 pl-8 text-xs text-muted-foreground transition-all hover:border-white/20 hover:bg-surface-2 hover:text-foreground hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_2px_rgba(0,0,0,0.45)] active:scale-[0.98] cursor-pointer"
+          aria-label="Open Search Intelligence (Ctrl+K)"
+          title="Search Intelligence across 5,000+ FIRs, Suspects, Districts & Hotspots (Ctrl+K)"
+          className="group relative flex items-center gap-2.5 rounded-full border border-hairline bg-surface-1/90 py-1.5 px-3 text-xs text-muted-foreground transition-all hover:border-white/20 hover:bg-surface-2 hover:text-foreground hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_2px_rgba(0,0,0,0.45)] active:scale-[0.98] cursor-pointer"
         >
-          <span className="material-symbols-outlined absolute left-2.5 text-[17px] text-muted-foreground transition-colors group-hover:text-white">
+          <span className="material-symbols-outlined text-[17px] text-emerald-400 transition-transform group-hover:scale-110">
             search
           </span>
-          <span>Search Intelligence...</span>
-          <span className="material-symbols-outlined absolute right-2.5 text-xs text-muted-foreground/60 transition-colors group-hover:text-white">
-            keyboard_command_key
-          </span>
+          <span className="hidden sm:inline font-sans">Search Intelligence...</span>
+          <kbd className="flex items-center gap-0.5 rounded-md bg-zinc-900 border border-zinc-700/80 px-1.5 py-0.5 font-mono text-[10px] text-zinc-300 shadow-sm group-hover:border-zinc-500 group-hover:text-white transition-colors">
+            <span className="font-semibold">Ctrl</span>
+            <span>+</span>
+            <span className="font-bold text-white">K</span>
+          </kbd>
         </button>
+
 
         {/* Notifications Popover Toggle */}
         <div className="relative">

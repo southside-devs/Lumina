@@ -502,7 +502,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       textToCopy = `${item.suspect.name} (${item.suspect.id})`;
     }
     navigator.clipboard.writeText(textToCopy);
-    toast.success(`Copied to clipboard: ${textToCopy}`);
+    toast.success(`Copied: ${textToCopy}`);
   }, []);
 
   // Keyboard navigation & Shortcuts
@@ -591,7 +591,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-10 md:pt-16 bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-8 md:pt-14 bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
@@ -599,8 +599,8 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Omnibar Header */}
-        <div className="relative flex items-center border-b border-zinc-800/80 bg-zinc-950 px-4 py-3.5">
-          <span className="material-symbols-outlined text-emerald-400 text-2xl mr-3 select-none">
+        <div className="relative flex items-center border-b border-zinc-800/80 bg-zinc-950 px-4 py-3.5 gap-2">
+          <span className="material-symbols-outlined text-emerald-400 text-2xl select-none shrink-0">
             {isListening ? "graphic_eq" : "search"}
           </span>
 
@@ -614,10 +614,10 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                 ? "Listening... Speak in English or Kannada (e.g. 'FIR 1693', 'Indiranagar', 'ಬೆಂಗಳೂರು')..."
                 : "Search FIRs, suspects, hotspots, districts, or press Tab to ask Gemini AI..."
             }
-            className="flex-1 bg-transparent text-sm text-white placeholder-zinc-500 font-sans focus:outline-none"
+            className="flex-1 bg-transparent text-sm text-white placeholder-zinc-500 font-sans focus:outline-none min-w-0"
           />
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Live Audio Equalizer Wave Animation when dictating */}
             {isListening && (
               <div className="flex items-center gap-0.5 px-2 py-1 bg-red-950/80 border border-red-800/50 rounded-lg">
@@ -633,30 +633,55 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
             <button
               type="button"
               onClick={handleToggleVoice}
-              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-mono transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-mono transition-all cursor-pointer ${
                 isListening
                   ? "bg-red-500 text-white font-bold animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]"
                   : "text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
               }`}
               title="Voice Search in English or Kannada"
             >
-              <span className="material-symbols-outlined text-sm">{isListening ? "mic_off" : "mic"}</span>
+              <span className="material-symbols-outlined text-[16px]">{isListening ? "mic_off" : "mic"}</span>
               <span className="hidden sm:inline">{isListening ? "Listening..." : "Voice"}</span>
             </button>
 
+            {/* Explicit Ask AI Button in Header */}
+            {query.trim() && (
+              <button
+                type="button"
+                onClick={() => handleAskAI()}
+                disabled={isAiLoading}
+                className="flex items-center gap-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 px-2.5 py-1.5 text-xs font-medium text-emerald-300 transition-colors cursor-pointer"
+                title="Ask Gemini AI Copilot (Tab)"
+              >
+                <span className="material-symbols-outlined text-sm">smart_toy</span>
+                <span className="hidden sm:inline">{isAiLoading ? "Consulting..." : "Ask AI"}</span>
+                <kbd className="hidden sm:inline font-mono text-[9px] bg-emerald-950/80 border border-emerald-700/60 px-1 py-0.2 rounded text-emerald-300">Tab</kbd>
+              </button>
+            )}
+
+            {/* Clear Input Button */}
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery("")}
-                className="text-zinc-400 hover:text-white p-1 cursor-pointer"
+                className="text-zinc-400 hover:text-white p-1 rounded hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Clear Search"
               >
                 <span className="material-symbols-outlined text-sm">close</span>
               </button>
             )}
 
-            <span className="rounded bg-zinc-800/80 border border-zinc-700/60 px-1.5 py-0.5 text-[10px] font-mono text-zinc-400">
-              ESC
-            </span>
+            {/* Prominent Clickable Close Button */}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close search panel"
+              title="Close Search (ESC)"
+              className="flex items-center gap-1.5 rounded-lg border border-zinc-800 bg-zinc-900/90 px-2.5 py-1.5 text-xs text-zinc-400 hover:bg-red-950/40 hover:border-red-800/60 hover:text-red-300 transition-all cursor-pointer group"
+            >
+              <span className="material-symbols-outlined text-[16px] transition-transform group-hover:scale-110">close</span>
+              <span className="hidden sm:inline font-mono text-[10px] text-zinc-500 group-hover:text-red-300 font-semibold">ESC</span>
+            </button>
           </div>
         </div>
 
@@ -753,7 +778,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                 <button
                   type="button"
                   onClick={() => handleToggleVoiceAudio(aiAnswer)}
-                  className="flex items-center gap-1 text-xs text-emerald-300 hover:text-emerald-100 bg-emerald-900/50 border border-emerald-500/40 px-2.5 py-0.5 rounded-lg transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 text-xs text-emerald-300 hover:text-emerald-100 bg-emerald-900/50 border border-emerald-500/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-sm"
                   title="Listen to briefing (Google Neural Voice 1.18x)"
                 >
                   <span className="material-symbols-outlined text-sm">
@@ -780,7 +805,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
         )}
 
         {/* Search Results / Action List with Split Detail Preview */}
-        <div className="flex flex-col md:flex-row h-[430px] overflow-hidden">
+        <div className="flex flex-col md:flex-row h-[420px] overflow-hidden">
           {/* Left Column: Results List */}
           <div ref={listRef} className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1.5">
             {/* When Query is empty: Show Recent Searches & Suggested AI Prompts */}
@@ -924,7 +949,37 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Hover action icon for Copy */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyIdentifier(item);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-white transition-opacity cursor-pointer"
+                        title="Copy Identifier (Ctrl+C)"
+                      >
+                        <span className="material-symbols-outlined text-[15px]">content_copy</span>
+                      </button>
+
+                      {/* Hover action icon for Pin */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePin(item.id);
+                        }}
+                        className={`opacity-0 group-hover:opacity-100 p-1 hover:bg-zinc-800 rounded transition-opacity cursor-pointer ${
+                          isPinned ? "text-amber-400 opacity-100" : "text-zinc-400 hover:text-amber-300"
+                        }`}
+                        title={isPinned ? "Unpin (Ctrl+P)" : "Pin to Top (Ctrl+P)"}
+                      >
+                        <span className="material-symbols-outlined text-[15px]">
+                          {isPinned ? "star" : "star_outline"}
+                        </span>
+                      </button>
+
                       {"shortcut" in item && item.shortcut && (
                         <span className="font-mono text-[10px] text-zinc-500 bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded">
                           {item.shortcut}
@@ -951,14 +1006,14 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                       type="button"
                       onClick={() => togglePin(activeItem.id)}
                       className={`flex items-center gap-1 text-[10px] cursor-pointer ${
-                        isSelectedPinned ? "text-amber-400" : "text-zinc-500 hover:text-zinc-300"
+                        isSelectedPinned ? "text-amber-400 font-bold" : "text-zinc-500 hover:text-zinc-300"
                       }`}
-                      title={isSelectedPinned ? "Unpin Dossier" : "Pin Dossier to Top"}
+                      title={isSelectedPinned ? "Unpin Dossier (Ctrl+P)" : "Pin Dossier to Top (Ctrl+P)"}
                     >
                       <span className="material-symbols-outlined text-xs">
                         {isSelectedPinned ? "star" : "star_outline"}
                       </span>
-                      <span>{isSelectedPinned ? "Pinned" : "Pin"}</span>
+                      <span>{isSelectedPinned ? "Pinned" : "Pin (Ctrl+P)"}</span>
                     </button>
                     <span className="text-zinc-600">·</span>
                     <span className="text-emerald-400">Live</span>
@@ -1080,7 +1135,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                       type="button"
                       onClick={() => handleCopyIdentifier(activeItem)}
                       className="flex items-center justify-center gap-1 rounded-xl border border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 py-1.5 text-xs font-mono transition-colors cursor-pointer"
-                      title="Copy Case Number / Suspect ID"
+                      title="Copy Case Number / Suspect ID (Ctrl+C)"
                     >
                       <span className="material-symbols-outlined text-xs">content_copy</span>
                       <span>Copy ID</span>
@@ -1097,6 +1152,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                         handleAskAI(prompt);
                       }}
                       className="flex items-center justify-center gap-1 rounded-xl border border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 py-1.5 text-xs font-mono transition-colors cursor-pointer"
+                      title="Consult Gemini AI on this dossier (Tab)"
                     >
                       <span className="material-symbols-outlined text-xs">smart_toy</span>
                       <span>Ask AI</span>
@@ -1125,16 +1181,62 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
           </div>
         </div>
 
-        {/* Footer Navigation Hints */}
-        <div className="flex items-center justify-between border-t border-zinc-800/80 px-4 py-2.5 bg-zinc-950 text-[11px] font-mono text-zinc-500">
-          <div className="flex items-center gap-3">
-            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">↑↓</kbd> navigate</span>
-            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">↵</kbd> open</span>
-            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">Ctrl+C</kbd> copy</span>
-            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">Ctrl+P</kbd> pin</span>
-            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">Tab</kbd> ask AI</span>
+        {/* Interactive Clickable Footer Action Bar */}
+        <div className="flex flex-wrap items-center justify-between border-t border-zinc-800/80 px-4 py-2.5 bg-zinc-950 text-[11px] font-mono text-zinc-400 gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                if (results[selectedIndex]) results[selectedIndex].action();
+              }}
+              className="flex items-center gap-1 hover:text-white px-1.5 py-0.5 rounded hover:bg-zinc-900 cursor-pointer"
+            >
+              <kbd className="text-zinc-200 bg-zinc-800 px-1.5 py-0.2 rounded border border-zinc-700">↵ Enter</kbd>
+              <span>Open</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (results[selectedIndex]) handleCopyIdentifier(results[selectedIndex]);
+              }}
+              className="flex items-center gap-1 hover:text-white px-1.5 py-0.5 rounded hover:bg-zinc-900 cursor-pointer"
+            >
+              <kbd className="text-zinc-200 bg-zinc-800 px-1.5 py-0.2 rounded border border-zinc-700">Ctrl+C</kbd>
+              <span>Copy</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (results[selectedIndex]) togglePin(results[selectedIndex].id);
+              }}
+              className="flex items-center gap-1 hover:text-white px-1.5 py-0.5 rounded hover:bg-zinc-900 cursor-pointer"
+            >
+              <kbd className="text-zinc-200 bg-zinc-800 px-1.5 py-0.2 rounded border border-zinc-700">Ctrl+P</kbd>
+              <span>Pin</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleAskAI()}
+              className="flex items-center gap-1 hover:text-white px-1.5 py-0.5 rounded hover:bg-zinc-900 cursor-pointer"
+            >
+              <kbd className="text-zinc-200 bg-zinc-800 px-1.5 py-0.2 rounded border border-zinc-700">Tab</kbd>
+              <span>Ask AI</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex items-center gap-1 text-red-400 hover:text-red-300 px-1.5 py-0.5 rounded hover:bg-red-950/40 cursor-pointer"
+            >
+              <kbd className="text-red-300 bg-red-950/80 px-1.5 py-0.2 rounded border border-red-800/60">ESC</kbd>
+              <span>Close</span>
+            </button>
           </div>
-          <span className="text-zinc-400">5,005 FIRs · 3,000 Suspects · 31 Districts Indexed</span>
+
+          <span className="text-zinc-500 hidden lg:inline">5,005 FIRs · 3,000 Suspects Indexed</span>
         </div>
       </div>
     </div>
