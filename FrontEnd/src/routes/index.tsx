@@ -106,6 +106,27 @@ export function IntelligenceHub() {
     { label: "Active Patrols", count: 5 },
   ];
 
+  const handleFilterChange = (filterName: string) => {
+    setActiveFilter(filterName);
+    if (filterName === "All Incidents") {
+      setShowIncidents(true);
+      setShowHotspots(true);
+      setShowPatrols(true);
+    } else if (filterName === "Critical Threats") {
+      setShowIncidents(true);
+      setShowHotspots(true);
+      setShowPatrols(false);
+    } else if (filterName === "Recent (2026)") {
+      setShowIncidents(true);
+      setShowHotspots(false);
+      setShowPatrols(false);
+    } else if (filterName === "Active Patrols") {
+      setShowIncidents(false);
+      setShowHotspots(false);
+      setShowPatrols(true);
+    }
+  };
+
   const handleSelectSpot = (spot: TacticalHotspot | null) => {
     setSelectedSpot(spot);
     setSelectedFir(null);
@@ -191,7 +212,7 @@ export function IntelligenceHub() {
                     type="button"
                     role="tab"
                     aria-selected={activeFilter === f.label}
-                    onClick={() => setActiveFilter(f.label)}
+                    onClick={() => handleFilterChange(f.label)}
                     className={`flex items-center gap-2 rounded-full px-4 py-1.5 text-sm transition-colors cursor-pointer ${
                       activeFilter === f.label
                         ? "bg-slate-200 text-slate-900"
