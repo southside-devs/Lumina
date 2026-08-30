@@ -115,25 +115,38 @@ def get_model_candidates(api_key):
 
 # ── Database Context Retrieval (RAG) ─────────────────────────────────────────
 
+# ── Database Context Retrieval (RAG) ─────────────────────────────────────────
+
 def _extract_fir_references(text):
     """
-    Extract FIR number patterns from free text.
-    Matches formats like: 6746/2026, FIR-6746/2026, FIR #5001, ID 5001
+    Extract FIR number patterns from free text or voice transcriptions.
+    Matches formats like: 1693/2026, 1693 slash 2026, FIR 1693 2026, FIR 1693 of 2026, FIR #1693, ID 5001
     Returns list of (ref_string, ref_type) tuples where ref_type is 'number' or 'id'.
     """
+    # Normalize spoken / voice patterns to standard num/year format:
+    # "1693 slash 2026", "1693 stroke 2026", "1693 of 2026", "1693 by 2026", "1693-2026"
+    text_norm = re.sub(r'(\d{1,5})\s*(?:/|slash|stroke|by|of|-)\s*(20\d{2})', r'\1/\2', text, flags=re.IGNORECASE)
+    # Normalize space separated year: "1693 2026" -> "1693/2026"
+    text_norm = re.sub(r'\b(\d{1,5})\s+(20\d{2})\b', r'\1/\2', text_norm)
+
     found = []
 
-    # 1. Match full FIR_Number patterns like 6746/2026, 0001/2025, 2706/2026
-    for m in re.finditer(r'\b(\d{1,5}/20\d{2})\b', text, re.IGNORECASE):
+    # 1. Match full FIR_Number patterns like 1693/2026, 0004/2026, 2706/2026
+    for m in re.finditer(r'\b(\d{1,5}/20\d{2})\b', text_norm, re.IGNORECASE):
         found.append((m.group(1), 'number'))
 
-    # 2. If no full FIR number was found, look for standalone 4-5 digit IDs (e.g., FIR #5001, ID 5001, case 5001)
+    # 2. Match standalone numbers following FIR / case / report / Kannada keywords
     if not found:
         for m in re.finditer(
-            r'(?:FIR|case|id|rowid|report)[#\s\-:]*(\d{1,5})\b(?!\s*/\s*\d)',
-            text, re.IGNORECASE
+            r'(?:FIR|case|crime|id|rowid|report|ಎಫ್‌ಐಆರ್|ಪ್ರಥಮ ವರ್ತಮಾನ ವರದಿ)[#\s\-:]*(\d{1,5})\b',
+            text_norm, re.IGNORECASE
         ):
-            found.append((m.group(1), 'id'))
+            found.append((m.group(1), 'number_or_id'))
+
+    # 3. Fallback: catch any standalone 4-digit number that could be an FIR number in a short query
+    if not found and len(text.strip().split()) <= 4:
+        for m in re.finditer(r'\b(\d{3,5})\b', text_norm):
+            found.append((m.group(1), 'number_or_id'))
 
     # Deduplicate
     seen = set()
@@ -159,38 +172,43 @@ def _fetch_db_context(query, db):
     for ref, ref_type in fir_refs:
         try:
             rows = []
-            if ref_type == 'number':
-                # Exact match first
+            if '/' in ref:
+                # Full num/year format (e.g. 1693/2026, 0004/2026)
                 escaped = ref.replace("'", "''")
+                num, yr = ref.split('/')
+                num_clean = num.lstrip('0') or '0'
+
                 rows = db.execute_query(
                     f"SELECT FIR.*, Police_Station.Name AS Station_Name, District.Name AS District_Name "
                     f"FROM FIR "
                     f"LEFT JOIN Police_Station ON FIR.Station_ID = Police_Station.ROWID "
                     f"LEFT JOIN District ON Police_Station.District_ID = District.ROWID "
-                    f"WHERE FIR.FIR_Number = '{escaped}' LIMIT 1"
+                    f"WHERE FIR.FIR_Number = '{escaped}' "
+                    f"   OR FIR.FIR_Number LIKE '%{num_clean}/{yr}%' "
+                    f"   OR FIR.FIR_Number LIKE '%{escaped}%' LIMIT 1"
                 )
-                if not rows:
-                    # Fuzzy: strip leading zeros from number part
-                    parts = ref.split('/')
-                    num = parts[0].lstrip('0') or '0'
-                    yr = parts[1] if len(parts) > 1 else ''
+            else:
+                # Standalone number (e.g. 1693) -> FIRST search by FIR_Number prefix/suffix, then ROWID
+                escaped = ref.replace("'", "''")
+                num_clean = ref.lstrip('0') or '0'
+                rows = db.execute_query(
+                    f"SELECT FIR.*, Police_Station.Name AS Station_Name, District.Name AS District_Name "
+                    f"FROM FIR "
+                    f"LEFT JOIN Police_Station ON FIR.Station_ID = Police_Station.ROWID "
+                    f"LEFT JOIN District ON Police_Station.District_ID = District.ROWID "
+                    f"WHERE FIR.FIR_Number LIKE '%{num_clean}/%' "
+                    f"   OR FIR.FIR_Number LIKE '%/{num_clean}' "
+                    f"   OR FIR.FIR_Number = '{escaped}' LIMIT 1"
+                )
+                if not rows and ref.isdigit():
+                    fir_id = int(ref)
                     rows = db.execute_query(
                         f"SELECT FIR.*, Police_Station.Name AS Station_Name, District.Name AS District_Name "
                         f"FROM FIR "
                         f"LEFT JOIN Police_Station ON FIR.Station_ID = Police_Station.ROWID "
                         f"LEFT JOIN District ON Police_Station.District_ID = District.ROWID "
-                        f"WHERE FIR.FIR_Number LIKE '%{num}/{yr}%' OR FIR.FIR_Number LIKE '%{escaped}%' LIMIT 1"
+                        f"WHERE FIR.ROWID = {fir_id} OR FIR.ID = {fir_id} LIMIT 1"
                     )
-            else:
-                # Lookup by numeric ID / ROWID
-                fir_id = int(ref)
-                rows = db.execute_query(
-                    f"SELECT FIR.*, Police_Station.Name AS Station_Name, District.Name AS District_Name "
-                    f"FROM FIR "
-                    f"LEFT JOIN Police_Station ON FIR.Station_ID = Police_Station.ROWID "
-                    f"LEFT JOIN District ON Police_Station.District_ID = District.ROWID "
-                    f"WHERE FIR.ROWID = {fir_id} OR FIR.ID = {fir_id} LIMIT 1"
-                )
 
             if rows:
                 found_any_fir = True
@@ -215,6 +233,7 @@ def _fetch_db_context(query, db):
                 )
         except Exception as e:
             print(f"FIR lookup error for '{ref}': {e}")
+
 
 
     # 2. Always include platform-wide stats for grounding
