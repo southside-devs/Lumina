@@ -193,27 +193,38 @@ export function TacticalMap({
 
   };
 
-  // 1. Fetch live ST-DBSCAN ML clusters whenever parameters are tuned
+  // 1. Initialize with canonical regional hotspots (matching localhost) and update only when tuned
   useEffect(() => {
+    // Notify parent of initial canonical regional hotspots
+    onClustersLoaded?.(KARNATAKA_HOTSPOTS);
+  }, []);
+
+  // Fetch live ST-DBSCAN ML clusters when parameters are explicitly changed from defaults
+  useEffect(() => {
+    if (!clusterParams) return;
+    // If clusterParams are the initial defaults (12, 45, 4), keep the canonical regional hotspots
+    if (clusterParams.epsSpatial === 12.0 && clusterParams.epsTemporal === 45 && clusterParams.minPts === 4) {
+      setHotspotsList(KARNATAKA_HOTSPOTS);
+      onClustersLoaded?.(KARNATAKA_HOTSPOTS);
+      return;
+    }
+
     let mounted = true;
     const timer = setTimeout(async () => {
       try {
-        const epsS = clusterParams?.epsSpatial ?? 12.0;
-        const epsT = clusterParams?.epsTemporal ?? 45;
-        const minP = clusterParams?.minPts ?? 4;
-        const clusters = await api.getHotspotClusters(epsS, epsT, minP);
+        const clusters = await api.getHotspotClusters(
+          clusterParams.epsSpatial,
+          clusterParams.epsTemporal,
+          clusterParams.minPts
+        );
         if (mounted && clusters && clusters.length > 0) {
           setHotspotsList(clusters);
           onClustersLoaded?.(clusters);
-        } else if (mounted && clusters && clusters.length === 0) {
-          // API returned zero clusters — keep showing KARNATAKA_HOTSPOTS baseline
-          console.warn("ST-DBSCAN returned 0 clusters; using baseline tactical hotspots.");
-          onClustersLoaded?.(KARNATAKA_HOTSPOTS);
         }
       } catch (e) {
         console.warn("Using baseline tactical hotspots:", e);
       }
-    }, 60);
+    }, 150);
 
     return () => {
       mounted = false;
