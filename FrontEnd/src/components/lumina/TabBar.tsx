@@ -1,76 +1,68 @@
 import { useState, useEffect } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { useRouterState, useNavigate } from "@tanstack/react-router";
 
 const tabs = [
   { label: "Overview", to: "/overview", icon: "leaderboard" },
   { label: "Risk Scores", to: "/risk-scores", icon: "query_stats" },
 ] as const;
 
-// Module-level memory preserves last tab position across TanStack route transitions
-let previousTabPath = "/overview";
-
 export function TabBar() {
-  const currentPath = useRouterState({ select: (s) => s.location.pathname });
-  
-  // Initialize with the previous path so the slide animation physically plays on mount
-  const [animatedTab, setAnimatedTab] = useState<string>(() => previousTabPath);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState(pathname);
 
   useEffect(() => {
-    // Trigger the slide animation towards the active route path
-    const frame = requestAnimationFrame(() => {
-      setAnimatedTab(currentPath);
-      previousTabPath = currentPath;
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [currentPath]);
+    setActiveTab(pathname);
+  }, [pathname]);
 
-  const isRiskScores = animatedTab === "/risk-scores";
+  const isRiskScores = activeTab === "/risk-scores";
 
-  const handleTabClick = (to: string) => {
-    setAnimatedTab(to);
-    previousTabPath = to;
+  const handleTabClick = (e: React.MouseEvent, to: string) => {
+    e.preventDefault();
+    if (activeTab === to) return;
+    setActiveTab(to);
+    setTimeout(() => {
+      navigate({ to });
+    }, 180);
   };
 
   return (
     <div className="mb-8 flex justify-center ui-no-select">
-      {/* 1. Outer Glassmorphic Track Container */}
+      {/* Outer Capsule Track */}
       <div
         role="tablist"
         aria-label="Intelligence views"
-        className="relative inline-flex w-[350px] p-[5px] rounded-full border border-white/[0.12] bg-[#111215]/80 backdrop-blur-[24px] backdrop-saturate-[180%] shadow-[0_20px_40px_rgba(0,0,0,0.45),inset_0_1px_1px_rgba(255,255,255,0.18)]"
+        className="relative inline-flex w-[340px] p-[5px] rounded-full border border-white/[0.12] bg-white/[0.05] backdrop-blur-xl shadow-[0_12px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]"
       >
-        {/* 2. Absolute Sliding Highlight Pill (Frosted Glass Piece) */}
+        {/* Sliding Frosted Glass Piece */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-[5px] bottom-[5px] left-[5px] w-[calc(50%-5px)] rounded-full border border-white/[0.22] bg-gradient-to-b from-white/[0.18] via-white/[0.10] to-white/[0.04] backdrop-blur-md shadow-[inset_0_1px_1px_rgba(255,255,255,0.45),inset_0_-1px_2px_rgba(0,0,0,0.3),0_4px_16px_rgba(0,0,0,0.35)] transition-transform duration-[380ms] ease-[cubic-bezier(0.16,1,0.3,1)]"
+          className="pointer-events-none absolute top-[5px] bottom-[5px] left-[5px] w-[calc(50%-5px)] rounded-full border border-white/[0.16] bg-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_12px_rgba(0,0,0,0.25)] transition-transform duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
           style={{
             transform: isRiskScores ? "translateX(100%)" : "translateX(0%)",
           }}
-        >
-          {/* Subtle Specular Top Reflection */}
-          <div className="absolute inset-x-3 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent" />
-        </div>
+        />
 
-        {/* 3. Interactive Navigation Links */}
+        {/* Tab Items */}
         {tabs.map((tab) => {
-          const isSelected = currentPath === tab.to;
+          const isSelected = activeTab === tab.to;
           return (
-            <Link
+            <a
               key={tab.label}
-              to={tab.to}
+              href={tab.to}
               role="tab"
               aria-selected={isSelected}
-              onClick={() => handleTabClick(tab.to)}
-              className={`relative z-10 flex flex-1 items-center justify-center gap-2.5 py-2 font-mono text-sm font-semibold transition-colors duration-200 cursor-pointer ${
+              onClick={(e) => handleTabClick(e, tab.to)}
+              className={`relative z-10 flex flex-1 items-center justify-center gap-2.5 py-2.5 font-mono text-sm font-semibold transition-colors duration-200 cursor-pointer ${
                 isSelected
                   ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
-                  : "text-zinc-400 hover:text-white"
+                  : "text-[#94A3B8] hover:text-white"
               }`}
             >
               <span
                 className={`flex size-5 items-center justify-center rounded-sm border transition-all duration-200 ${
                   isSelected
-                    ? "border-[#007AFF] bg-[#007AFF]/20 text-[#007AFF] shadow-[0_0_10px_rgba(0,122,255,0.5)]"
+                    ? "border-[#007AFF] bg-[#007AFF]/20 text-[#007AFF] shadow-[0_0_8px_rgba(0,122,255,0.4)]"
                     : "border-zinc-500/40 text-zinc-400"
                 }`}
               >
@@ -79,7 +71,7 @@ export function TabBar() {
                 </span>
               </span>
               <span>{tab.label}</span>
-            </Link>
+            </a>
           );
         })}
       </div>
