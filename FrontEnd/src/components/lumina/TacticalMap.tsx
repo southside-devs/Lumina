@@ -214,17 +214,6 @@ export function TacticalMap({
       zoomAnimationThreshold: 8,
     });
 
-    if (!prefersReducedMotion) {
-      setTimeout(() => {
-        if (mapInstanceRef.current === map) {
-          map.flyTo(targetCenter, targetZoom, {
-            duration: 1.8,
-            easeLinearity: 0.25,
-          });
-        }
-      }, 400);
-    }
-
     // 1. Official Esri Dark Gray Base Map Layer (100% Native Dark Military GIS)
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
@@ -234,21 +223,42 @@ export function TacticalMap({
       }
     ).addTo(map);
 
-    // 2. Karnataka State Administrative Boundary GeoJSON Layer (Subtle, Thinner, Classy Dashed Outline)
-    L.geoJSON(karnatakaGeoJson as any, {
+    // 2. Karnataka State Administrative Boundary GeoJSON Layer
+    const boundaryLayer = L.geoJSON(karnatakaGeoJson as any, {
       interactive: false,
       style: {
-        color: "#cbd5e1",         // Soft muted silver-white (less bright)
-        weight: 1.5,              // Sleek, thinner outline
-        opacity: 0.55,            // Refined subtle opacity
-        dashArray: "4, 6",        // Classy fine dashed tactical line
+        color: "#e2e8f0",
+        weight: 1.5,
+        opacity: 0.75,
+        dashArray: "5, 5",
         fillColor: "transparent",
         fillOpacity: 0,
-        lineCap: "round",
-        lineJoin: "round",
+        lineCap: "square",
+        lineJoin: "miter",
         className: "karnataka-state-boundary",
       },
     }).addTo(map);
+
+    if (!prefersReducedMotion) {
+      setTimeout(() => {
+        if (mapInstanceRef.current === map) {
+          map.flyTo(targetCenter, targetZoom, {
+            duration: 1.8,
+            easeLinearity: 0.25,
+          });
+        }
+      }, 350);
+
+      // Force sharp re-rasterization on zoom end so vector paths never stay blurred
+      map.once("zoomend", () => {
+        boundaryLayer.setStyle({
+          color: "#e2e8f0",
+          weight: 1.5,
+          opacity: 0.75,
+          dashArray: "5, 5",
+        });
+      });
+    }
 
     const layers = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
@@ -288,10 +298,10 @@ export function TacticalMap({
         const coreSize = isDominant ? 24 : score >= 85 ? 22 : 20;
         const outerRingSize = coreSize + (isDominant ? 6 : 5);
 
-        // High-contrast, refined military GIS styling
-        const borderColor = isDominant ? "rgba(239, 68, 68, 0.85)" : score >= 85 ? "rgba(245, 158, 11, 0.8)" : "rgba(226, 232, 240, 0.75)";
-        const ringBorderColor = isDominant ? "rgba(239, 68, 68, 0.35)" : score >= 85 ? "rgba(245, 158, 11, 0.25)" : "rgba(203, 213, 225, 0.2)";
-        const textColor = isDominant ? "#fecaca" : score >= 85 ? "#fef3c7" : "#f1f5f9";
+        // High-contrast, refined military GIS styling — 100% Pure Monochrome
+        const borderColor = isDominant ? "rgba(241, 245, 249, 0.9)" : "rgba(148, 163, 184, 0.65)";
+        const ringBorderColor = isDominant ? "rgba(226, 232, 240, 0.35)" : "rgba(148, 163, 184, 0.2)";
+        const textColor = isDominant ? "#ffffff" : "#cbd5e1";
 
         const customIcon = L.divIcon({
           className: "custom-tactical-marker",
@@ -316,10 +326,10 @@ export function TacticalMap({
 
         const tooltipHtml = `
           <div style="font-family: ui-monospace, SFMono-Regular, monospace; font-size: 11px; color: #f1f5f9; background: rgba(9, 9, 11, 0.96); padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.16); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.9); display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: ${score >= 90 ? '#f87171' : '#fbbf24'};"></span>
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 9999px; background: #e2e8f0;"></span>
             <span style="font-weight: 600; color: #ffffff;">${spot.name}</span>
             <span style="color: #52525b;">·</span>
-            <span style="color: ${score >= 90 ? '#f87171' : '#fbbf24'}; font-weight: 700;">Threat: ${score}/100</span>
+            <span style="color: #cbd5e1; font-weight: 700;">Threat: ${score}/100</span>
             <span style="color: #52525b;">·</span>
             <span style="color: #a1a1aa;">${spot.firCount || 10} FIRs</span>
           </div>
