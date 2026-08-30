@@ -67,9 +67,9 @@ export function SideRail() {
             type="button"
             onClick={() => setIsReportOpen(true)}
             aria-label="Create New FIR Incident Report"
-            className="mb-2 flex size-10 items-center justify-center rounded-xl border border-amber-500/30 bg-[#f59e0b] font-display text-xl font-bold text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-2px_4px_rgba(0,0,0,0.25)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+            className="mb-2 flex size-10 items-center justify-center rounded-xl border border-amber-500/30 bg-[#f59e0b] text-black shadow-[inset_0_1px_0_rgba(255,255,255,0.35),inset_0_-2px_4px_rgba(0,0,0,0.25)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
           >
-            +
+            <span className="material-symbols-outlined text-2xl font-bold leading-none select-none">add</span>
           </button>
         </RailItem>
 
