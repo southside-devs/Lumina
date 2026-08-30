@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
-import { api } from "@/lib/api";
+import { api, type FIRItem } from "@/lib/api";
 
 const CHAT_STORAGE_KEY = "lumina_ai_chat_history";
 
@@ -39,14 +39,14 @@ interface ChatMessage {
 const RECENT_INVESTIGATIONS_EN = [
   "Cluster Analysis - Indiranagar",
   "Risk Score - MG Road Corridor",
-  "FIR #2026-8921 Syndicate Check",
+  "FIR #1693/2026 Cybercrime Incident",
   "Network Topology Suspect Isolation",
 ];
 
 const RECENT_INVESTIGATIONS_KN = [
   "ಕ್ಲಸ್ಟರ್ ವಿಶ್ಲೇಷಣೆ - ಇಂದಿರಾನಗರ",
   "ಅಪಾಯ ಸೂಚ್ಯಂಕ - ಎಂ.ಜಿ. ರಸ್ತೆ ಕಾರಿಡಾರ್",
-  "ಎಫ್‌ಐಆರ್ #2026-8921 ಸಿಂಡಿಕೇಟ್ ಪರಿಶೀಲನೆ",
+  "ಎಫ್‌ಐಆರ್ #1693/2026 ಸೈಬರ್ ಅಪರಾಧ ದಾಖಲೆ",
   "ನೆಟ್‌ವರ್ಕ್ ಟೊಪಾಲಜಿ ಆರೋಪಿಗಳ ಪ್ರತ್ಯೇಕತೆ",
 ];
 
@@ -66,7 +66,14 @@ export function AIChatbotView() {
   const [language, setLanguage] = useState<"en" | "kn">("en");
   const [isListening, setIsListening] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
-  const [autoSpeak, setAutoSpeak] = useState(false);
+
+  // Quick FIR Attach Modal States
+  const [isAttachModalOpen, setIsAttachModalOpen] = useState(false);
+  const [availableFirs, setAvailableFirs] = useState<FIRItem[]>([]);
+  const [isLoadingFirs, setIsLoadingFirs] = useState(false);
+  const [firSearchQuery, setFirSearchQuery] = useState("");
+  const [firCategoryFilter, setFirCategoryFilter] = useState("All");
+
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       const saved = sessionStorage.getItem(CHAT_STORAGE_KEY);
@@ -81,6 +88,32 @@ export function AIChatbotView() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Load FIRs when modal is opened
+  useEffect(() => {
+    if (isAttachModalOpen && availableFirs.length === 0) {
+      setIsLoadingFirs(true);
+      api.getFirs({ limit: 120 })
+        .then((res) => {
+          if (res && res.firs) {
+            setAvailableFirs(res.firs);
+          }
+        })
+        .catch((err) => console.warn("Failed to load FIRs for quick attach:", err))
+        .finally(() => setIsLoadingFirs(false));
+    }
+  }, [isAttachModalOpen, availableFirs.length]);
+
+  // Handle Escape key to close FIR Attach Modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isAttachModalOpen) {
+        setIsAttachModalOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isAttachModalOpen]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -264,13 +297,6 @@ export function AIChatbotView() {
       };
 
       setMessages((prev) => [...prev, aiMsg]);
-
-      // If Auto-Speak is enabled, read response aloud
-      if (autoSpeak) {
-        setTimeout(() => {
-          handleToggleSpeak(aiReply, newId);
-        }, 150);
-      }
     } catch (err) {
       console.error("AI Chatbot error:", err);
       const errorId = (Date.now() + 1).toString();
@@ -287,6 +313,44 @@ export function AIChatbotView() {
       setIsAnalyzing(false);
     }
   };
+
+  const filteredFirs = availableFirs.filter((f) => {
+    const q = firSearchQuery.toLowerCase();
+    const matchesSearch =
+      !q ||
+      f.FIR_Number.toLowerCase().includes(q) ||
+      (f.Crime_Group && f.Crime_Group.toLowerCase().includes(q)) ||
+      (f.Station_Name && f.Station_Name.toLowerCase().includes(q)) ||
+      (f.District_Name && f.District_Name.toLowerCase().includes(q)) ||
+      (f.Narrative && f.Narrative.toLowerCase().includes(q));
+
+    const matchesCat =
+      firCategoryFilter === "All" ||
+      (f.Crime_Group && f.Crime_Group.toLowerCase().includes(firCategoryFilter.toLowerCase()));
+
+    return matchesSearch && matchesCat;
+  });
+
+  const handleSelectFIR = (fir: FIRItem) => {
+    setIsAttachModalOpen(false);
+    const station = fir.Station_Name || fir.District_Name || "Karnataka State Police";
+    const prompt =
+      language === "kn"
+        ? `${station} ಠಾಣೆಯ ಎಫ್‌ಐಆರ್ ಸಂಖ್ಯೆ #${fir.FIR_Number} (${fir.Crime_Group}) ಕುರಿತು ಸಂಪೂರ್ಣ ತನಿಖಾ ಮಾಹಿತಿ ಮತ್ತು ಘಟನಾವಳಿ ವಿವರ ನೀಡಿ`
+        : `Provide intelligence overview and detailed breakdown for FIR #${fir.FIR_Number} registered at ${station} (${fir.Crime_Group})`;
+    handleSendPrompt(prompt);
+  };
+
+  const crimeCategories = [
+    "All",
+    "Cybercrime",
+    "Theft",
+    "Assault",
+    "Burglary",
+    "Narcotics",
+    "Robbery",
+    "Cheating & Fraud",
+  ];
 
   const suggestions = language === "kn" ? SUGGESTIONS_KN : SUGGESTIONS_EN;
   const recentInvestigations = language === "kn" ? RECENT_INVESTIGATIONS_KN : RECENT_INVESTIGATIONS_EN;
@@ -380,7 +444,6 @@ export function AIChatbotView() {
                 </button>
               </div>
             </div>
-
 
             {/* If no chat messages yet, show landing headline & suggestions */}
             {messages.length === 0 ? (
@@ -546,15 +609,10 @@ export function AIChatbotView() {
                 {/* Bottom Bar Actions */}
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-4 text-xs font-sans text-[#d4d4d8]">
+                    {/* Attach FIR Button -> Opens Hovering Panel */}
                     <button
                       type="button"
-                      onClick={() =>
-                        handleSendPrompt(
-                          language === "kn"
-                            ? "ಎಫ್‌ಐಆರ್ ದಾಖಲೆ ಉಲ್ಲೇಖ #2026-8921 ಪರಿಶೀಲಿಸಿ"
-                            : "Attach FIR document reference #2026-8921"
-                        )
-                      }
+                      onClick={() => setIsAttachModalOpen(true)}
                       className="flex items-center gap-1.5 font-medium transition-colors hover:text-white cursor-pointer"
                     >
                       <span className="material-symbols-outlined text-base text-[#8e8e93]">attach_file</span>
@@ -612,6 +670,172 @@ export function AIChatbotView() {
               </div>
             </div>
 
+            {/* ── Hovering Quick FIR Explorer Modal Panel ─────────────────── */}
+            {isAttachModalOpen && (
+              <div 
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-200"
+                onClick={() => setIsAttachModalOpen(false)}
+              >
+                <div
+                  className="relative flex flex-col w-full max-w-2xl max-h-[80vh] rounded-2xl border border-zinc-800 bg-[#121214] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Modal Header */}
+                  <div className="flex items-center justify-between border-b border-zinc-800/80 px-6 py-4 bg-zinc-950/80">
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-emerald-400 text-xl">folder_open</span>
+                      <div>
+                        <h2 className="text-sm font-semibold text-white font-sans">
+                          {language === "kn" ? "ಎಫ್‌ಐಆರ್ ದಾಖಲೆ ಆಯ್ಕೆಮಾಡಿ" : "Quick FIR Case Explorer"}
+                        </h2>
+                        <p className="text-[11px] text-zinc-400 font-mono">
+                          {language === "kn"
+                            ? "ತನಿಖಾ ವಿಶ್ಲೇಷಣೆಗೆ ನೇರವಾಗಿ ಲಗತ್ತಿಸಲು ಪ್ರಕರಣವನ್ನು ಆಯ್ಕೆಮಾಡಿ"
+                            : "Select an FIR record to attach and analyze directly in Lumina Copilot"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsAttachModalOpen(false)}
+                      className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-lg">close</span>
+                    </button>
+                  </div>
+
+                  {/* Search Bar & Category Filter Chips */}
+                  <div className="p-4 border-b border-zinc-800/60 bg-[#151518] space-y-3">
+                    <div className="relative flex items-center">
+                      <span className="material-symbols-outlined absolute left-3 text-zinc-400 text-lg">search</span>
+                      <input
+                        type="text"
+                        value={firSearchQuery}
+                        onChange={(e) => setFirSearchQuery(e.target.value)}
+                        placeholder={
+                          language === "kn"
+                            ? "FIR ಸಂಖ್ಯೆ, ಠಾಣೆ, ಜಿಲ್ಲೆ ಅಥವಾ ಅಪರಾಧ ಪ್ರಕಾರದಿಂದ ಹುಡುಕಿ..."
+                            : "Search by FIR # (e.g. 1693), Station, District, Crime Category, or Narrative..."
+                        }
+                        className="w-full rounded-xl bg-zinc-900/90 border border-zinc-700/70 pl-10 pr-10 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/30"
+                        autoFocus
+                      />
+                      {firSearchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setFirSearchQuery("")}
+                          className="absolute right-3 text-zinc-400 hover:text-white"
+                        >
+                          <span className="material-symbols-outlined text-sm">clear</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Category Filter Chips */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar pb-1 text-[11px] font-mono">
+                      {crimeCategories.map((cat) => {
+                        const isSelected = firCategoryFilter === cat;
+                        return (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setFirCategoryFilter(cat)}
+                            className={`rounded-full px-2.5 py-1 transition-all cursor-pointer shrink-0 ${
+                              isSelected
+                                ? "bg-white text-black font-semibold shadow"
+                                : "bg-zinc-800/80 text-zinc-300 hover:bg-zinc-700 hover:text-white border border-zinc-700/40"
+                            }`}
+                          >
+                            {cat}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* FIR Results Scrollable List */}
+                  <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-2.5">
+                    {isLoadingFirs ? (
+                      <div className="py-12 text-center font-mono text-xs text-zinc-400">
+                        <span className="inline-block h-3 w-3 rounded-full bg-emerald-400 animate-ping mr-2" />
+                        <span>{language === "kn" ? "ದಾಖಲೆಗಳನ್ನು ಪಡೆಯಲಾಗುತ್ತಿದೆ..." : "Loading FIR records from database..."}</span>
+                      </div>
+                    ) : filteredFirs.length === 0 ? (
+                      <div className="py-12 text-center text-xs text-zinc-500 font-mono">
+                        <span className="material-symbols-outlined text-3xl mb-2 text-zinc-600 block">search_off</span>
+                        <span>{language === "kn" ? "ಯಾವುದೇ ಎಫ್‌ಐಆರ್ ದಾಖಲೆಗಳು ಕಂಡುಬಂದಿಲ್ಲ" : "No matching FIR records found"}</span>
+                      </div>
+                    ) : (
+                      filteredFirs.map((fir) => (
+                        <div
+                          key={fir.ROWID || fir.FIR_Number}
+                          onClick={() => handleSelectFIR(fir)}
+                          className="group relative rounded-xl border border-zinc-800/80 bg-zinc-900/60 p-3.5 transition-all hover:border-emerald-500/50 hover:bg-zinc-800/70 cursor-pointer shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-white bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">
+                                FIR #{fir.FIR_Number}
+                              </span>
+                              <span className="text-[10px] font-mono font-medium text-emerald-300 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded-full">
+                                {fir.Crime_Group || "Incident"}
+                              </span>
+                            </div>
+
+                            <span className="font-mono text-[10px] text-zinc-400">
+                              {fir.Date}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs text-zinc-300 font-medium mb-1">
+                            <span className="material-symbols-outlined text-zinc-500 text-sm">local_police</span>
+                            <span>{fir.Station_Name || "Police Station"}</span>
+                            <span className="text-zinc-600">·</span>
+                            <span className="text-zinc-400">{fir.District_Name || "Karnataka"}</span>
+                            <span className="text-zinc-600">·</span>
+                            <span className={`text-[10px] font-mono ${
+                              fir.Status === "Under Investigation" ? "text-amber-400" :
+                              fir.Status === "Chargesheeted" ? "text-blue-400" : "text-emerald-400"
+                            }`}>
+                              {fir.Status || "Active"}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">
+                            {fir.Narrative}
+                          </p>
+
+                          <div className="mt-2.5 flex items-center justify-between text-[11px] font-mono text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-emerald-400 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-xs">attachment</span>
+                              <span>{language === "kn" ? "ಲಗತ್ತಿಸಿ & ವಿಶ್ಲೇಷಿಸಿ" : "Click to attach & analyze"}</span>
+                            </span>
+                            <span className="text-zinc-500">ID: {fir.ROWID}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Modal Footer */}
+                  <div className="flex items-center justify-between border-t border-zinc-800/80 px-6 py-3 bg-zinc-950/90 text-xs font-mono text-zinc-400">
+                    <span>
+                      {language === "kn"
+                        ? `ಒಟ್ಟು ದಾಖಲೆಗಳು: ${filteredFirs.length}`
+                        : `Showing ${filteredFirs.length} records`}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAttachModalOpen(false)}
+                      className="text-zinc-400 hover:text-white cursor-pointer"
+                    >
+                      {language === "kn" ? "ಮುಚ್ಚಿ (Esc)" : "Cancel (Esc)"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </main>
         </div>
@@ -619,4 +843,3 @@ export function AIChatbotView() {
     </div>
   );
 }
-
