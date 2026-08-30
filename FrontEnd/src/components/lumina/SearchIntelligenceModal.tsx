@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { api, type FIRItem, type SpatiotemporalCluster, type TopSuspectItem, type DistrictSummary } from "@/lib/api";
+import { useSystemConfig, getPlaybackRateFromConfig, VOICE_SPEED_MAP } from "@/lib/config";
+
 
 interface SearchIntelligenceModalProps {
   isOpen: boolean;
@@ -75,7 +77,9 @@ const SYNONYMS: Record<string, string[]> = {
 
 export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceModalProps) {
   const navigate = useNavigate();
+  const { config } = useSystemConfig();
   const [query, setQuery] = useState("");
+
   const [activeCategory, setActiveCategory] = useState<FilterCategory>("all");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
@@ -518,11 +522,12 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      const isKn = /[\u0c80-\u0cff]/.test(text);
+      const isKn = /[\u0c80-\u0cff]/.test(text) || config.defaultLanguage === "kn";
       const audioUrl = api.getTTSAudioUrl(text, isKn ? "kn" : "en");
       const audio = new Audio(audioUrl);
-      audio.playbackRate = 1.18;
+      audio.playbackRate = getPlaybackRateFromConfig(config.voiceSpeed);
       audioRef.current = audio;
+
 
       audio.onplay = () => setIsPlayingAudio(true);
       audio.onended = () => setIsPlayingAudio(false);
@@ -833,13 +838,14 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                   type="button"
                   onClick={() => handleToggleVoiceAudio(aiAnswer)}
                   className="flex items-center gap-1.5 text-xs text-emerald-300 hover:text-emerald-100 bg-emerald-900/50 border border-emerald-500/40 px-2.5 py-1 rounded-lg transition-colors cursor-pointer shadow-sm"
-                  title="Listen to briefing (Google Neural Voice 1.18x)"
+                  title={`Listen to briefing (Google Neural Voice ${VOICE_SPEED_MAP[config.voiceSpeed].multiplier})`}
                 >
                   <span className="material-symbols-outlined text-sm">
                     {isPlayingAudio ? "stop_circle" : "volume_up"}
                   </span>
-                  <span>{isPlayingAudio ? "Stop Audio" : "Listen (1.18x)"}</span>
+                  <span>{isPlayingAudio ? "Stop Audio" : `Listen (${VOICE_SPEED_MAP[config.voiceSpeed].multiplier})`}</span>
                 </button>
+
 
                 <button
                   type="button"
