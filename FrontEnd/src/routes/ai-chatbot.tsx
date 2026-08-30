@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { api, type FIRItem } from "@/lib/api";
+import { useSystemConfig, getPlaybackRateFromConfig } from "@/lib/config";
 
 const CHAT_STORAGE_KEY = "lumina_ai_chat_history";
 
@@ -65,7 +66,8 @@ const SUGGESTIONS_KN = [
 ];
 
 export function AIChatbotView() {
-  const [language, setLanguage] = useState<"en" | "kn">("en");
+  const { config } = useSystemConfig();
+  const [language, setLanguage] = useState<"en" | "kn">(config.defaultLanguage || "en");
   const [isListening, setIsListening] = useState(false);
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
 
@@ -180,7 +182,7 @@ export function AIChatbotView() {
     try {
       const audioUrl = api.getTTSAudioUrl(cleanText, audioLang);
       const audio = new Audio(audioUrl);
-      audio.playbackRate = 1.18; // Crisp, energetic pacing (18% faster)
+      audio.playbackRate = getPlaybackRateFromConfig(config.voiceSpeed);
       audioPlayerRef.current = audio;
       setSpeakingMsgId(msgId);
 
@@ -195,7 +197,7 @@ export function AIChatbotView() {
         if ("speechSynthesis" in window) {
           const utterance = new SpeechSynthesisUtterance(cleanText);
           utterance.lang = isKannada ? "kn-IN" : "en-IN";
-          utterance.rate = 1.1;
+          utterance.rate = getPlaybackRateFromConfig(config.voiceSpeed);
           utterance.onend = () => setSpeakingMsgId(null);
           utterance.onerror = () => setSpeakingMsgId(null);
           window.speechSynthesis.speak(utterance);
@@ -205,9 +207,19 @@ export function AIChatbotView() {
         }
       };
       audio.play().catch((err) => {
-        console.warn("Audio playback note:", err);
-        setSpeakingMsgId(null);
-        audioPlayerRef.current = null;
+        console.warn("Audio stream unavailable, falling back to browser synthesis:", err);
+        // Backend TTS unavailable (cloud IP blocked) — fall back to native browser synthesis
+        if ("speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.lang = isKannada ? "kn-IN" : "en-IN";
+          utterance.rate = getPlaybackRateFromConfig(config.voiceSpeed);
+          utterance.onend = () => setSpeakingMsgId(null);
+          utterance.onerror = () => setSpeakingMsgId(null);
+          window.speechSynthesis.speak(utterance);
+        } else {
+          setSpeakingMsgId(null);
+          audioPlayerRef.current = null;
+        }
       });
     } catch (err) {
       console.error("TTS synthesis error:", err);

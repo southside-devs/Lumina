@@ -1,15 +1,14 @@
 import os
 import json
 import re
+import urllib.request
+import urllib.error
 from utils.response import success, bad_request, server_error
 from utils.auth import check_any_authenticated
 from utils.db import DataStore
 
-try:
-    import google.generativeai as genai
-    HAS_GENAI = True
-except ImportError:
-    HAS_GENAI = False
+
+
 
 
 def handle(request, path_parts):
@@ -20,31 +19,16 @@ def handle(request, path_parts):
     return bad_request(f"Method not allowed: {request.method}")
 
 
-def clean_ai_response(response):
+def clean_ai_response(raw_text):
     """Extract and sanitize final AI response, stripping out thinking traces, scratchpads, or echoed prompts."""
-    if not response:
-        return ""
-
-    raw_text = ""
-    try:
-        if hasattr(response, 'candidates') and response.candidates:
-            cand = response.candidates[0]
-            if hasattr(cand, 'content') and hasattr(cand.content, 'parts'):
-                non_thought_parts = []
-                for p in cand.content.parts:
-                    is_thought = getattr(p, 'thought', False)
-                    if not is_thought and hasattr(p, 'text') and p.text:
-                        non_thought_parts.append(p.text)
-                if non_thought_parts:
-                    raw_text = "".join(non_thought_parts)
-    except Exception as e:
-        print(f"Part extraction note: {e}")
-
-    if not raw_text and hasattr(response, 'text'):
-        raw_text = response.text or ""
-
     if not raw_text:
         return ""
+
+    if not isinstance(raw_text, str):
+        if hasattr(raw_text, "text"):
+            raw_text = raw_text.text or ""
+        else:
+            raw_text = str(raw_text)
 
     lines = raw_text.split('\n')
     cleaned_lines = []
@@ -74,43 +58,15 @@ def clean_ai_response(response):
     return result if result else raw_text.strip()
 
 
-def get_model_candidates(api_key):
-    """Retrieve available Gemini models that support generateContent, prioritized by latest stable versions."""
-    defaults = [
-        'gemini-3.6-flash',
-        'gemini-3.7-flash',
-        'gemini-3.5-flash',
-        'gemini-flash-latest',
-        'gemini-2.5-pro',
-        'gemini-pro-latest',
+def get_model_candidates():
+    """Prioritized list of verified, currently available Gemini models via REST API."""
+    return [
+        'gemini-2.0-flash-lite',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-flash',
+        'gemini-2.5-flash-preview-05-20',
     ]
-
-    if not HAS_GENAI:
-        return defaults
-
-    genai.configure(api_key=api_key)
-    candidates = []
-
-    try:
-        models = genai.list_models()
-        for m in models:
-            methods = getattr(m, 'supported_generation_methods', [])
-            if 'generateContent' in methods:
-                name = m.name.replace('models/', '')
-                candidates.append(name)
-    except Exception as e:
-        print(f"Warning listing genai models: {e}")
-
-    # Ensure top working models are first in order
-    sorted_candidates = []
-    for d in defaults:
-        if d in candidates and d not in sorted_candidates:
-            sorted_candidates.append(d)
-    for c in candidates:
-        if c not in sorted_candidates:
-            sorted_candidates.append(c)
-
-    return sorted_candidates if sorted_candidates else defaults
 
 
 # ── Database Context Retrieval (RAG) ─────────────────────────────────────────
@@ -303,9 +259,7 @@ def process_chat(request):
 
         api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
         if not api_key:
-            return server_error("GEMINI_API_KEY is not set.")
-
-        genai.configure(api_key=api_key)
+            return server_error("GEMINI_API_KEY environment variable is not configured on this server.")
 
         # ── RAG: Pull real records from the database for this query ──────────
         db_context = ""
@@ -356,7 +310,6 @@ def process_chat(request):
             "- For investigative queries, use structured Markdown formatting."
         )
 
-
         if db_context:
             system_instruction += (
                 f"\n\n=== LIVE DATABASE CONTEXT (treat as ground truth) ===\n"
@@ -374,21 +327,60 @@ def process_chat(request):
             if text:
                 formatted_history.append({'role': role, 'parts': [text]})
 
-        candidates = get_model_candidates(api_key)
+        candidates = get_model_candidates()
         last_error = None
 
         for model_name in candidates:
             try:
-                try:
-                    model = genai.GenerativeModel(model_name, system_instruction=system_instruction)
-                except Exception:
-                    model = genai.GenerativeModel(model_name)
+                # 1. Direct REST API call (fast, zero external SDK dependencies)
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+                contents = []
+                for msg in formatted_history:
+                    contents.append({
+                        "role": msg["role"],
+                        "parts": [{"text": p} for p in msg["parts"]]
+                    })
+                contents.append({
+                    "role": "user",
+                    "parts": [{"text": query}]
+                })
 
-                chat = model.start_chat(history=formatted_history)
-                response = chat.send_message(query)
-                cleaned_text = clean_ai_response(response)
-                if cleaned_text:
-                    return success({'response': cleaned_text})
+                payload = {
+                    "contents": contents,
+                    "systemInstruction": {
+                        "parts": [{"text": system_instruction}]
+                    },
+                    "generationConfig": {
+                        "temperature": 0.2,
+                        "maxOutputTokens": 2048
+                    }
+                }
+
+                req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST"
+                )
+
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    res_data = json.loads(resp.read().decode("utf-8"))
+                    if "candidates" in res_data and len(res_data["candidates"]) > 0:
+                        cand = res_data["candidates"][0]
+                        if "content" in cand and "parts" in cand["content"]:
+                            non_thought_parts = []
+                            for p in cand["content"]["parts"]:
+                                if not p.get("thought", False) and "text" in p:
+                                    non_thought_parts.append(p["text"])
+                            if non_thought_parts:
+                                cleaned_text = clean_ai_response("\n".join(non_thought_parts))
+                                if cleaned_text:
+                                    return success({'response': cleaned_text})
+
+            except urllib.error.HTTPError as http_err:
+                err_body = http_err.read().decode('utf-8', errors='ignore')
+                print(f"Gemini REST HTTP {http_err.code} on '{model_name}': {err_body}")
+                last_error = http_err
             except Exception as model_err:
                 print(f"Model '{model_name}' failed: {model_err}")
                 last_error = model_err

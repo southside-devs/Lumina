@@ -4,7 +4,16 @@
  * Includes resilient fallbacks for offline presentation & development resilience.
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+export const getApiBase = () => {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host.includes("catalystserverless") || host.includes("catalyst.zoho") || window.location.pathname.startsWith("/app")) {
+      return "/server/api_service/api";
+    }
+  }
+  return "/api";
+};
+
 const DEMO_KEY = "lumina-demo-ksp-2026";
 
 export interface DashboardOverview {
@@ -126,7 +135,8 @@ export interface AIChatResponse {
 
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
-    const url = `${API_BASE}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+    const base = getApiBase();
+    const url = `${base}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
     const res = await fetch(url, {
       ...options,
       headers: {
@@ -164,7 +174,7 @@ export const api = {
       return data;
     }
     return {
-      total_firs: 5000,
+      total_firs: 5005,
       total_accused: 3000,
       total_victims: 6254,
       total_stations: 209,
@@ -524,7 +534,7 @@ export const api = {
     epsSpatial = 15.0,
     epsTemporal = 60,
     minSamples = 4,
-    limit = 2000
+    limit = 5000
   ): Promise<SpatiotemporalCluster[]> {
     const data = await fetchJson<HotspotClustersResponse>(
       `/hotspots?eps_spatial=${epsSpatial}&eps_temporal=${epsTemporal}&min_samples=${minSamples}&limit=${limit}`
@@ -585,7 +595,7 @@ export const api = {
    * Get direct audio synthesis stream URL for Kannada / English TTS
    */
   getTTSAudioUrl(text: string, lang: "en" | "kn" = "kn"): string {
-    return `${API_BASE}/tts?lang=${lang}&text=${encodeURIComponent(text)}`;
+    return `${getApiBase()}/tts?lang=${lang}&text=${encodeURIComponent(text)}`;
   },
 };
 

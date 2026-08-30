@@ -14,20 +14,30 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
+  const router = useRouter();
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.location.hash = "#/";
+      router.navigate({ to: "/" });
+    }
+  }, [router]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
+        <div className="flex size-12 items-center justify-center rounded-xl bg-amber-500/20 text-amber-400 mx-auto mb-4 border border-amber-500/30 animate-pulse">
+          <span className="material-symbols-outlined text-2xl">radar</span>
+        </div>
+        <h1 className="text-xl font-bold text-foreground">Aligning Tactical Coordinates...</h1>
+        <p className="mt-2 text-xs text-muted-foreground font-mono">
+          Connecting to Karnataka State Police Command Center...
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-xs font-semibold text-black transition-colors hover:bg-zinc-200"
           >
-            Go home
+            Launch Command Center
           </Link>
         </div>
       </div>

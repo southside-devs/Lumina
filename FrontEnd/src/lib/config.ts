@@ -3,11 +3,11 @@ import { useState, useEffect, useCallback } from "react";
 export type VoiceSpeedOption = "ultra-slow" | "slow" | "normal" | "fast" | "ultra-fast";
 
 export const VOICE_SPEED_MAP: Record<VoiceSpeedOption, { label: string; rate: number }> = {
-  "ultra-slow": { label: "Ultra Slow", rate: 0.85 },
-  "slow": { label: "Slow", rate: 1.00 },
+  "ultra-slow": { label: "Ultra Slow", rate: 0.75 },
+  "slow": { label: "Slow", rate: 0.95 },
   "normal": { label: "Normal", rate: 1.18 },
-  "fast": { label: "Fast", rate: 1.35 },
-  "ultra-fast": { label: "Ultra Fast", rate: 1.50 },
+  "fast": { label: "Fast", rate: 1.40 },
+  "ultra-fast": { label: "Ultra Fast", rate: 1.70 },
 };
 
 export interface SystemConfig {

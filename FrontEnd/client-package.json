@@ -1,4 +1,6 @@
 {
-  "name": "FrontEnd",
+  "name": "lumina-client",
+  "version": "1.0.0",
+  "homepage": "index.html",
   "client": { "output_directory": "dist" }
 }

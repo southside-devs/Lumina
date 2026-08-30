@@ -202,9 +202,13 @@ export function TacticalMap({
         const epsT = clusterParams?.epsTemporal ?? 45;
         const minP = clusterParams?.minPts ?? 4;
         const clusters = await api.getHotspotClusters(epsS, epsT, minP);
-        if (mounted && clusters) {
+        if (mounted && clusters && clusters.length > 0) {
           setHotspotsList(clusters);
           onClustersLoaded?.(clusters);
+        } else if (mounted && clusters && clusters.length === 0) {
+          // API returned zero clusters — keep showing KARNATAKA_HOTSPOTS baseline
+          console.warn("ST-DBSCAN returned 0 clusters; using baseline tactical hotspots.");
+          onClustersLoaded?.(KARNATAKA_HOTSPOTS);
         }
       } catch (e) {
         console.warn("Using baseline tactical hotspots:", e);
@@ -254,6 +258,7 @@ export function TacticalMap({
       maxZoom: 16,
       zoomControl: false,
       attributionControl: false,
+      preferCanvas: true,
       zoomAnimation: true,
       zoomAnimationThreshold: 8,
     });

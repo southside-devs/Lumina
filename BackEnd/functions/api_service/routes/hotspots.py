@@ -12,8 +12,6 @@ Endpoints:
 from collections import deque
 from datetime import datetime
 import math
-from flask import request
-import numpy as np
 
 from utils.db import DataStore
 from utils.response import success, bad_request, server_error
@@ -32,9 +30,9 @@ def handle(request, path_parts):
     db = DataStore(request)
 
     if request.method == "GET":
-        return get_clusters(db)
+        return get_clusters(request, db)
     elif request.method == "POST":
-        return detect_custom_hotspots(db)
+        return detect_custom_hotspots(request, db)
 
     return bad_request("Unsupported HTTP method for /api/hotspots")
 
@@ -55,36 +53,37 @@ def _days_to_date(days: float) -> str:
     return dt.strftime("%Y-%m-%d")
 
 
-def haversine_vectorized(lat1, lon1, lat2_arr, lon2_arr):
-    """Calculate Haversine distance in km between a point and an array of points."""
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate Haversine distance in km between two points in pure Python."""
     r = 6371.0  # Earth radius in km
-    dlat = np.radians(lat2_arr - lat1)
-    dlon = np.radians(lon2_arr - lon1)
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+
     a = (
-        np.sin(dlat / 2.0) ** 2
-        + np.cos(np.radians(lat1))
-        * np.cos(np.radians(lat2_arr))
-        * np.sin(dlon / 2.0) ** 2
+        math.sin(delta_phi / 2.0) ** 2
+        + math.cos(phi1) * math.cos(phi2) * (math.sin(delta_lambda / 2.0) ** 2)
     )
-    c = 2 * np.arcsin(np.clip(np.sqrt(a), 0, 1))
+    c = 2 * math.atan2(math.sqrt(max(0.0, a)), math.sqrt(max(0.0, 1.0 - a)))
     return r * c
 
 
 def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
     """
-    Run ST-DBSCAN on a list of crime events.
+    Run ST-DBSCAN on a list of crime events in pure Python.
     Each event must have: 'lat', 'lon', 'days', 'fir_id', 'crime_group', 'station_name'.
     """
     n = len(events)
     if n < min_samples:
         return [], 0
 
-    lats = np.array([e["lat"] for e in events], dtype=np.float64)
-    lons = np.array([e["lon"] for e in events], dtype=np.float64)
-    days = np.array([e["days"] for e in events], dtype=np.float64)
+    lats = [float(e["lat"]) for e in events]
+    lons = [float(e["lon"]) for e in events]
+    days = [float(e["days"]) for e in events]
 
-    labels = np.full(n, -1, dtype=int)
-    visited = np.zeros(n, dtype=bool)
+    labels = [-1] * n
+    visited = [False] * n
     cluster_id = 0
 
     for i in range(n):
@@ -93,12 +92,11 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
         visited[i] = True
 
         # Find spatial and temporal neighbors of point i
-        spatial_dists = haversine_vectorized(lats[i], lons[i], lats, lons)
-        temporal_dists = np.abs(days - days[i])
-
-        neighbors = np.where(
-            (spatial_dists <= eps_spatial) & (temporal_dists <= eps_temporal)
-        )[0]
+        neighbors = []
+        for k in range(n):
+            if abs(days[k] - days[i]) <= eps_temporal:
+                if haversine_distance(lats[i], lons[i], lats[k], lons[k]) <= eps_spatial:
+                    neighbors.append(k)
 
         if len(neighbors) < min_samples:
             continue
@@ -110,11 +108,11 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
             j = seed_set.popleft()
             if not visited[j]:
                 visited[j] = True
-                j_spatial = haversine_vectorized(lats[j], lons[j], lats, lons)
-                j_temporal = np.abs(days - days[j])
-                j_neighbors = np.where(
-                    (j_spatial <= eps_spatial) & (j_temporal <= eps_temporal)
-                )[0]
+                j_neighbors = []
+                for k in range(n):
+                    if abs(days[k] - days[j]) <= eps_temporal:
+                        if haversine_distance(lats[j], lons[j], lats[k], lons[k]) <= eps_spatial:
+                            j_neighbors.append(k)
 
                 if len(j_neighbors) >= min_samples:
                     seed_set.extend(j_neighbors)
@@ -139,25 +137,25 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
         ("Patrol Western-2", "Durgigudi -> Bypass Junction", "~10m"),
     ]
 
-
     # Find max cluster size for normalization
-    max_size = max([len(np.where(labels == cid)[0]) for cid in unique_clusters]) if unique_clusters else 1
+    cluster_sizes = [labels.count(cid) for cid in unique_clusters]
+    max_size = max(cluster_sizes) if cluster_sizes else 1
 
     for cid in unique_clusters:
-        indices = np.where(labels == cid)[0]
-        c_lats = lats[indices]
-        c_lons = lons[indices]
-        c_days = days[indices]
+        indices = [idx for idx, l in enumerate(labels) if l == cid]
+        c_lats = [lats[idx] for idx in indices]
+        c_lons = [lons[idx] for idx in indices]
+        c_days = [days[idx] for idx in indices]
 
-        centroid_lat = float(np.mean(c_lats))
-        centroid_lon = float(np.mean(c_lons))
+        centroid_lat = float(sum(c_lats) / len(c_lats))
+        centroid_lon = float(sum(c_lons) / len(c_lons))
 
         # Cluster radius in km (max distance from centroid)
-        dists_from_centroid = haversine_vectorized(
-            centroid_lat, centroid_lon, c_lats, c_lons
-        )
-        radius_km = float(np.max(dists_from_centroid))
-        radius_km = max(round(radius_km, 2), 1.5)
+        dists_from_centroid = [
+            haversine_distance(centroid_lat, centroid_lon, lat, lon)
+            for lat, lon in zip(c_lats, c_lons)
+        ]
+        radius_km = max(round(max(dists_from_centroid) if dists_from_centroid else 1.5, 2), 1.5)
 
         # Crime type counts
         crime_counts = {}
@@ -215,8 +213,8 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
                 "radius_km": radius_km,
                 "threatScore": int(threat_score),
                 "firCount": size,
-                "date_start": _days_to_date(float(np.min(c_days))),
-                "date_end": _days_to_date(float(np.max(c_days))),
+                "date_start": _days_to_date(float(min(c_days))),
+                "date_end": _days_to_date(float(max(c_days))),
                 "crime_types": crime_counts,
                 "category": max(crime_counts, key=crime_counts.get) if crime_counts else "Theft",
                 "activePatrol": f"{patrol_unit} ({patrol_sector})",
@@ -228,12 +226,12 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
 
     # Sort clusters by threat score descending
     clusters.sort(key=lambda c: c["threatScore"], reverse=True)
-    noise_count = int((labels == -1).sum())
+    noise_count = labels.count(-1)
 
     return clusters, noise_count
 
 
-def get_clusters(db):
+def get_clusters(request, db):
     """
     Fetch FIRs from DataStore and compute ST-DBSCAN hotspots.
     Query params:
@@ -248,7 +246,7 @@ def get_clusters(db):
         min_samples = int(request.args.get("min_samples", 4))
         limit = int(request.args.get("limit", 2000))
 
-        # Query recent FIRs with lat/lon
+        # Query recent FIRs with lat/lon — use explicit column names compatible with SQLite
         query = (
             f"SELECT f.ROWID, f.ID, f.Latitude, f.Longitude, f.Date, f.Crime_Group, "
             f"ps.Name AS Station_Name, d.Name AS District_Name "
@@ -256,6 +254,7 @@ def get_clusters(db):
             f"LEFT JOIN Police_Station ps ON f.Station_ID = ps.ROWID "
             f"LEFT JOIN District d ON ps.District_ID = d.ROWID "
             f"WHERE f.Latitude IS NOT NULL AND f.Longitude IS NOT NULL "
+            f"AND CAST(f.Latitude AS REAL) != 0.0 AND CAST(f.Longitude AS REAL) != 0.0 "
             f"ORDER BY f.Date DESC LIMIT {limit}"
         )
         rows = db.execute_query(query)
@@ -263,8 +262,10 @@ def get_clusters(db):
         events = []
         for r in rows:
             try:
-                lat = float(r.get("Latitude"))
-                lon = float(r.get("Longitude"))
+                lat = float(r.get("Latitude") or 0)
+                lon = float(r.get("Longitude") or 0)
+                if lat == 0 or lon == 0:
+                    continue
                 d_str = str(r.get("Date") or "2026-01-01")
                 events.append(
                     {
@@ -306,7 +307,7 @@ def get_clusters(db):
 
 
 
-def detect_custom_hotspots(db):
+def detect_custom_hotspots(request, db):
     """POST endpoint to run ST-DBSCAN on custom submitted points."""
     try:
         body = request.get_json() or {}
