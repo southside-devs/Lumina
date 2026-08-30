@@ -7,53 +7,41 @@ interface SearchIntelligenceModalProps {
   onClose: () => void;
 }
 
-interface NavItem {
+type FilterCategory = "all" | "nav" | "firs" | "suspects" | "clusters" | "districts" | "ai";
+
+interface BaseItem {
   id: string;
-  type: "navigation";
   title: string;
   subtitle: string;
-  icon: string;
   badge?: string;
+  icon?: string;
+  action: () => void;
+}
+
+interface NavItem extends BaseItem {
+  type: "navigation";
   shortcut?: string;
-  action: () => void;
 }
 
-interface FIRResult {
-  id: string;
+interface FIRResult extends BaseItem {
   type: "fir";
-  title: string;
-  subtitle: string;
-  badge: string;
   fir: FIRItem;
-  action: () => void;
 }
 
-interface SuspectResult {
-  id: string;
+interface SuspectResult extends BaseItem {
   type: "suspect";
-  title: string;
-  subtitle: string;
-  badge: string;
   score: number;
-  action: () => void;
+  suspect: TopSuspectItem;
 }
 
-interface DistrictResult {
-  id: string;
+interface DistrictResult extends BaseItem {
   type: "district";
-  title: string;
-  subtitle: string;
-  badge: string;
-  action: () => void;
+  district: DistrictSummary;
 }
 
-interface ClusterResult {
-  id: string;
+interface ClusterResult extends BaseItem {
   type: "cluster";
-  title: string;
-  subtitle: string;
-  badge: string;
-  action: () => void;
+  cluster: SpatiotemporalCluster;
 }
 
 type SearchItem = NavItem | FIRResult | SuspectResult | DistrictResult | ClusterResult;
@@ -66,9 +54,17 @@ const FALLBACK_SUSPECTS: TopSuspectItem[] = [
   { id: "S-105", name: "Suresh Babu", arrestCount: 6, caseCount: 9, riskScore: 86, age: 38, gender: "Male" },
 ];
 
+const SUGGESTED_AI_PROMPTS = [
+  { icon: "radar", label: "ST-DBSCAN Hotspots", prompt: "Show ST-DBSCAN spatiotemporal hotspot clusters in Bengaluru Urban" },
+  { icon: "fingerprint", label: "Repeat Offenders", prompt: "Identify top repeat offenders with threat score > 85 across Karnataka" },
+  { icon: "summarize", label: "Statewide Crime Volume", prompt: "Generate statewide district crime volume and legal classification breakdown" },
+  { icon: "security", label: "Cybercrime Analysis", prompt: "Analyze recent IT Act 66C and fraud incidents in Cubbon Park precinct" },
+];
+
 export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceModalProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
+  const [activeCategory, setActiveCategory] = useState<FilterCategory>("all");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [firs, setFirs] = useState<FIRItem[]>([]);
@@ -90,6 +86,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       setAiAnswer(null);
     } else {
       setQuery("");
+      setActiveCategory("all");
       setAiAnswer(null);
       if (isListening) {
         try { recognitionRef.current?.stop(); } catch {}
@@ -147,7 +144,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       id: "nav-map",
       type: "navigation",
       title: "Live Hotspot Tactical Map",
-      subtitle: "ST-DBSCAN Spatiotemporal Crime Clusters & Patrol Routes",
+      subtitle: "ST-DBSCAN Spatiotemporal Crime Clusters & Patrol Dispatch",
       icon: "map",
       badge: "Tactical",
       shortcut: "G M",
@@ -160,7 +157,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       id: "nav-overview",
       type: "navigation",
       title: "Statewide Intelligence Overview",
-      subtitle: "KPI Metrics, District Breakdown & Crime Trends",
+      subtitle: "Executive KPI Metrics, District Breakdown & Crime Trends",
       icon: "dashboard",
       badge: "Analytics",
       shortcut: "G O",
@@ -173,9 +170,9 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       id: "nav-copilot",
       type: "navigation",
       title: "Lumina AI Bilingual Copilot",
-      subtitle: "Chat with Gemini RAG in English & Kannada with Voice TTS",
+      subtitle: "Natural Language Gemini RAG Assistant (English & ಕನ್ನಡ Voice)",
       icon: "smart_toy",
-      badge: "AI RAG",
+      badge: "Bilingual AI",
       shortcut: "G C",
       action: () => {
         try { navigate({ to: "/ai-chatbot" }); } catch {}
@@ -201,7 +198,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       title: "Statewide Risk Matrix",
       subtitle: "Predictive District Threat Scores & Trend Forecasts",
       icon: "query_stats",
-      badge: "ML Model",
+      badge: "ML Forecast",
       shortcut: "G R",
       action: () => {
         try { navigate({ to: "/risk-scores" }); } catch {}
@@ -212,7 +209,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       id: "nav-fir",
       type: "navigation",
       title: "FIR Records Database Explorer",
-      subtitle: "Search 5,000+ First Information Reports across 209 Police Stations",
+      subtitle: "Browse 5,000+ First Information Reports across 209 Stations",
       icon: "folder_shared",
       badge: "Database",
       shortcut: "G F",
@@ -223,14 +220,12 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     },
   ], [navigate, onClose]);
 
-  // Compute Search Results with Safe String Access
-  const results = useMemo<SearchItem[]>(() => {
+  // Compute Search Results categorized
+  const { results, counts } = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) {
-      return navItems;
-    }
 
     const matchedNav = navItems.filter((n) => {
+      if (!q) return true;
       const title = (n.title || "").toLowerCase();
       const subtitle = (n.subtitle || "").toLowerCase();
       const badge = (n.badge || "").toLowerCase();
@@ -240,6 +235,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     const matchedFirs: FIRResult[] = (firs || [])
       .filter((f) => {
         if (!f) return false;
+        if (!q) return false; // In empty state, keep list clean
         const firNum = String(f.FIR_Number || "").toLowerCase();
         const crime = String(f.Crime_Group || "").toLowerCase();
         const station = String(f.Station_Name || "").toLowerCase();
@@ -247,7 +243,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
         const narrative = String(f.Narrative || "").toLowerCase();
         return firNum.includes(q) || crime.includes(q) || station.includes(q) || district.includes(q) || narrative.includes(q);
       })
-      .slice(0, 8)
+      .slice(0, 10)
       .map((f) => ({
         id: `fir-${f.ROWID || f.FIR_Number}`,
         type: "fir",
@@ -264,10 +260,12 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     const matchedSuspects: SuspectResult[] = (suspects || [])
       .filter((s) => {
         if (!s) return false;
+        if (!q) return true;
         const name = String(s.name || "").toLowerCase();
         const id = String(s.id || "").toLowerCase();
         return name.includes(q) || id.includes(q);
       })
+      .slice(0, 6)
       .map((s) => ({
         id: `suspect-${s.id || Math.random()}`,
         type: "suspect",
@@ -275,6 +273,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
         subtitle: `${s.arrestCount || 0} Prior Arrests · ${s.caseCount || 0} Linked Cases · Age ${s.age || "N/A"}`,
         badge: `Risk ${s.riskScore || 80}/100`,
         score: s.riskScore || 80,
+        suspect: s,
         action: () => {
           try { navigate({ to: "/network" }); } catch {}
           onClose();
@@ -284,16 +283,18 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     const matchedDistricts: DistrictResult[] = (districts || [])
       .filter((d) => {
         if (!d) return false;
+        if (!q) return true;
         const name = String(d.district_name || "").toLowerCase();
         return name.includes(q);
       })
-      .slice(0, 4)
+      .slice(0, 5)
       .map((d) => ({
         id: `district-${d.district_id}`,
         type: "district",
         title: `District: ${d.district_name}`,
         subtitle: `Statewide Jurisdiction · ${d.total_firs || 0} Registered FIRs`,
         badge: d.risk_level || "Active",
+        district: d,
         action: () => {
           try { navigate({ to: "/overview" }); } catch {}
           onClose();
@@ -303,38 +304,66 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     const matchedClusters: ClusterResult[] = (clusters || [])
       .filter((c) => {
         if (!c) return false;
+        if (!q) return true;
         const name = String(c.name || "").toLowerCase();
         const cat = String(c.category || "").toLowerCase();
         return name.includes(q) || cat.includes(q);
       })
-      .slice(0, 4)
+      .slice(0, 5)
       .map((c) => ({
         id: `cluster-${c.id || Math.random()}`,
         type: "cluster",
         title: `Cluster: ${c.name || "Hotspot Zone"}`,
         subtitle: `ST-DBSCAN Hot Zone · Threat ${c.threatScore || 85}/100 · ${c.firCount || 10} Incidents`,
         badge: "Hot Zone",
+        cluster: c,
         action: () => {
           try { navigate({ to: "/" }); } catch {}
           onClose();
         },
       }));
 
-    return [...matchedNav, ...matchedSuspects, ...matchedFirs, ...matchedClusters, ...matchedDistricts];
-  }, [query, navItems, firs, suspects, districts, clusters, navigate, onClose]);
+    const counts = {
+      all: matchedNav.length + matchedFirs.length + matchedSuspects.length + matchedClusters.length + matchedDistricts.length,
+      nav: matchedNav.length,
+      firs: matchedFirs.length,
+      suspects: matchedSuspects.length,
+      clusters: matchedClusters.length,
+      districts: matchedDistricts.length,
+    };
+
+    // Filter by active category tab
+    let filtered: SearchItem[] = [];
+    if (activeCategory === "all") {
+      filtered = [...matchedNav, ...matchedSuspects, ...matchedFirs, ...matchedClusters, ...matchedDistricts];
+    } else if (activeCategory === "nav") {
+      filtered = matchedNav;
+    } else if (activeCategory === "firs") {
+      filtered = matchedFirs;
+    } else if (activeCategory === "suspects") {
+      filtered = matchedSuspects;
+    } else if (activeCategory === "clusters") {
+      filtered = matchedClusters;
+    } else if (activeCategory === "districts") {
+      filtered = matchedDistricts;
+    }
+
+    return { results: filtered, counts };
+  }, [query, activeCategory, navItems, firs, suspects, districts, clusters, navigate, onClose]);
 
   // Keep selected index in bounds
   useEffect(() => {
     setSelectedIndex(0);
-  }, [query]);
+  }, [query, activeCategory]);
 
   // Handle Ask AI in spotlight
-  const handleAskAI = async () => {
-    if (!query.trim() || isAiLoading) return;
+  const handleAskAI = async (promptToUse?: string) => {
+    const p = promptToUse || query;
+    if (!p.trim() || isAiLoading) return;
     setIsAiLoading(true);
     try {
-      const isKn = /[\u0c80-\u0cff]/.test(query);
-      const reply = await api.sendAIChat(query, [], undefined, isKn ? "kn" : "en");
+      const isKn = /[\u0c80-\u0cff]/.test(p);
+      const reply = await api.sendAIChat(p, [], undefined, isKn ? "kn" : "en");
       setAiAnswer(reply);
     } catch {
       setAiAnswer("⚡ [Lumina Intelligence]: Processed statewide intelligence records across 209 mapped police stations.");
@@ -416,17 +445,17 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-16 md:pt-24 bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-12 md:pt-20 bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col w-full max-w-3xl rounded-2xl border border-zinc-800 bg-[#121215] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        className="relative flex flex-col w-full max-w-4xl rounded-2xl border border-zinc-800 bg-[#0f1013] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Omnibar Header */}
-        <div className="relative flex items-center border-b border-zinc-800/80 bg-zinc-950/90 px-4 py-3.5">
-          <span className="material-symbols-outlined text-zinc-400 text-xl mr-3 select-none">
-            {isListening ? "mic" : "search"}
+        <div className="relative flex items-center border-b border-zinc-800/80 bg-zinc-950 px-4 py-3.5">
+          <span className="material-symbols-outlined text-emerald-400 text-2xl mr-3 select-none">
+            {isListening ? "graphic_eq" : "search"}
           </span>
 
           <input
@@ -447,12 +476,12 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
             <button
               type="button"
               onClick={handleToggleVoice}
-              className={`flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-mono transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-mono transition-all cursor-pointer ${
                 isListening
-                  ? "bg-red-500 text-white font-bold animate-pulse"
-                  : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                  ? "bg-red-500 text-white font-bold animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]"
+                  : "text-zinc-400 hover:text-white hover:bg-zinc-800 border border-zinc-800"
               }`}
-              title="Voice Search"
+              title="Voice Search in English or Kannada"
             >
               <span className="material-symbols-outlined text-sm">{isListening ? "graphic_eq" : "mic"}</span>
               <span className="hidden sm:inline">{isListening ? "Listening..." : "Voice"}</span>
@@ -474,13 +503,83 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
           </div>
         </div>
 
+        {/* Quick Scope Filter Chips Bar */}
+        <div className="flex items-center gap-1.5 border-b border-zinc-800/60 bg-[#131418] px-4 py-2 overflow-x-auto custom-scrollbar text-xs font-mono">
+          <button
+            type="button"
+            onClick={() => setActiveCategory("all")}
+            className={`rounded-full px-3 py-1 transition-all cursor-pointer shrink-0 ${
+              activeCategory === "all"
+                ? "bg-white text-black font-semibold shadow"
+                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+            }`}
+          >
+            ✨ All ({counts.all})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveCategory("nav")}
+            className={`rounded-full px-3 py-1 transition-all cursor-pointer shrink-0 ${
+              activeCategory === "nav"
+                ? "bg-white text-black font-semibold shadow"
+                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+            }`}
+          >
+            ⚡ Navigation ({counts.nav})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveCategory("firs")}
+            className={`rounded-full px-3 py-1 transition-all cursor-pointer shrink-0 ${
+              activeCategory === "firs"
+                ? "bg-white text-black font-semibold shadow"
+                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+            }`}
+          >
+            📄 FIR Cases ({counts.firs})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveCategory("suspects")}
+            className={`rounded-full px-3 py-1 transition-all cursor-pointer shrink-0 ${
+              activeCategory === "suspects"
+                ? "bg-white text-black font-semibold shadow"
+                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+            }`}
+          >
+            👤 Suspects ({counts.suspects})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveCategory("clusters")}
+            className={`rounded-full px-3 py-1 transition-all cursor-pointer shrink-0 ${
+              activeCategory === "clusters"
+                ? "bg-white text-black font-semibold shadow"
+                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+            }`}
+          >
+            🚨 Hot Zones ({counts.clusters})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveCategory("districts")}
+            className={`rounded-full px-3 py-1 transition-all cursor-pointer shrink-0 ${
+              activeCategory === "districts"
+                ? "bg-white text-black font-semibold shadow"
+                : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+            }`}
+          >
+            📍 Districts ({counts.districts})
+          </button>
+        </div>
+
         {/* AI Quick Response Banner if activated */}
         {aiAnswer && (
-          <div className="border-b border-emerald-500/30 bg-emerald-950/20 p-4 max-h-48 overflow-y-auto custom-scrollbar">
+          <div className="border-b border-emerald-500/30 bg-emerald-950/25 p-4 max-h-52 overflow-y-auto custom-scrollbar">
             <div className="flex items-center justify-between font-mono text-[11px] text-emerald-400 mb-1.5">
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-                <span>Lumina Gemini AI Analysis</span>
+              <span className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="font-bold">Lumina Gemini 2.5 Flash Intelligence Briefing</span>
               </span>
               <button
                 type="button"
@@ -488,9 +587,10 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                   try { navigate({ to: "/ai-chatbot" }); } catch {}
                   onClose();
                 }}
-                className="text-emerald-300 hover:underline cursor-pointer"
+                className="text-emerald-300 hover:underline cursor-pointer font-sans text-xs flex items-center gap-1"
               >
-                Open in Full Copilot →
+                <span>Continue in Full Copilot</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
               </button>
             </div>
             <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">{aiAnswer}</p>
@@ -498,22 +598,61 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
         )}
 
         {/* Search Results / Action List with Split Detail Preview */}
-        <div className="flex flex-col md:flex-row h-96 overflow-hidden">
+        <div className="flex flex-col md:flex-row h-[420px] overflow-hidden">
           {/* Left Column: Results List */}
-          <div ref={listRef} className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
+          <div ref={listRef} className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1.5">
+            {/* When Query is empty: Show Suggested AI Prompts & Modules */}
+            {!query && (
+              <div className="mb-3 space-y-2">
+                <div className="flex items-center justify-between px-2 font-mono text-[10px] uppercase text-zinc-500 tracking-wider">
+                  <span>💡 AI Suggested Inquiries</span>
+                  <span className="text-emerald-400/80">Click to ask Gemini</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {SUGGESTED_AI_PROMPTS.map((sp) => (
+                    <button
+                      key={sp.label}
+                      type="button"
+                      onClick={() => {
+                        setQuery(sp.prompt);
+                        handleAskAI(sp.prompt);
+                      }}
+                      className="flex items-center gap-2.5 rounded-xl border border-zinc-800/80 bg-zinc-900/50 p-2.5 text-left transition-all hover:border-emerald-500/50 hover:bg-zinc-800/80 cursor-pointer group"
+                    >
+                      <span className="material-symbols-outlined text-base text-zinc-400 group-hover:text-emerald-400">
+                        {sp.icon}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-zinc-200 group-hover:text-white truncate">
+                          {sp.label}
+                        </div>
+                        <div className="text-[10px] text-zinc-500 truncate font-mono">
+                          {sp.prompt}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pt-2 px-2 font-mono text-[10px] uppercase text-zinc-500 tracking-wider">
+                  ⚡ Quick Module Navigation
+                </div>
+              </div>
+            )}
+
             {results.length === 0 ? (
               <div className="py-16 text-center text-xs text-zinc-500 font-mono">
-                <span className="material-symbols-outlined text-3xl mb-2 text-zinc-600 block">travel_explore</span>
+                <span className="material-symbols-outlined text-4xl mb-2 text-zinc-600 block">travel_explore</span>
                 <span>No matching intelligence records found for "{query}"</span>
                 <div className="mt-3">
                   <button
                     type="button"
-                    onClick={handleAskAI}
+                    onClick={() => handleAskAI()}
                     disabled={isAiLoading}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 px-3 py-1.5 text-xs text-emerald-300 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 px-3.5 py-2 text-xs font-medium text-emerald-300 transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">smart_toy</span>
-                    <span>{isAiLoading ? "Consulting Gemini AI..." : "Ask Gemini AI Copilot"}</span>
+                    <span>{isAiLoading ? "Consulting Gemini AI..." : `Ask Gemini AI Copilot about "${query}"`}</span>
                   </button>
                 </div>
               </div>
@@ -521,12 +660,11 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
               results.map((item, idx) => {
                 const isSelected = idx === selectedIndex;
                 let icon = "chevron_right";
-                let typeBadge = "Jump";
-                if (item.type === "navigation") { icon = item.icon; typeBadge = "View"; }
-                else if (item.type === "fir") { icon = "folder_open"; typeBadge = "FIR Case"; }
-                else if (item.type === "suspect") { icon = "person_search"; typeBadge = "Suspect"; }
-                else if (item.type === "district") { icon = "location_city"; typeBadge = "District"; }
-                else if (item.type === "cluster") { icon = "radar"; typeBadge = "Hot Zone"; }
+                if (item.type === "navigation") icon = item.icon || "explore";
+                else if (item.type === "fir") icon = "folder_open";
+                else if (item.type === "suspect") icon = "person_search";
+                else if (item.type === "district") icon = "location_city";
+                else if (item.type === "cluster") icon = "radar";
 
                 return (
                   <div
@@ -535,7 +673,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                     onMouseEnter={() => setSelectedIndex(idx)}
                     className={`group flex items-center justify-between rounded-xl px-3 py-2.5 transition-all cursor-pointer ${
                       isSelected
-                        ? "bg-zinc-800/90 text-white shadow-sm border border-zinc-700/60"
+                        ? "bg-zinc-800/90 text-white shadow-sm border border-zinc-700/80"
                         : "text-zinc-300 hover:bg-zinc-900/60 hover:text-white border border-transparent"
                     }`}
                   >
@@ -579,22 +717,30 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
             )}
           </div>
 
-          {/* Right Column: Live Context Preview Card (Desktop) */}
-          <div className="hidden md:flex flex-col w-72 border-l border-zinc-800/80 bg-zinc-950/60 p-4 justify-between">
+          {/* Right Column: Live Context Dossier Preview (Desktop) */}
+          <div className="hidden md:flex flex-col w-80 border-l border-zinc-800/80 bg-zinc-950/70 p-4 justify-between">
             {activeItem ? (
-              <div className="space-y-3">
-                <div className="font-mono text-[10px] uppercase text-zinc-500 tracking-wider">
-                  Target Intelligence Preview
+              <div className="space-y-3 overflow-y-auto custom-scrollbar pr-1">
+                <div className="flex items-center justify-between font-mono text-[10px] uppercase text-zinc-500 tracking-wider">
+                  <span>Intelligence Dossier</span>
+                  <span className="text-emerald-400">Live Record</span>
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-[#151518] p-3.5 space-y-2">
+                <div className="rounded-xl border border-zinc-800 bg-[#141417] p-3.5 space-y-2.5">
                   <div className="text-xs font-bold text-white font-sans">{activeItem.title}</div>
                   <p className="text-[11px] text-zinc-400 font-sans leading-relaxed">{activeItem.subtitle}</p>
-                  
+
+                  {/* FIR Details Dossier */}
                   {activeItem.type === "fir" && activeItem.fir && (
-                    <div className="pt-2 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400 space-y-1">
-                      <div className="flex justify-between"><span>Status:</span><span className="text-emerald-400">{activeItem.fir.Status || "Active"}</span></div>
-                      <div className="flex justify-between"><span>Incident Date:</span><span className="text-white">{activeItem.fir.Date || "Recent"}</span></div>
+                    <div className="pt-2 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400 space-y-1.5">
+                      <div className="flex justify-between">
+                        <span>Case Status:</span>
+                        <span className="text-emerald-400 font-semibold">{activeItem.fir.Status || "Active"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Incident Date:</span>
+                        <span className="text-white">{activeItem.fir.Date || "Recent"}</span>
+                      </div>
                       <div className="flex justify-between">
                         <span>Coordinates:</span>
                         <span className="text-zinc-300">
@@ -602,19 +748,98 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                           {typeof activeItem.fir.Longitude === "number" ? activeItem.fir.Longitude.toFixed(3) : "77.594"}
                         </span>
                       </div>
+                      {activeItem.fir.Narrative && (
+                        <div className="pt-1.5 text-[11px] font-sans text-zinc-400 border-t border-zinc-800/50 line-clamp-3">
+                          "{activeItem.fir.Narrative}"
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {activeItem.type === "suspect" && (
-                    <div className="pt-2 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400 space-y-1">
-                      <div className="flex justify-between"><span>Threat Score:</span><span className="text-red-400 font-bold">{activeItem.score} / 100</span></div>
-                      <div className="flex justify-between"><span>Action:</span><span className="text-emerald-400">Open in Network Link Graph</span></div>
+                  {/* Suspect Dossier */}
+                  {activeItem.type === "suspect" && activeItem.suspect && (
+                    <div className="pt-2 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400 space-y-1.5">
+                      <div className="flex justify-between">
+                        <span>Threat Score:</span>
+                        <span className="text-red-400 font-bold">{activeItem.score} / 100</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Prior Arrests:</span>
+                        <span className="text-amber-400 font-bold">{activeItem.suspect.arrestCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Linked Cases:</span>
+                        <span className="text-white font-bold">{activeItem.suspect.caseCount}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Demographics:</span>
+                        <span className="text-zinc-300">Age {activeItem.suspect.age || "N/A"} · {activeItem.suspect.gender || "Male"}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cluster Dossier */}
+                  {activeItem.type === "cluster" && activeItem.cluster && (
+                    <div className="pt-2 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400 space-y-1.5">
+                      <div className="flex justify-between">
+                        <span>Cluster Threat:</span>
+                        <span className="text-red-400 font-bold">{activeItem.cluster.threatScore} / 100</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>FIR Density:</span>
+                        <span className="text-white font-bold">{activeItem.cluster.firCount} events</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Category:</span>
+                        <span className="text-emerald-400">{activeItem.cluster.category || "Hotspot"}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* District Dossier */}
+                  {activeItem.type === "district" && activeItem.district && (
+                    <div className="pt-2 border-t border-zinc-800/80 text-[10px] font-mono text-zinc-400 space-y-1.5">
+                      <div className="flex justify-between">
+                        <span>Registered FIRs:</span>
+                        <span className="text-white font-bold">{activeItem.district.total_firs}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Risk Level:</span>
+                        <span className={`font-semibold ${
+                          activeItem.district.risk_level === "High" ? "text-red-400" :
+                          activeItem.district.risk_level === "Medium" ? "text-amber-400" : "text-emerald-400"
+                        }`}>{activeItem.district.risk_level}</span>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-[11px] text-zinc-400 font-mono">
-                  Press <kbd className="text-white bg-zinc-800 px-1 py-0.5 rounded">Enter ↵</kbd> to jump directly to this module.
+                {/* Direct Action Trigger Buttons */}
+                <div className="space-y-1.5">
+                  <button
+                    type="button"
+                    onClick={() => activeItem.action()}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-white text-black font-semibold py-2 text-xs transition-transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow"
+                  >
+                    <span>Open in Module</span>
+                    <span className="material-symbols-outlined text-sm">open_in_new</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prompt = activeItem.type === "fir"
+                        ? `Analyze investigation dossier and criminal records for FIR #${(activeItem as FIRResult).fir.FIR_Number}`
+                        : activeItem.type === "suspect"
+                        ? `Provide risk analysis and syndicate link overview for suspect ${(activeItem as SuspectResult).suspect.name}`
+                        : `Provide intelligence overview for ${activeItem.title}`;
+                      handleAskAI(prompt);
+                    }}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-950/40 hover:bg-emerald-900/60 text-emerald-300 py-1.5 text-xs font-mono transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">smart_toy</span>
+                    <span>Analyze with Copilot</span>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -623,29 +848,29 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
               </div>
             )}
 
-            {/* Quick Ask AI Prompt */}
+            {/* Quick Ask AI Prompt Bottom Box */}
             {query.trim() && (
               <button
                 type="button"
-                onClick={handleAskAI}
+                onClick={() => handleAskAI()}
                 disabled={isAiLoading}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700/60 py-2 text-xs font-medium text-white transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-800/90 hover:bg-zinc-700 border border-zinc-700/80 py-2.5 text-xs font-medium text-white transition-colors cursor-pointer shrink-0 mt-2"
               >
                 <span className="material-symbols-outlined text-sm text-emerald-400">smart_toy</span>
-                <span>{isAiLoading ? "Consulting AI..." : `Ask AI about "${query.slice(0, 15)}..."`}</span>
+                <span>{isAiLoading ? "Consulting AI..." : `Ask Gemini about "${query.slice(0, 14)}..."`}</span>
               </button>
             )}
           </div>
         </div>
 
         {/* Footer Navigation Hints */}
-        <div className="flex items-center justify-between border-t border-zinc-800/80 px-4 py-2.5 bg-zinc-950/90 text-[11px] font-mono text-zinc-500">
+        <div className="flex items-center justify-between border-t border-zinc-800/80 px-4 py-2.5 bg-zinc-950 text-[11px] font-mono text-zinc-500">
           <div className="flex items-center gap-3">
-            <span><kbd className="text-zinc-400">↑↓</kbd> to navigate</span>
-            <span><kbd className="text-zinc-400">↵</kbd> to open</span>
-            <span><kbd className="text-zinc-400">Tab</kbd> to ask Gemini AI</span>
+            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">↑↓</kbd> navigate</span>
+            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">↵</kbd> select</span>
+            <span><kbd className="text-zinc-300 bg-zinc-800 px-1 py-0.2 rounded">Tab</kbd> ask AI</span>
           </div>
-          <span>5,005 FIRs · 3,000 Suspects Indexed</span>
+          <span className="text-zinc-400">5,005 FIRs · 3,000 Suspects · 31 Districts Indexed</span>
         </div>
       </div>
     </div>
