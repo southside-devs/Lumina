@@ -22,7 +22,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [isSignUp, setIsSignUp] = useState(false);
   const [badgeId, setBadgeId] = useState("KSP-4521");
-  const [password, setPassword] = useState("••••••••••••");
+  const [password, setPassword] = useState("Karnataka@Police2026");
   const [officerName, setOfficerName] = useState("Insp. R. Kumar");
   const [stationUnit, setStationUnit] = useState("Cyber & Strategic Command HQ");
   const [showPassword, setShowPassword] = useState(false);
@@ -213,10 +213,12 @@ export function LoginPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 text-zinc-500 hover:text-zinc-300"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    title={showPassword ? "Hide password" : "Show password"}
+                    className="absolute right-3.5 flex items-center justify-center text-zinc-500 hover:text-zinc-200 transition-colors cursor-pointer"
                   >
-                    <span className="material-symbols-outlined text-[18px]">
+                    <span className="material-symbols-outlined text-[19px]">
                       {showPassword ? "visibility_off" : "visibility"}
                     </span>
                   </button>
