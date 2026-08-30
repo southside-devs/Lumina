@@ -163,7 +163,7 @@ export function TacticalMap({
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>(KARNATAKA_HOTSPOTS);
+  const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>([]);
 
   const createTileLayerForStyle = (style: string) => {
     let tileUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
@@ -193,34 +193,29 @@ export function TacticalMap({
 
   };
 
-  // 1. Fetch live ST-DBSCAN ML clusters whenever parameters are tuned
+  // 1. Fetch live ST-DBSCAN ML clusters immediately and whenever parameters are tuned
   useEffect(() => {
     let mounted = true;
-    const timer = setTimeout(async () => {
+    const epsS = clusterParams?.epsSpatial ?? 12.0;
+    const epsT = clusterParams?.epsTemporal ?? 45;
+    const minP = clusterParams?.minPts ?? 4;
+
+    async function fetchClusters() {
       try {
-        const epsS = clusterParams?.epsSpatial ?? 12.0;
-        const epsT = clusterParams?.epsTemporal ?? 45;
-        const minP = clusterParams?.minPts ?? 4;
         const clusters = await api.getHotspotClusters(epsS, epsT, minP);
         if (mounted && clusters && clusters.length > 0) {
           setHotspotsList(clusters);
           onClustersLoaded?.(clusters);
-        } else if (mounted) {
-          setHotspotsList(KARNATAKA_HOTSPOTS);
-          onClustersLoaded?.(KARNATAKA_HOTSPOTS);
         }
       } catch (e) {
-        console.warn("Using baseline tactical hotspots:", e);
-        if (mounted) {
-          setHotspotsList(KARNATAKA_HOTSPOTS);
-          onClustersLoaded?.(KARNATAKA_HOTSPOTS);
-        }
+        console.warn("Error loading ST-DBSCAN clusters:", e);
       }
-    }, 60);
+    }
+
+    fetchClusters();
 
     return () => {
       mounted = false;
-      clearTimeout(timer);
     };
   }, [clusterParams?.epsSpatial, clusterParams?.epsTemporal, clusterParams?.minPts, onClustersLoaded]);
 
