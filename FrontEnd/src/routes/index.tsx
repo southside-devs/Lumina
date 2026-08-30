@@ -4,7 +4,7 @@ import L from "leaflet";
 
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
-import { TacticalMap, KARNATAKA_HOTSPOTS, type TacticalHotspot } from "@/components/lumina/TacticalMap";
+import { TacticalMap, type TacticalHotspot } from "@/components/lumina/TacticalMap";
 import { IncidentCard } from "@/components/lumina/IncidentCard";
 import { MapToolbar } from "@/components/lumina/MapToolbar";
 import { api, type FIRItem } from "@/lib/api";
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
 export function IntelligenceHub() {
   const [firs, setFirs] = useState<FIRItem[]>([]);
   const [activeFilter, setActiveFilter] = useState("All Incidents");
-  const [showIncidents, setShowIncidents] = useState(true);
+  const [showIncidents, setShowIncidents] = useState(false);
   const [showHotspots, setShowHotspots] = useState(true);
   const [showPatrols, setShowPatrols] = useState(true);
   const [cardOpen, setCardOpen] = useState(false);
@@ -106,20 +106,24 @@ export function IntelligenceHub() {
     { label: "Active Patrols", count: 5 },
   ];
 
-  const handleSelectSpot = (spot: TacticalHotspot) => {
+  const handleSelectSpot = (spot: TacticalHotspot | null) => {
     setSelectedSpot(spot);
     setSelectedFir(null);
-    setCardOpen(true);
-    mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
+    if (spot) {
+      setCardOpen(true);
+      mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
+    }
   };
 
-  const handleSelectFir = (fir: FIRItem) => {
+  const handleSelectFir = (fir: FIRItem | null) => {
     setSelectedFir(fir);
     setSelectedSpot(null);
-    setCardOpen(true);
-    mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
-      duration: 0.5,
-    });
+    if (fir) {
+      setCardOpen(true);
+      mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
+        duration: 0.5,
+      });
+    }
   };
 
   const handleResetView = () => {
