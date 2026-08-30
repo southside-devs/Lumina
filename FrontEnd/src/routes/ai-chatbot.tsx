@@ -170,11 +170,12 @@ export function AIChatbotView() {
     const cleanText = cleanForSpeech(text);
     if (!cleanText) return;
 
-    // 1. In Kannada mode: Use backend streaming neural synthesis for pure native Kannada voice
+    // 1. In Kannada mode: Use backend streaming neural synthesis with tuned brisk tempo
     if (language === "kn") {
       try {
         const audioUrl = api.getTTSAudioUrl(cleanText, "kn");
         const audio = new Audio(audioUrl);
+        audio.playbackRate = 1.18; // Crisp, energetic pacing (18% faster)
         audioPlayerRef.current = audio;
         setSpeakingMsgId(msgId);
 
@@ -205,7 +206,7 @@ export function AIChatbotView() {
       try {
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = "en-IN";
-        utterance.rate = 1.0;
+        utterance.rate = 1.08; // Brisk professional tempo
         utterance.pitch = 1.0;
 
         const voices = window.speechSynthesis.getVoices();
@@ -226,6 +227,7 @@ export function AIChatbotView() {
     // Fallback streaming TTS for English
     const audioUrl = api.getTTSAudioUrl(cleanText, "en");
     const audio = new Audio(audioUrl);
+    audio.playbackRate = 1.15;
     audioPlayerRef.current = audio;
     setSpeakingMsgId(msgId);
     audio.onplay = () => setSpeakingMsgId(msgId);
@@ -233,6 +235,7 @@ export function AIChatbotView() {
       setSpeakingMsgId(null);
       audioPlayerRef.current = null;
     };
+
     audio.onerror = () => {
       setSpeakingMsgId(null);
       audioPlayerRef.current = null;
