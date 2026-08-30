@@ -214,8 +214,8 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
                 "radius_km": radius_km,
                 "threatScore": int(threat_score),
                 "firCount": size,
-                "date_start": _days_to_date(float(np.min(c_days))),
-                "date_end": _days_to_date(float(np.max(c_days))),
+                "date_start": _days_to_date(float(min(c_days))),
+                "date_end": _days_to_date(float(max(c_days))),
                 "crime_types": crime_counts,
                 "category": max(crime_counts, key=crime_counts.get) if crime_counts else "Theft",
                 "activePatrol": f"{patrol_unit} ({patrol_sector})",
@@ -227,7 +227,7 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
 
     # Sort clusters by threat score descending
     clusters.sort(key=lambda c: c["threatScore"], reverse=True)
-    noise_count = int((labels == -1).sum())
+    noise_count = labels.count(-1)
 
     return clusters, noise_count
 

@@ -16,6 +16,7 @@ logger = logging.getLogger("lumina.db")
 
 # Path discovery for synthetic data CSVs
 DATA_DIR_CANDIDATES = [
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "DataBase", "synthetic")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "data", "synthetic")),
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "DataBase", "synthetic")),
