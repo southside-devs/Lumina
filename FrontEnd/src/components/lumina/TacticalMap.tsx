@@ -300,46 +300,52 @@ export function TacticalMap({
       hotspotsList.forEach((spot) => {
         const isSelected = activeSpot?.id === spot.id;
         
-        // Count to display (e.g. 13, 7, 5, 4, 3)
-        const count = spot.firCount || (spot.threatScore >= 90 ? 13 : spot.threatScore >= 85 ? 7 : spot.threatScore >= 80 ? 5 : spot.threatScore >= 70 ? 4 : 3);
-        const isDominant = count >= 10 || isSelected;
+        // Threat Score to display on the pin (e.g. 94, 88, 85, 78)
+        const score = spot.threatScore || (spot.firCount >= 10 ? 94 : spot.firCount >= 6 ? 88 : 82);
+        const isDominant = score >= 90 || isSelected;
 
-        // Extra compact, refined node sizes
-        const coreSize = isDominant ? 20 : count >= 7 ? 17 : count >= 5 ? 15 : 13;
-        const outerRingSize = coreSize + (isDominant ? 5 : 4);
+        // Sized cleanly for 2-digit threat score numbers (e.g. 94, 88)
+        const coreSize = isDominant ? 24 : score >= 85 ? 22 : 20;
+        const outerRingSize = coreSize + (isDominant ? 6 : 5);
 
-        // Muted, less bright color scheme
-        const borderColor = isDominant ? "rgba(226, 232, 240, 0.8)" : "rgba(148, 163, 184, 0.6)";
-        const ringBorderColor = isDominant ? "rgba(203, 213, 225, 0.35)" : "rgba(148, 163, 184, 0.2)";
-        const textColor = isDominant ? "#f1f5f9" : "#cbd5e1";
+        // High-contrast, refined military GIS styling
+        const borderColor = isDominant ? "rgba(239, 68, 68, 0.85)" : score >= 85 ? "rgba(245, 158, 11, 0.8)" : "rgba(226, 232, 240, 0.75)";
+        const ringBorderColor = isDominant ? "rgba(239, 68, 68, 0.35)" : score >= 85 ? "rgba(245, 158, 11, 0.25)" : "rgba(203, 213, 225, 0.2)";
+        const textColor = isDominant ? "#fecaca" : score >= 85 ? "#fef3c7" : "#f1f5f9";
 
         const customIcon = L.divIcon({
           className: "custom-tactical-marker",
           html: `
             <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2 cursor-pointer group select-none" style="width:${outerRingSize}px; height:${outerRingSize}px;">
-              <!-- Outer concentric thin muted ring -->
-              <div class="absolute rounded-full border pointer-events-none transition-transform group-hover:scale-105"
+              <!-- Outer concentric thin radar ring -->
+              <div class="absolute rounded-full border pointer-events-none transition-transform group-hover:scale-110"
                 style="width:${outerRingSize}px; height:${outerRingSize}px; border-color: ${ringBorderColor}; border-width: 1px;"></div>
               
-              <!-- Dark circular core with softened border and muted text -->
-              <div class="relative z-10 flex items-center justify-center rounded-full bg-zinc-950/90 shadow-sm transition-transform group-hover:scale-110"
-                style="width:${coreSize}px; height:${coreSize}px; border: 1px solid ${borderColor};">
-                <span class="font-sans font-semibold text-center leading-none select-none flex items-center justify-center" 
-                  style="color: ${textColor}; font-size: ${isDominant ? '9px' : count >= 7 ? '8px' : count >= 5 ? '7.5px' : '7px'};">
-                  ${count}
+              <!-- Dark circular core showing Threat Score -->
+              <div class="relative z-10 flex items-center justify-center rounded-full bg-zinc-950/95 shadow-md transition-transform group-hover:scale-110"
+                style="width:${coreSize}px; height:${coreSize}px; border: 1.5px solid ${borderColor};">
+                <span class="font-mono font-bold text-center leading-none select-none flex items-center justify-center tracking-tighter" 
+                  style="color: ${textColor}; font-size: ${isDominant ? '10px' : '9px'};">
+                  ${score}
                 </span>
               </div>
 
               <!-- Minimal hover label -->
-              <div class="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
-                <span class="font-mono text-[9px] text-zinc-300 bg-zinc-950/90 px-1.5 py-0.5 rounded border border-zinc-800 shadow-lg">
-                  ${spot.name} · ${count} Incidents
+              <div class="absolute top-full left-1/2 mt-1.5 -translate-x-1/2 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
+                <span class="font-mono text-[10px] text-zinc-200 bg-zinc-950/95 px-2 py-1 rounded-md border border-zinc-800 shadow-xl flex items-center gap-1.5">
+                  <span class="inline-block size-1.5 rounded-full ${score >= 90 ? 'bg-red-400' : 'bg-amber-400'}"></span>
+                  <span>${spot.name}</span>
+                  <span class="text-zinc-500">·</span>
+                  <span class="${score >= 90 ? 'text-red-400' : 'text-amber-400'} font-bold">Threat: ${score}/100</span>
+                  <span class="text-zinc-500">·</span>
+                  <span class="text-zinc-400">${spot.firCount || 10} FIRs</span>
                 </span>
               </div>
             </div>
           `,
           iconSize: [0, 0],
         });
+
 
         const marker = L.marker([spot.lat, spot.lng], { icon: customIcon }).addTo(layerGroup);
         marker.on("click", () => { onSelectSpot?.(spot); });
