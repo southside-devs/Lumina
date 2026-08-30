@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
 import { ReportModal } from "./ReportModal";
+
 
 const primaryNav = [
   { icon: "grid_view", label: "Command Hub", to: "/" },
@@ -87,25 +87,8 @@ export function SideRail() {
               </Link>
             </RailItem>
           ))}
-
-          <RailItem label="Export Briefing">
-            <button
-              type="button"
-              onClick={() =>
-                generateIntelligenceBriefingPDF({
-                  title: "KARNATAKA STATE POLICE — STRATEGIC INTELLIGENCE BRIEFING",
-                  totalFirs: 5000,
-                  repeatOffenders: 456,
-                  criticalHotspots: 3,
-                })
-              }
-              aria-label="Export Briefing Report"
-              className={idleClass}
-            >
-              <span className="material-symbols-outlined text-amber-400">assignment</span>
-            </button>
-          </RailItem>
         </div>
+
 
         <div className="mt-auto flex w-full flex-col gap-3 px-2">
           {secondaryLinks.map((item) => (
