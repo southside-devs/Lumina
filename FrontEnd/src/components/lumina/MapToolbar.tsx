@@ -43,8 +43,6 @@ export type MapToolbarProps = {
   showPatrols: boolean;
   onTogglePatrols: () => void;
   onResetView?: () => void;
-  onZoomIn?: () => void;
-  onZoomOut?: () => void;
   onClusterTuned?: (params: { epsSpatial: number; epsTemporal: number; minPts: number }) => void;
 };
 
@@ -56,8 +54,6 @@ export function MapToolbar({
   showPatrols,
   onTogglePatrols,
   onResetView,
-  onZoomIn,
-  onZoomOut,
   onClusterTuned,
 }: MapToolbarProps) {
   const [showConfig, setShowConfig] = useState(false);
@@ -263,34 +259,6 @@ export function MapToolbar({
           <span className="material-symbols-outlined text-sm">tune</span>
           <span>ST-DBSCAN</span>
         </button>
-
-        {/* Zoom Controls */}
-        {(onZoomIn || onZoomOut) && (
-          <div className="flex items-center gap-1">
-            {onZoomIn && (
-              <button
-                type="button"
-                onClick={onZoomIn}
-                title="Zoom In"
-                aria-label="Zoom In"
-                className="flex size-7 items-center justify-center rounded-lg font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[16px]">add</span>
-              </button>
-            )}
-            {onZoomOut && (
-              <button
-                type="button"
-                onClick={onZoomOut}
-                title="Zoom Out"
-                aria-label="Zoom Out"
-                className="flex size-7 items-center justify-center rounded-lg font-mono text-xs text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[16px]">remove</span>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Reset View Button */}
         {onResetView && (

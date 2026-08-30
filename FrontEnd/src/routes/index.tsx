@@ -255,8 +255,6 @@ export function IntelligenceHub() {
                 showPatrols={showPatrols}
                 onTogglePatrols={() => setShowPatrols((v) => !v)}
                 onResetView={handleResetView}
-                onZoomIn={() => mapRef.current?.zoomIn()}
-                onZoomOut={() => mapRef.current?.zoomOut()}
                 onClusterTuned={(p) => setClusterParams(p)}
               />
               <div className="hidden w-[88px] lg:block" />
