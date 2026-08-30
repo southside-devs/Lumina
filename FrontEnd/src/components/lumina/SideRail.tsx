@@ -1,8 +1,7 @@
 import { useState, type ReactNode } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReportModal } from "./ReportModal";
-
 
 const primaryNav = [
   { icon: "grid_view", label: "Command Hub", to: "/" },
@@ -42,6 +41,14 @@ function RailItem({ label, children }: { label: string; children: ReactNode }) {
 export function SideRail() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  const isItemActive = (to: string) => {
+    if (to === "/overview") {
+      return pathname === "/overview" || pathname === "/risk-scores";
+    }
+    return pathname === to;
+  };
 
   const handleLogout = () => {
     toast.info("Session Closed", {
@@ -79,15 +86,14 @@ export function SideRail() {
               <Link
                 to={item.to}
                 aria-label={item.label}
-                className={idleClass}
-                activeProps={{ className: activeClass }}
-                activeOptions={{ exact: true }}
+                className={isItemActive(item.to) ? activeClass : idleClass}
               >
                 <span className="material-symbols-outlined">{item.icon}</span>
               </Link>
             </RailItem>
           ))}
         </div>
+
 
 
         <div className="mt-auto flex w-full flex-col gap-3 px-2">
