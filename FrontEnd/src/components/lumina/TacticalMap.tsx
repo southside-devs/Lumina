@@ -251,9 +251,6 @@ export function TacticalMap({
       },
     }).addTo(map);
 
-    // Zoom control at bottom right
-    L.control.zoom({ position: "bottomright" }).addTo(map);
-
     const layers = L.layerGroup().addTo(map);
     mapInstanceRef.current = map;
     layerGroupRef.current = layers;

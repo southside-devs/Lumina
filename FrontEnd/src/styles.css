@@ -229,14 +229,20 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
 }
 
 /* Monochrome Circular Zoom Controls */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 40 !important;
+}
+
 .leaflet-control-zoom {
   border: none !important;
   background: transparent !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 6px !important;
-  margin-right: 16px !important;
-  margin-bottom: 16px !important;
+  margin-right: 20px !important;
+  margin-bottom: 48px !important;
+  pointer-events: auto !important;
 }
 
 .leaflet-control-zoom-in,
@@ -255,6 +261,20 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
+  pointer-events: auto !important;
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: rgba(30, 41, 59, 0.95) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: scale(1.05);
+}
+
+.leaflet-control-zoom-in:active,
+.leaflet-control-zoom-out:active {
+  transform: scale(0.95);
 }
 
 /* Dedicated Circular Bounds for Leaflet DivIcons */

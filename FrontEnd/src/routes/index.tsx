@@ -213,6 +213,28 @@ export function IntelligenceHub() {
               </div>
             </div>
 
+            {/* Always-on Tactical Map Zoom Controls in Right Corner */}
+            <div className="pointer-events-auto absolute right-6 bottom-20 z-20 flex flex-col gap-1.5">
+              <button
+                type="button"
+                onClick={() => mapRef.current?.zoomIn()}
+                title="Zoom In (+)"
+                aria-label="Zoom In"
+                className="flex size-9 items-center justify-center rounded-xl border border-hairline bg-surface-1/90 text-foreground shadow-lg backdrop-blur-xl transition-all hover:bg-surface-2 hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => mapRef.current?.zoomOut()}
+                title="Zoom Out (-)"
+                aria-label="Zoom Out"
+                className="flex size-9 items-center justify-center rounded-xl border border-hairline bg-surface-1/90 text-foreground shadow-lg backdrop-blur-xl transition-all hover:bg-surface-2 hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[18px]">remove</span>
+              </button>
+            </div>
+
             {cardOpen && (selectedSpot || selectedFir) && (
               <div className="pointer-events-auto absolute top-6 right-6 z-20">
                 <IncidentCard
@@ -233,6 +255,8 @@ export function IntelligenceHub() {
                 showPatrols={showPatrols}
                 onTogglePatrols={() => setShowPatrols((v) => !v)}
                 onResetView={handleResetView}
+                onZoomIn={() => mapRef.current?.zoomIn()}
+                onZoomOut={() => mapRef.current?.zoomOut()}
                 onClusterTuned={(p) => setClusterParams(p)}
               />
               <div className="hidden w-[88px] lg:block" />
