@@ -40,6 +40,18 @@ export function IntelligenceHub() {
 
   const { firCreatedCount } = useFIREvents();
   const mapRef = useRef<L.Map | null>(null);
+  const tabRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({});
+  const [sliderStyle, setSliderStyle] = useState<{ left: number; width: number }>({ left: 6, width: 140 });
+
+  useEffect(() => {
+    const el = tabRefs.current[activeFilter];
+    if (el) {
+      setSliderStyle({
+        left: el.offsetLeft,
+        width: el.offsetWidth,
+      });
+    }
+  }, [activeFilter, firs.length]);
 
 
   // Fetch live FIR records and refresh when a new FIR is filed
@@ -199,33 +211,48 @@ export function IntelligenceHub() {
                 <div
                   role="tablist"
                   aria-label="Incident filters"
-                  className="glass-panel flex items-center gap-1 rounded-full bg-surface-1/80 p-1.5 shadow-2xl backdrop-blur-xl border border-hairline transition-all duration-200"
+                  className="glass-panel relative flex items-center rounded-full bg-zinc-950/70 p-1.5 shadow-2xl backdrop-blur-2xl border border-white/10"
                 >
-                  {filters.map((f) => (
-                    <button
-                      key={f.label}
-                      type="button"
-                      role="tab"
-                      aria-selected={activeFilter === f.label}
-                      onClick={() => handleFilterChange(f.label)}
-                      className={`flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer ${
-                        activeFilter === f.label
-                          ? "bg-slate-200 text-slate-950 shadow-md font-semibold"
-                          : "text-muted-foreground hover:bg-surface-2/60 hover:text-foreground"
-                      }`}
-                    >
-                      <span>{f.label}</span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors ${
-                          activeFilter === f.label
-                            ? "bg-slate-900/15 text-slate-950"
-                            : "bg-surface-2/80 text-muted-foreground"
+                  {/* Smooth sliding indicator pill */}
+                  <div
+                    className="absolute top-1.5 bottom-1.5 rounded-full bg-slate-200 shadow-md transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none"
+                    style={{
+                      left: `${sliderStyle.left}px`,
+                      width: `${sliderStyle.width}px`,
+                    }}
+                  />
+
+                  {filters.map((f) => {
+                    const isActive = activeFilter === f.label;
+                    return (
+                      <button
+                        key={f.label}
+                        ref={(el) => {
+                          tabRefs.current[f.label] = el;
+                        }}
+                        type="button"
+                        role="tab"
+                        aria-selected={isActive}
+                        onClick={() => handleFilterChange(f.label)}
+                        className={`relative z-10 flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors duration-200 cursor-pointer select-none ${
+                          isActive
+                            ? "text-slate-950 font-bold"
+                            : "text-zinc-400 hover:text-zinc-200"
                         }`}
                       >
-                        {f.count}
-                      </span>
-                    </button>
-                  ))}
+                        <span>{f.label}</span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors duration-200 ${
+                            isActive
+                              ? "bg-slate-900/15 text-slate-950 font-bold"
+                              : "bg-zinc-800/80 text-zinc-400"
+                          }`}
+                        >
+                          {f.count}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* Pop-up Incident Card cleanly positioned right below filter tabs */}
