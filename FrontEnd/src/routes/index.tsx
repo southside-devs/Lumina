@@ -62,9 +62,10 @@ export function IntelligenceHub() {
   }, [firCreatedCount]);
 
   // Filter FIRs based on active tab
-  const filteredFirs = firs.filter((f) => {
+  const filteredFirs = (firs || []).filter((f) => {
+    if (!f) return false;
     if (activeFilter === "Critical Threats") {
-      const g = f.Crime_Group.toLowerCase();
+      const g = (f.Crime_Group || "").toLowerCase();
       return (
         g.includes("assault") ||
         g.includes("murder") ||
@@ -75,15 +76,16 @@ export function IntelligenceHub() {
     }
     if (activeFilter === "Recent (2026)") {
       return (
-        f.Date?.includes("2026") ||
-        f.FIR_Number?.includes("2026")
+        String(f.Date || "").includes("2026") ||
+        String(f.FIR_Number || "").includes("2026")
       );
     }
     return true;
   });
 
-  const criticalCount = firs.filter((f) => {
-    const g = f.Crime_Group.toLowerCase();
+  const criticalCount = (firs || []).filter((f) => {
+    if (!f) return false;
+    const g = (f.Crime_Group || "").toLowerCase();
     return (
       g.includes("assault") ||
       g.includes("murder") ||
@@ -93,15 +95,14 @@ export function IntelligenceHub() {
     );
   }).length;
 
-  const recentCount = firs.filter(
-    (f) => f.Date?.includes("2026") || f.FIR_Number?.includes("2026")
+  const recentCount = (firs || []).filter(
+    (f) => String(f?.Date || "").includes("2026") || String(f?.FIR_Number || "").includes("2026")
   ).length;
 
   const filters = [
     { label: "All Incidents", count: firs.length || 5000 },
     { label: "Critical Threats", count: criticalCount || 746 },
     { label: "Recent (2026)", count: recentCount || 12 },
-    { label: "Active Patrols", count: 5 },
   ];
 
   const handleFilterChange = (filterName: string) => {
@@ -109,21 +110,15 @@ export function IntelligenceHub() {
     if (filterName === "All Incidents") {
       setShowIncidents(true);
       setShowHotspots(true);
-      setShowPatrols(true);
     } else if (filterName === "Critical Threats") {
       setShowIncidents(true);
       setShowHotspots(true);
-      setShowPatrols(false);
     } else if (filterName === "Recent (2026)") {
       setShowIncidents(true);
       setShowHotspots(false);
-      setShowPatrols(false);
-    } else if (filterName === "Active Patrols") {
-      setShowIncidents(false);
-      setShowHotspots(false);
-      setShowPatrols(true);
     }
   };
+
 
   const handleSelectSpot = (spot: TacticalHotspot | null) => {
     setSelectedSpot(spot);

@@ -829,9 +829,9 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                     type="button"
                     onClick={() => {
                       const prompt = activeItem.type === "fir"
-                        ? `Analyze investigation dossier and criminal records for FIR #${(activeItem as FIRResult).fir.FIR_Number}`
+                        ? `Analyze investigation dossier and criminal records for FIR #${(activeItem as FIRResult)?.fir?.FIR_Number || activeItem.title}`
                         : activeItem.type === "suspect"
-                        ? `Provide risk analysis and syndicate link overview for suspect ${(activeItem as SuspectResult).suspect.name}`
+                        ? `Provide risk analysis and syndicate link overview for suspect ${(activeItem as SuspectResult)?.suspect?.name || activeItem.title}`
                         : `Provide intelligence overview for ${activeItem.title}`;
                       handleAskAI(prompt);
                     }}
@@ -840,6 +840,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
                     <span className="material-symbols-outlined text-sm">smart_toy</span>
                     <span>Analyze with Copilot</span>
                   </button>
+
                 </div>
               </div>
             ) : (

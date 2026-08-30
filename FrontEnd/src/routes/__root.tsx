@@ -36,42 +36,46 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
+  console.error("Root error boundary caught:", error);
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-white font-sans">
+      <div className="max-w-lg text-center bg-zinc-900/90 border border-zinc-800 p-6 rounded-2xl shadow-2xl">
+        <div className="size-12 rounded-full bg-red-950/80 border border-red-800/50 flex items-center justify-center mx-auto mb-3 text-red-400">
+          <span className="material-symbols-outlined text-2xl">warning</span>
+        </div>
+        <h1 className="text-lg font-semibold tracking-tight text-white">
+          Tactical Interface Exception
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+        <p className="mt-2 text-xs text-zinc-400 font-mono leading-relaxed bg-black/60 p-3 rounded-lg border border-zinc-800 text-left overflow-x-auto text-red-300">
+          {error?.message || "An unexpected rendering fault occurred."}
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center rounded-xl bg-white px-4 py-2 text-xs font-semibold text-black transition-colors hover:bg-zinc-200 cursor-pointer"
           >
-            Try again
+            Retry Module
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-zinc-700"
           >
-            Go home
+            Return to Command Center
           </a>
         </div>
       </div>
     </div>
   );
 }
+
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
