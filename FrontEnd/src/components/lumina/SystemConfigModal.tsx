@@ -182,7 +182,7 @@ export function SystemConfigModal({ isOpen, onClose }: SystemConfigModalProps) {
                     type="button"
                     onClick={handleTestVoice}
                     disabled={isPlayingTestAudio}
-                    className="flex items-center gap-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 px-3 py-1.5 text-xs font-mono text-emerald-300 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 rounded-lg bg-zinc-800/80 hover:bg-zinc-700 border border-zinc-700 px-3 py-1.5 text-xs font-mono text-zinc-200 transition-colors cursor-pointer"
                   >
                     <span className="material-symbols-outlined text-sm">
                       {isPlayingTestAudio ? "graphic_eq" : "volume_up"}
@@ -206,7 +206,7 @@ export function SystemConfigModal({ isOpen, onClose }: SystemConfigModalProps) {
                         }}
                         className={`flex items-center justify-center py-3 px-2 rounded-xl border text-xs transition-all cursor-pointer ${
                           isSelected
-                            ? "bg-emerald-950/70 border-emerald-500/80 text-emerald-300 shadow-[0_0_12px_rgba(16,185,129,0.25)] font-bold"
+                            ? "bg-white text-black font-bold border-white shadow-sm"
                             : "bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700"
                         }`}
                       >
