@@ -123,9 +123,10 @@ export function TopBar() {
             onClick={() => toggle("notifications")}
             className={`relative flex size-9 items-center justify-center rounded-xl border text-muted-foreground transition-all active:scale-95 cursor-pointer ${
               panel === "notifications"
-                ? "border-blue-500/40 bg-surface-2 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15),0_0_14px_rgba(0,122,255,0.3)]"
+                ? "border-white/20 bg-surface-2 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_6px_rgba(0,0,0,0.55)]"
                 : "border-hairline bg-surface-1/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/20 hover:bg-surface-2 hover:text-foreground"
             }`}
+
           >
             <span className="material-symbols-outlined text-[18px]">notifications</span>
             {counts.unread > 0 && (
