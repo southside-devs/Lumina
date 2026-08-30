@@ -2,6 +2,8 @@ import { useState, useEffect, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReportModal } from "./ReportModal";
+import { SystemConfigModal } from "./SystemConfigModal";
+
 
 const primaryNav = [
   { icon: "grid_view", label: "Command Hub", to: "/" },
@@ -49,6 +51,7 @@ function getActiveNavIndex(path: string): number {
 
 export function SideRail() {
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -72,12 +75,6 @@ export function SideRail() {
       description: "Signed out of Karnataka State Police Command Center.",
     });
     navigate({ to: "/login" });
-  };
-
-  const handleConfig = () => {
-    toast.info("System Configuration", {
-      description: "Lumina Core Engine v3.4.2 · Node KA-01-HQ · AES-256 Enabled.",
-    });
   };
 
   return (
@@ -150,7 +147,7 @@ export function SideRail() {
           <RailItem label="System Config">
             <button
               type="button"
-              onClick={handleConfig}
+              onClick={() => setIsConfigOpen(true)}
               aria-label="System Config"
               className={idleSecondaryClass}
             >
@@ -172,6 +169,8 @@ export function SideRail() {
       </nav>
 
       <ReportModal isOpen={isReportOpen} onClose={() => setIsReportOpen(false)} />
+      <SystemConfigModal isOpen={isConfigOpen} onClose={() => setIsConfigOpen(false)} />
     </>
   );
 }
+
