@@ -12,7 +12,6 @@ Endpoints:
 from collections import deque
 from datetime import datetime
 import math
-from flask import request
 
 from utils.db import DataStore
 from utils.response import success, bad_request, server_error
@@ -31,9 +30,9 @@ def handle(request, path_parts):
     db = DataStore(request)
 
     if request.method == "GET":
-        return get_clusters(db)
+        return get_clusters(request, db)
     elif request.method == "POST":
-        return detect_custom_hotspots(db)
+        return detect_custom_hotspots(request, db)
 
     return bad_request("Unsupported HTTP method for /api/hotspots")
 
@@ -232,7 +231,7 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
     return clusters, noise_count
 
 
-def get_clusters(db):
+def get_clusters(request, db):
     """
     Fetch FIRs from DataStore and compute ST-DBSCAN hotspots.
     Query params:
@@ -247,7 +246,7 @@ def get_clusters(db):
         min_samples = int(request.args.get("min_samples", 4))
         limit = int(request.args.get("limit", 2000))
 
-        # Query recent FIRs with lat/lon
+        # Query recent FIRs with lat/lon — use explicit column names compatible with SQLite
         query = (
             f"SELECT f.ROWID, f.ID, f.Latitude, f.Longitude, f.Date, f.Crime_Group, "
             f"ps.Name AS Station_Name, d.Name AS District_Name "
@@ -255,6 +254,7 @@ def get_clusters(db):
             f"LEFT JOIN Police_Station ps ON f.Station_ID = ps.ROWID "
             f"LEFT JOIN District d ON ps.District_ID = d.ROWID "
             f"WHERE f.Latitude IS NOT NULL AND f.Longitude IS NOT NULL "
+            f"AND CAST(f.Latitude AS REAL) != 0.0 AND CAST(f.Longitude AS REAL) != 0.0 "
             f"ORDER BY f.Date DESC LIMIT {limit}"
         )
         rows = db.execute_query(query)
@@ -262,8 +262,10 @@ def get_clusters(db):
         events = []
         for r in rows:
             try:
-                lat = float(r.get("Latitude"))
-                lon = float(r.get("Longitude"))
+                lat = float(r.get("Latitude") or 0)
+                lon = float(r.get("Longitude") or 0)
+                if lat == 0 or lon == 0:
+                    continue
                 d_str = str(r.get("Date") or "2026-01-01")
                 events.append(
                     {
@@ -305,7 +307,7 @@ def get_clusters(db):
 
 
 
-def detect_custom_hotspots(db):
+def detect_custom_hotspots(request, db):
     """POST endpoint to run ST-DBSCAN on custom submitted points."""
     try:
         body = request.get_json() or {}

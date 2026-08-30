@@ -9,6 +9,8 @@ from utils.db import DataStore
 
 
 
+
+
 def handle(request, path_parts):
     """Route dispatcher for /api/ai-chat endpoints."""
     if request.method == "POST":
@@ -57,14 +59,13 @@ def clean_ai_response(raw_text):
 
 
 def get_model_candidates():
-    """Prioritized list of high-speed active Gemini models."""
+    """Prioritized list of verified, currently available Gemini models via REST API."""
     return [
-        'gemini-3.1-flash-lite-preview',
-        'gemini-3.1-flash-lite',
-        'gemini-3.5-flash-lite',
-        'gemini-3.5-flash',
-        'gemini-3.7-flash',
-        'gemma-4-26b-a4b-it',
+        'gemini-2.0-flash-lite',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-flash',
+        'gemini-2.5-flash-preview-05-20',
     ]
 
 
@@ -257,6 +258,8 @@ def process_chat(request):
         language = str(data.get('language', 'en')).lower().strip()  # 'en' or 'kn'
 
         api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
+        if not api_key:
+            return server_error("GEMINI_API_KEY environment variable is not configured on this server.")
 
         # ── RAG: Pull real records from the database for this query ──────────
         db_context = ""

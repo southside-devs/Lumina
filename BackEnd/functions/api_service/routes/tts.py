@@ -7,7 +7,7 @@ import re
 import urllib.request
 import urllib.parse
 from flask import make_response, Response
-from utils.response import bad_request, server_error
+from utils.response import bad_request, server_error, error
 
 
 def handle(request, path_parts):
@@ -51,7 +51,9 @@ def handle(request, path_parts):
         return response
     except Exception as e:
         print(f"TTS synthesis error: {e}")
-        return server_error(f"Failed to synthesize speech: {str(e)}")
+        # Return 503 (not 500) so the frontend can detect service-unavailable
+        # and gracefully fall back to browser SpeechSynthesis API
+        return error("TTS service temporarily unavailable — browser fallback will be used", status_code=503)
 
 
 def _clean_for_speech(raw: str) -> str:
@@ -70,6 +72,7 @@ def _synthesize_audio(text: str, lang: str) -> bytes:
     """
     Split text into sentence chunks (< 150 chars) and fetch natural Google TTS audio stream.
     Intelligently auto-detects Kannada Unicode characters to always speak in native Kannada voice.
+    Tries two different client identifiers for resilience against rate-limiting from cloud IPs.
     """
     # Detect if text contains Kannada Unicode characters (\u0c80-\u0cff)
     has_kannada_chars = bool(re.search(r'[\u0c80-\u0cff]', text))
@@ -107,25 +110,49 @@ def _synthesize_audio(text: str, lang: str) -> bytes:
         chunks = [text[:140]]
 
     combined_audio = bytearray()
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
+
+    # Two client strings to try — rotate if rate-limited
+    client_ids = ["tw-ob", "gtx"]
+    user_agents = [
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0",
+    ]
+
+    consecutive_failures = 0
 
     for chunk in chunks:
         if not chunk.strip():
             continue
-        try:
-            encoded_q = urllib.parse.quote(chunk.strip())
-            url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={encoded_q}&tl={target_lang}&client=tw-ob"
-            req = urllib.request.Request(url, headers=headers)
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                if resp.status == 200:
-                    combined_audio.extend(resp.read())
-        except Exception as err:
-            print(f"TTS chunk error for '{chunk[:30]}': {err}")
-            continue
+
+        chunk_ok = False
+        for client_id, agent in zip(client_ids, user_agents):
+            try:
+                encoded_q = urllib.parse.quote(chunk.strip())
+                url = f"https://translate.google.com/translate_tts?ie=UTF-8&q={encoded_q}&tl={target_lang}&client={client_id}"
+                headers = {"User-Agent": agent, "Referer": "https://translate.google.com/"}
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    if resp.status == 200:
+                        audio_data = resp.read()
+                        if audio_data:
+                            combined_audio.extend(audio_data)
+                            chunk_ok = True
+                            break
+            except Exception as err:
+                print(f"TTS chunk error (client={client_id}) for '{chunk[:30]}': {err}")
+                continue
+
+        if not chunk_ok:
+            consecutive_failures += 1
+            # Abort early if 3 consecutive chunks all fail (cloud IP blocked)
+            if consecutive_failures >= 3:
+                print("TTS: 3 consecutive chunk failures, aborting — cloud IP may be blocked")
+                break
+        else:
+            consecutive_failures = 0
 
     if not combined_audio:
-        raise RuntimeError("No audio could be synthesized from the service")
+        raise RuntimeError("No audio could be synthesized — Google TTS may be rate-limiting this server IP. The frontend will use browser speech synthesis as fallback.")
 
     return bytes(combined_audio)
+

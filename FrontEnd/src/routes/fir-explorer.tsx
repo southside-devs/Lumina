@@ -56,6 +56,7 @@ function FIRExplorerView() {
   const navigate = useNavigate();
   const searchParams = Route.useSearch();
   const [firs, setFirs] = useState<FIRItem[]>([]);
+  const [totalFirs, setTotalFirs] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams?.search || searchParams?.fir || "");
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
@@ -70,13 +71,14 @@ function FIRExplorerView() {
       try {
         const targetSearch = searchParams?.fir || searchParams?.search;
         const res = await api.getFirs({
-          limit: 100,
+          limit: 500,
           search: targetSearch || undefined,
           status: selectedStatus !== "All Statuses" ? selectedStatus : undefined,
           crime_group: selectedCrimeGroup !== "All Crime Types" ? selectedCrimeGroup : undefined,
         });
         if (mounted) {
           setFirs(res.firs);
+          if (res.total > 0) setTotalFirs(res.total);
           setLoading(false);
           if (searchParams?.fir && res.firs.length > 0) {
             const matched = res.firs.find(
@@ -140,7 +142,7 @@ function FIRExplorerView() {
                 <h1 className="font-display text-headline-lg tracking-tight text-white flex items-center gap-3">
                   FIR Case Explorer &amp; Registry
                   <span className="rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-sky-400">
-                    5,000 INDEXED
+                    {totalFirs > 0 ? `${totalFirs.toLocaleString()} INDEXED` : "LOADING..."}
                   </span>
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">

@@ -207,9 +207,19 @@ export function AIChatbotView() {
         }
       };
       audio.play().catch((err) => {
-        console.warn("Audio playback note:", err);
-        setSpeakingMsgId(null);
-        audioPlayerRef.current = null;
+        console.warn("Audio stream unavailable, falling back to browser synthesis:", err);
+        // Backend TTS unavailable (cloud IP blocked) — fall back to native browser synthesis
+        if ("speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.lang = isKannada ? "kn-IN" : "en-IN";
+          utterance.rate = getPlaybackRateFromConfig(config.voiceSpeed);
+          utterance.onend = () => setSpeakingMsgId(null);
+          utterance.onerror = () => setSpeakingMsgId(null);
+          window.speechSynthesis.speak(utterance);
+        } else {
+          setSpeakingMsgId(null);
+          audioPlayerRef.current = null;
+        }
       });
     } catch (err) {
       console.error("TTS synthesis error:", err);

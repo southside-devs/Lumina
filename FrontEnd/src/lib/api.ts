@@ -595,7 +595,7 @@ export const api = {
    * Get direct audio synthesis stream URL for Kannada / English TTS
    */
   getTTSAudioUrl(text: string, lang: "en" | "kn" = "kn"): string {
-    return `${API_BASE}/tts?lang=${lang}&text=${encodeURIComponent(text)}`;
+    return `${getApiBase()}/tts?lang=${lang}&text=${encodeURIComponent(text)}`;
   },
 };
 
