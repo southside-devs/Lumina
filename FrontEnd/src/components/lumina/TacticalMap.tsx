@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { api, type FIRItem, type SpatiotemporalCluster } from "@/lib/api";
+import { useSystemConfig } from "@/lib/config";
 
 import karnatakaGeoJson from "./karnataka-boundary.json";
+
 
 export interface TacticalHotspot {
   id: string;
@@ -156,10 +158,39 @@ export function TacticalMap({
   onClustersLoaded,
 }: TacticalMapProps) {
 
+  const { config } = useSystemConfig();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layerGroupRef = useRef<L.LayerGroup | null>(null);
+  const tileLayerRef = useRef<L.TileLayer | null>(null);
   const [hotspotsList, setHotspotsList] = useState<TacticalHotspot[]>(KARNATAKA_HOTSPOTS);
+
+  const createTileLayerForStyle = (style: string) => {
+    let tileUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
+    let tileOptions: L.TileLayerOptions = {
+      maxZoom: 16,
+      subdomains: ["server", "services"],
+      className: "esri-dark-tiles",
+    };
+
+    if (style === "satellite") {
+      tileUrl = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+      tileOptions = {
+        maxZoom: 18,
+        subdomains: ["server", "services"],
+        className: "esri-satellite-tiles",
+      };
+    } else if (style === "midnight") {
+      tileUrl = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+      tileOptions = {
+        maxZoom: 19,
+        subdomains: ["a", "b", "c", "d"],
+        className: "carto-midnight-tiles",
+      };
+    }
+
+    return L.tileLayer(tileUrl, tileOptions);
+  };
 
   // 1. Fetch live ST-DBSCAN ML clusters whenever parameters are tuned
   useEffect(() => {
@@ -185,10 +216,22 @@ export function TacticalMap({
     };
   }, [clusterParams?.epsSpatial, clusterParams?.epsTemporal, clusterParams?.minPts, onClustersLoaded]);
 
+  // 2. Dynamic Base Map Tile Layer Swapping based on System Configuration
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    const map = mapInstanceRef.current;
 
+    if (tileLayerRef.current) {
+      map.removeLayer(tileLayerRef.current);
+      tileLayerRef.current = null;
+    }
 
+    const newLayer = createTileLayerForStyle(config.baseMapStyle).addTo(map);
+    newLayer.bringToBack();
+    tileLayerRef.current = newLayer;
+  }, [config.baseMapStyle]);
 
-  // 2. Initialize Leaflet Map with Esri World Dark Gray Canvas
+  // 3. Initialize Leaflet Map with Initial Layer
   useEffect(() => {
     if (!mapContainerRef.current) return;
     if (mapInstanceRef.current) return;
@@ -214,16 +257,13 @@ export function TacticalMap({
       zoomAnimationThreshold: 8,
     });
 
-    // 1. Official Esri Dark Gray Base Map Layer (100% Native Dark Military GIS)
-    L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
-      {
-        maxZoom: 16,
-        className: "esri-dark-tiles",
-      }
-    ).addTo(map);
+    // Initial Base Map Layer
+    const initialTileLayer = createTileLayerForStyle(config.baseMapStyle).addTo(map);
+    initialTileLayer.bringToBack();
+    tileLayerRef.current = initialTileLayer;
 
-    // 2. Karnataka State Administrative Boundary GeoJSON Layer
+    // Karnataka State Administrative Boundary GeoJSON Layer
+
     const boundaryLayer = L.geoJSON(karnatakaGeoJson as any, {
       interactive: false,
       style: {

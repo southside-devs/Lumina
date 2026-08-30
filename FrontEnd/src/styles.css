@@ -229,6 +229,15 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
   filter: brightness(0.68) contrast(1.2) saturate(0) !important;
 }
 
+.esri-satellite-tiles {
+  filter: brightness(0.85) contrast(1.15) !important;
+}
+
+.carto-midnight-tiles {
+  filter: brightness(0.85) contrast(1.2) !important;
+}
+
+
 .karnataka-state-boundary {
   pointer-events: none;
   vector-effect: non-scaling-stroke;
