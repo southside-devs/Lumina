@@ -337,7 +337,7 @@ export function AIChatbotView() {
 
           <main className="relative mt-14 flex flex-1 flex-col items-center justify-between overflow-hidden bg-[#07080c] px-4 py-6">
             
-            {/* Top Bar Language & Voice Controls */}
+            {/* Top Bar Language Selector */}
             <div className="w-full max-w-2xl flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <span className="inline-block h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -346,59 +346,41 @@ export function AIChatbotView() {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
-                {/* Auto-Speak Read Aloud Toggle */}
+              {/* Language Switcher Toggle */}
+              <div className="flex items-center rounded-full border border-zinc-800 bg-zinc-900/90 p-0.5 shadow-inner">
                 <button
                   type="button"
-                  onClick={() => setAutoSpeak((prev) => !prev)}
-                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-mono transition-all cursor-pointer ${
-                    autoSpeak
-                      ? "border-emerald-500/50 bg-emerald-950/40 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]"
-                      : "border-zinc-800 bg-zinc-900/80 text-zinc-400 hover:text-white"
+                  onClick={() => {
+                    setLanguage("en");
+                    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+                  }}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
+                    language === "en"
+                      ? "bg-white text-black shadow"
+                      : "text-zinc-400 hover:text-white"
                   }`}
-                  title="Auto read-aloud responses"
                 >
-                  <span className="material-symbols-outlined text-xs">
-                    {autoSpeak ? "volume_up" : "volume_off"}
-                  </span>
-                  <span>{autoSpeak ? "Voice: ON" : "Voice: OFF"}</span>
+                  <span>🇬🇧</span>
+                  <span>English</span>
                 </button>
-
-                {/* Language Switcher Toggle */}
-                <div className="flex items-center rounded-full border border-zinc-800 bg-zinc-900/90 p-0.5 shadow-inner">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLanguage("en");
-                      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-                    }}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
-                      language === "en"
-                        ? "bg-white text-black shadow"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    <span>🇬🇧</span>
-                    <span>English</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setLanguage("kn");
-                      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-                    }}
-                    className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
-                      language === "kn"
-                        ? "bg-white text-black shadow"
-                        : "text-zinc-400 hover:text-white"
-                    }`}
-                  >
-                    <span>🇮🇳</span>
-                    <span>ಕನ್ನಡ</span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLanguage("kn");
+                    if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+                  }}
+                  className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-mono font-medium transition-all cursor-pointer ${
+                    language === "kn"
+                      ? "bg-white text-black shadow"
+                      : "text-zinc-400 hover:text-white"
+                  }`}
+                >
+                  <span>🇮🇳</span>
+                  <span>ಕನ್ನಡ</span>
+                </button>
               </div>
             </div>
+
 
             {/* If no chat messages yet, show landing headline & suggestions */}
             {messages.length === 0 ? (
