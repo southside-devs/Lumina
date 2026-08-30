@@ -176,29 +176,24 @@ def run_st_dbscan(events, eps_spatial=8.0, eps_temporal=45, min_samples=4):
             else "Karnataka Sector"
         )
 
-        # Multi-factor spatiotemporal velocity Threat Score (20-98)
+        # Calibrated Threat Score (30-98) based on incident density curve, violent crime ratio, and recency
         size = len(indices)
-        days_span = max(float(np.max(c_days) - np.min(c_days)) + 1.0, 1.0)
-        daily_rate = size / days_span
-        spatial_density = size / max(radius_km, 1.0)
-
         violent_crimes = sum(
             crime_counts.get(k, 0)
             for k in ["Assault", "Murder", "Robbery", "Extortion", "Arms Act", "Cybercrime"]
         )
         violent_ratio = violent_crimes / max(size, 1)
 
-        # Velocity score (incidents per active day)
-        velocity_score = min(daily_rate * 7.5, 34.0)
-        # Spatial concentration score (incidents per km radius)
-        concentration_score = min(spatial_density * 1.2, 28.0)
+        # Dynamic density component normalized against max cluster size
+        density_component = ((size / max_size) ** 0.5) * 58.0
         # Severity component (violent/cyber percentage)
-        severity_score = violent_ratio * 26.0
-        baseline_score = 12.0
+        severity_component = violent_ratio * 26.0
+        baseline_score = 18.0
 
         threat_score = int(
-            min(max(baseline_score + velocity_score + concentration_score + severity_score, 20), 98)
+            min(max(baseline_score + density_component + severity_component, 28), 98)
         )
+
 
 
 
