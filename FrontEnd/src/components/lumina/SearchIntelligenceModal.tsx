@@ -8,7 +8,7 @@ interface SearchIntelligenceModalProps {
   onClose: () => void;
 }
 
-type FilterCategory = "all" | "nav" | "firs" | "suspects" | "clusters" | "districts";
+type FilterCategory = "all" | "nav" | "firs" | "suspects" | "clusters" | "districts" | "pinned";
 
 interface BaseItem {
   id: string;
@@ -324,115 +324,123 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     });
   }, []);
 
-  // Compute Search Results categorized
-  const { results, counts } = useMemo(() => {
+  // Compute Search Results categorized & Pinned Items
+  const { results, counts, pinnedItems } = useMemo(() => {
     const rawTokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const cleanTokens = rawTokens.map((t) => t.replace(/^[#№,]+|[#№,]+$/g, "")).filter(Boolean);
 
+    // All structured FIR items mapped
+    const allFIRResults: FIRResult[] = (firs || []).map((f) => ({
+      id: `fir-${f.ROWID || f.FIR_Number}`,
+      type: "fir",
+      title: `FIR #${f.FIR_Number || "N/A"} — ${f.Crime_Group || "General"}`,
+      subtitle: `${f.Station_Name || "Police Station"} · ${f.District_Name || "Karnataka"} · ${f.Date || "Recent"}`,
+      badge: f.Status || "Active",
+      fir: f,
+      action: () => {
+        saveRecent(`FIR #${f.FIR_Number}`);
+        try {
+          navigate({
+            to: "/fir-explorer",
+            search: { fir: String(f.FIR_Number), search: String(f.FIR_Number) },
+          });
+        } catch {}
+        onClose();
+      },
+    }));
+
+    const allSuspectResults: SuspectResult[] = (suspects || []).map((s) => ({
+      id: `suspect-${s.id || Math.random()}`,
+      type: "suspect",
+      title: `Suspect: ${s.name} (${s.id})`,
+      subtitle: `${s.arrestCount || 0} Prior Arrests · ${s.caseCount || 0} Linked Cases · Age ${s.age || "N/A"}`,
+      badge: `Risk ${s.riskScore || 80}/100`,
+      score: s.riskScore || 80,
+      suspect: s,
+      action: () => {
+        saveRecent(`Suspect ${s.name}`);
+        try { navigate({ to: "/network" }); } catch {}
+        onClose();
+      },
+    }));
+
+    const allDistrictResults: DistrictResult[] = (districts || []).map((d) => ({
+      id: `district-${d.district_id}`,
+      type: "district",
+      title: `District: ${d.district_name}`,
+      subtitle: `Statewide Jurisdiction · ${d.total_firs || 0} Registered FIRs`,
+      badge: d.risk_level || "Active",
+      district: d,
+      action: () => {
+        saveRecent(`District ${d.district_name}`);
+        try { navigate({ to: "/overview" }); } catch {}
+        onClose();
+      },
+    }));
+
+    const allClusterResults: ClusterResult[] = (clusters || []).map((c) => ({
+      id: `cluster-${c.id || Math.random()}`,
+      type: "cluster",
+      title: `Cluster: ${c.name || "Hotspot Zone"}`,
+      subtitle: `ST-DBSCAN Hot Zone · Threat ${c.threatScore || 85}/100 · ${c.firCount || 10} Incidents`,
+      badge: "Hot Zone",
+      cluster: c,
+      action: () => {
+        saveRecent(`Cluster ${c.name}`);
+        try { navigate({ to: "/" }); } catch {}
+        onClose();
+      },
+    }));
+
+    const allItems: SearchItem[] = [
+      ...navItems,
+      ...allFIRResults,
+      ...allSuspectResults,
+      ...allDistrictResults,
+      ...allClusterResults,
+    ];
+
+    // Compute all pinned items across all entities
+    const currentPinnedItems: SearchItem[] = allItems.filter((item) => pinnedIds.includes(item.id));
+
+    // Matching logic
     const matchedNav = navItems.filter((n) => {
       if (cleanTokens.length === 0) return true;
       const combined = `${n.title} ${n.subtitle} ${n.badge || ""}`;
       return matchTokens(combined, cleanTokens);
     });
 
-    const matchedFirs: FIRResult[] = (firs || [])
-      .filter((f) => {
-        if (!f) return false;
-        if (cleanTokens.length === 0) return false;
-        const firNum = String(f.FIR_Number || "").toLowerCase();
-        const combined = `fir #${firNum} fir ${firNum} ${firNum} ${f.Crime_Group || ""} ${f.Crime_Subgroup || ""} ${f.Station_Name || ""} ${f.District_Name || ""} ${f.Narrative || ""} ${f.Status || ""}`;
-        
-        return cleanTokens.every((token) => {
-          if (cleanTokens.length > 1 && (token === "fir" || token === "case")) return true;
-          return matchTokens(combined, [token]);
-        });
-      })
-      .slice(0, 10)
-      .map((f) => ({
-        id: `fir-${f.ROWID || f.FIR_Number}`,
-        type: "fir",
-        title: `FIR #${f.FIR_Number || "N/A"} — ${f.Crime_Group || "General"}`,
-        subtitle: `${f.Station_Name || "Police Station"} · ${f.District_Name || "Karnataka"} · ${f.Date || "Recent"}`,
-        badge: f.Status || "Active",
-        fir: f,
-        action: () => {
-          saveRecent(`FIR #${f.FIR_Number}`);
-          try {
-            navigate({
-              to: "/fir-explorer",
-              search: { fir: String(f.FIR_Number), search: String(f.FIR_Number) },
-            });
-          } catch {}
-          onClose();
-        },
-      }));
+    const matchedFirs: FIRResult[] = allFIRResults.filter((item) => {
+      const f = item.fir;
+      if (!f) return false;
+      const isPinned = pinnedIds.includes(item.id);
+      if (cleanTokens.length === 0) return isPinned; // include pinned FIRs in default view
+      const firNum = String(f.FIR_Number || "").toLowerCase();
+      const combined = `fir #${firNum} fir ${firNum} ${firNum} ${f.Crime_Group || ""} ${f.Crime_Subgroup || ""} ${f.Station_Name || ""} ${f.District_Name || ""} ${f.Narrative || ""} ${f.Status || ""}`;
+      
+      return cleanTokens.every((token) => {
+        if (cleanTokens.length > 1 && (token === "fir" || token === "case")) return true;
+        return matchTokens(combined, [token]);
+      });
+    }).slice(0, 12);
 
-    const matchedSuspects: SuspectResult[] = (suspects || [])
-      .filter((s) => {
-        if (!s) return false;
-        if (cleanTokens.length === 0) return true;
-        const combined = `${s.name || ""} ${s.id || ""} suspect criminal offender`;
-        return matchTokens(combined, cleanTokens);
-      })
-      .slice(0, 6)
-      .map((s) => ({
-        id: `suspect-${s.id || Math.random()}`,
-        type: "suspect",
-        title: `Suspect: ${s.name} (${s.id})`,
-        subtitle: `${s.arrestCount || 0} Prior Arrests · ${s.caseCount || 0} Linked Cases · Age ${s.age || "N/A"}`,
-        badge: `Risk ${s.riskScore || 80}/100`,
-        score: s.riskScore || 80,
-        suspect: s,
-        action: () => {
-          saveRecent(`Suspect ${s.name}`);
-          try { navigate({ to: "/network" }); } catch {}
-          onClose();
-        },
-      }));
+    const matchedSuspects: SuspectResult[] = allSuspectResults.filter((s) => {
+      if (cleanTokens.length === 0) return true;
+      const combined = `${s.title} ${s.subtitle} ${s.badge || ""} suspect criminal offender`;
+      return matchTokens(combined, cleanTokens);
+    }).slice(0, 6);
 
-    const matchedDistricts: DistrictResult[] = (districts || [])
-      .filter((d) => {
-        if (!d) return false;
-        if (cleanTokens.length === 0) return true;
-        const combined = `${d.district_name || ""} district jurisdiction karnataka`;
-        return matchTokens(combined, cleanTokens);
-      })
-      .slice(0, 5)
-      .map((d) => ({
-        id: `district-${d.district_id}`,
-        type: "district",
-        title: `District: ${d.district_name}`,
-        subtitle: `Statewide Jurisdiction · ${d.total_firs || 0} Registered FIRs`,
-        badge: d.risk_level || "Active",
-        district: d,
-        action: () => {
-          saveRecent(`District ${d.district_name}`);
-          try { navigate({ to: "/overview" }); } catch {}
-          onClose();
-        },
-      }));
+    const matchedDistricts: DistrictResult[] = allDistrictResults.filter((d) => {
+      if (cleanTokens.length === 0) return true;
+      const combined = `${d.title} ${d.subtitle} ${d.badge || ""} district jurisdiction`;
+      return matchTokens(combined, cleanTokens);
+    }).slice(0, 5);
 
-    const matchedClusters: ClusterResult[] = (clusters || [])
-      .filter((c) => {
-        if (!c) return false;
-        if (cleanTokens.length === 0) return true;
-        const combined = `${c.name || ""} ${c.category || ""} hotspot cluster st-dbscan`;
-        return matchTokens(combined, cleanTokens);
-      })
-      .slice(0, 5)
-      .map((c) => ({
-        id: `cluster-${c.id || Math.random()}`,
-        type: "cluster",
-        title: `Cluster: ${c.name || "Hotspot Zone"}`,
-        subtitle: `ST-DBSCAN Hot Zone · Threat ${c.threatScore || 85}/100 · ${c.firCount || 10} Incidents`,
-        badge: "Hot Zone",
-        cluster: c,
-        action: () => {
-          saveRecent(`Cluster ${c.name}`);
-          try { navigate({ to: "/" }); } catch {}
-          onClose();
-        },
-      }));
+    const matchedClusters: ClusterResult[] = allClusterResults.filter((c) => {
+      if (cleanTokens.length === 0) return true;
+      const combined = `${c.title} ${c.subtitle} ${c.badge || ""} hotspot cluster st-dbscan`;
+      return matchTokens(combined, cleanTokens);
+    }).slice(0, 5);
 
     const counts = {
       all: matchedNav.length + matchedFirs.length + matchedSuspects.length + matchedClusters.length + matchedDistricts.length,
@@ -441,11 +449,14 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       suspects: matchedSuspects.length,
       clusters: matchedClusters.length,
       districts: matchedDistricts.length,
+      pinned: currentPinnedItems.length,
     };
 
     // Filter by active category tab
     let filtered: SearchItem[] = [];
-    if (activeCategory === "all") {
+    if (activeCategory === "pinned") {
+      filtered = currentPinnedItems;
+    } else if (activeCategory === "all") {
       filtered = [...matchedNav, ...matchedSuspects, ...matchedFirs, ...matchedClusters, ...matchedDistricts];
     } else if (activeCategory === "nav") {
       filtered = matchedNav;
@@ -468,7 +479,7 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       return 0;
     });
 
-    return { results: filtered, counts };
+    return { results: filtered, counts, pinnedItems: currentPinnedItems };
   }, [query, activeCategory, navItems, firs, suspects, districts, clusters, pinnedIds, matchTokens, navigate, onClose, saveRecent]);
 
   // Keep selected index in bounds
@@ -789,11 +800,21 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
             </button>
           </div>
 
+          {/* Interactive Pinned Filter Button */}
           {pinnedIds.length > 0 && (
-            <span className="hidden md:inline-flex items-center gap-1 text-[10px] text-amber-400 bg-amber-950/40 border border-amber-800/50 px-2 py-0.5 rounded-full shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveCategory(activeCategory === "pinned" ? "all" : "pinned")}
+              className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1 rounded-full border transition-all cursor-pointer shrink-0 ${
+                activeCategory === "pinned"
+                  ? "bg-amber-400 text-black font-bold border-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
+                  : "text-amber-400 bg-amber-950/40 border-amber-800/60 hover:bg-amber-900/50"
+              }`}
+              title="Show only pinned priority dossiers"
+            >
               <span className="material-symbols-outlined text-xs">star</span>
               <span>{pinnedIds.length} Pinned</span>
-            </span>
+            </button>
           )}
         </div>
 
@@ -841,6 +862,53 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
         <div className="flex flex-col md:flex-row h-[420px] overflow-hidden">
           {/* Left Column: Results List */}
           <div ref={listRef} className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1.5">
+            {/* Dedicated Pinned Priority Section on Empty State */}
+            {!query && pinnedItems.length > 0 && activeCategory !== "pinned" && (
+              <div className="mb-3 space-y-1.5 rounded-xl border border-amber-500/30 bg-amber-950/20 p-2.5">
+                <div className="flex items-center justify-between px-1 font-mono text-[10px] uppercase text-amber-400 tracking-wider">
+                  <span className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">star</span>
+                    <span>📌 Pinned Priority Dossiers ({pinnedItems.length})</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory("pinned")}
+                    className="hover:underline text-[10px] cursor-pointer"
+                  >
+                    View All
+                  </button>
+                </div>
+                <div className="space-y-1">
+                  {pinnedItems.map((item) => (
+                    <div
+                      key={`pinned-${item.id}`}
+                      onClick={() => item.action()}
+                      className="flex items-center justify-between rounded-lg bg-zinc-900/90 border border-amber-800/40 p-2 text-xs hover:border-amber-500/60 transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-amber-400 material-symbols-outlined text-sm shrink-0">star</span>
+                        <div className="min-w-0">
+                          <div className="font-semibold text-white truncate">{item.title}</div>
+                          <div className="text-[10px] text-zinc-400 truncate">{item.subtitle}</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePin(item.id);
+                        }}
+                        className="p-1 text-zinc-400 hover:text-red-400 transition-colors cursor-pointer"
+                        title="Unpin Dossier"
+                      >
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* When Query is empty: Show Recent Searches & Suggested AI Prompts */}
             {!query && (
               <div className="mb-3 space-y-3">
