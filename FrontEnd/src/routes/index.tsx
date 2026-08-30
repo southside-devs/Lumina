@@ -211,12 +211,12 @@ export function IntelligenceHub() {
                 <div
                   role="tablist"
                   aria-label="Incident filters"
-                  className="relative inline-flex items-center p-[5px] rounded-full border border-white/[0.12] bg-white/[0.05] backdrop-blur-xl shadow-[0_12px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.15)]"
+                  className="relative inline-flex items-center p-[5px] rounded-full border border-zinc-800/80 bg-zinc-950/85 backdrop-blur-2xl shadow-[0_16px_36px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.06)]"
                 >
-                  {/* Sliding Frosted Glass Piece */}
+                  {/* Sliding Dark Elevated Glass Piece */}
                   <div
                     aria-hidden="true"
-                    className="pointer-events-none absolute top-[5px] bottom-[5px] rounded-full border border-white/[0.16] bg-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_4px_12px_rgba(0,0,0,0.25)] transition-all duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
+                    className="pointer-events-none absolute top-[5px] bottom-[5px] rounded-full border border-white/10 bg-zinc-800/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_12px_rgba(0,0,0,0.4)] transition-all duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
                     style={{
                       left: `${sliderStyle.left}px`,
                       width: `${sliderStyle.width}px`,
@@ -245,8 +245,8 @@ export function IntelligenceHub() {
                         <span
                           className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold transition-colors duration-200 ${
                             isActive
-                              ? "bg-white/[0.14] border border-white/[0.22] text-white shadow-[0_0_8px_rgba(255,255,255,0.15)]"
-                              : "bg-white/[0.04] border border-white/[0.08] text-[#94A3B8]"
+                              ? "bg-zinc-700/70 border border-white/10 text-white shadow-sm"
+                              : "bg-zinc-900/70 border border-zinc-800 text-zinc-500"
                           }`}
                         >
                           {f.count}
