@@ -85,7 +85,7 @@ def get_overview(request, db):
         repeat_offenders = _extract_count(repeat_result)
 
         overview = {
-            "total_firs": 500,
+            "total_firs": total_firs,
             "total_accused": total_accused,
             "total_victims": total_victims,
             "total_stations": total_stations,
