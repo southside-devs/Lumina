@@ -199,6 +199,29 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
       .catch(() => {});
   }, [isOpen, firs.length, districts.length, clusters.length]);
 
+  // Live dynamic database search when user queries
+  useEffect(() => {
+    if (!isOpen || !query.trim()) return;
+    const cleanQ = query.replace(/^[#№\s]+|[#№\s]+$/g, "").trim();
+    if (!cleanQ || cleanQ.length < 2) return;
+
+    const timer = setTimeout(() => {
+      api.getFirs({ search: cleanQ, limit: 30 })
+        .then((res) => {
+          if (res && Array.isArray(res.firs) && res.firs.length > 0) {
+            setFirs((prev) => {
+              const existingIds = new Set(prev.map((f) => String(f.ROWID || f.FIR_Number)));
+              const newItems = res.firs.filter((f) => !existingIds.has(String(f.ROWID || f.FIR_Number)));
+              return newItems.length > 0 ? [...newItems, ...prev] : prev;
+            });
+          }
+        })
+        .catch(() => {});
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [isOpen, query]);
+
   // Navigation Items definition
   const navItems: NavItem[] = useMemo(() => [
     {
@@ -303,21 +326,26 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
 
   // Compute Search Results categorized
   const { results, counts } = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const queryTokens = q ? q.split(/\s+/).filter(Boolean) : [];
+    const rawTokens = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const cleanTokens = rawTokens.map((t) => t.replace(/^[#№,]+|[#№,]+$/g, "")).filter(Boolean);
 
     const matchedNav = navItems.filter((n) => {
-      if (queryTokens.length === 0) return true;
+      if (cleanTokens.length === 0) return true;
       const combined = `${n.title} ${n.subtitle} ${n.badge || ""}`;
-      return matchTokens(combined, queryTokens);
+      return matchTokens(combined, cleanTokens);
     });
 
     const matchedFirs: FIRResult[] = (firs || [])
       .filter((f) => {
         if (!f) return false;
-        if (queryTokens.length === 0) return false;
-        const combined = `${f.FIR_Number || ""} ${f.Crime_Group || ""} ${f.Crime_Subgroup || ""} ${f.Station_Name || ""} ${f.District_Name || ""} ${f.Narrative || ""} ${f.Status || ""}`;
-        return matchTokens(combined, queryTokens);
+        if (cleanTokens.length === 0) return false;
+        const firNum = String(f.FIR_Number || "").toLowerCase();
+        const combined = `fir #${firNum} fir ${firNum} ${firNum} ${f.Crime_Group || ""} ${f.Crime_Subgroup || ""} ${f.Station_Name || ""} ${f.District_Name || ""} ${f.Narrative || ""} ${f.Status || ""}`;
+        
+        return cleanTokens.every((token) => {
+          if (cleanTokens.length > 1 && (token === "fir" || token === "case")) return true;
+          return matchTokens(combined, [token]);
+        });
       })
       .slice(0, 10)
       .map((f) => ({
@@ -329,7 +357,12 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
         fir: f,
         action: () => {
           saveRecent(`FIR #${f.FIR_Number}`);
-          try { navigate({ to: "/ai-chatbot" }); } catch {}
+          try {
+            navigate({
+              to: "/fir-explorer",
+              search: { fir: String(f.FIR_Number), search: String(f.FIR_Number) },
+            });
+          } catch {}
           onClose();
         },
       }));
@@ -337,9 +370,9 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     const matchedSuspects: SuspectResult[] = (suspects || [])
       .filter((s) => {
         if (!s) return false;
-        if (queryTokens.length === 0) return true;
+        if (cleanTokens.length === 0) return true;
         const combined = `${s.name || ""} ${s.id || ""} suspect criminal offender`;
-        return matchTokens(combined, queryTokens);
+        return matchTokens(combined, cleanTokens);
       })
       .slice(0, 6)
       .map((s) => ({
@@ -360,9 +393,9 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     const matchedDistricts: DistrictResult[] = (districts || [])
       .filter((d) => {
         if (!d) return false;
-        if (queryTokens.length === 0) return true;
+        if (cleanTokens.length === 0) return true;
         const combined = `${d.district_name || ""} district jurisdiction karnataka`;
-        return matchTokens(combined, queryTokens);
+        return matchTokens(combined, cleanTokens);
       })
       .slice(0, 5)
       .map((d) => ({
@@ -382,9 +415,9 @@ export function SearchIntelligenceModal({ isOpen, onClose }: SearchIntelligenceM
     const matchedClusters: ClusterResult[] = (clusters || [])
       .filter((c) => {
         if (!c) return false;
-        if (queryTokens.length === 0) return true;
+        if (cleanTokens.length === 0) return true;
         const combined = `${c.name || ""} ${c.category || ""} hotspot cluster st-dbscan`;
-        return matchTokens(combined, queryTokens);
+        return matchTokens(combined, cleanTokens);
       })
       .slice(0, 5)
       .map((c) => ({

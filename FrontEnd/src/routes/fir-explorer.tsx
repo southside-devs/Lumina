@@ -13,6 +13,12 @@ const description =
   "Searchable intelligence registry of Karnataka State Police FIR records with BNS legal classifications, suspect dossiers, and evidence tracking.";
 
 export const Route = createFileRoute("/fir-explorer")({
+  validateSearch: (search: Record<string, unknown>): { search?: string; fir?: string } => {
+    return {
+      search: typeof search.search === "string" ? search.search : undefined,
+      fir: typeof search.fir === "string" ? search.fir : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title },
@@ -48,9 +54,10 @@ const CRIME_GROUPS = [
 
 function FIRExplorerView() {
   const navigate = useNavigate();
+  const searchParams = Route.useSearch();
   const [firs, setFirs] = useState<FIRItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams?.search || searchParams?.fir || "");
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [selectedCrimeGroup, setSelectedCrimeGroup] = useState("All Crime Types");
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
@@ -61,14 +68,22 @@ function FIRExplorerView() {
     async function load() {
       setLoading(true);
       try {
+        const targetSearch = searchParams?.fir || searchParams?.search;
         const res = await api.getFirs({
           limit: 100,
+          search: targetSearch || undefined,
           status: selectedStatus !== "All Statuses" ? selectedStatus : undefined,
           crime_group: selectedCrimeGroup !== "All Crime Types" ? selectedCrimeGroup : undefined,
         });
         if (mounted) {
           setFirs(res.firs);
           setLoading(false);
+          if (searchParams?.fir && res.firs.length > 0) {
+            const matched = res.firs.find(
+              (f) => String(f.FIR_Number).toLowerCase() === String(searchParams.fir).toLowerCase()
+            ) || res.firs[0];
+            if (matched) setSelectedFir(matched);
+          }
         }
       } catch (err) {
         console.error("Failed to load FIRs:", err);
@@ -79,7 +94,8 @@ function FIRExplorerView() {
     return () => {
       mounted = false;
     };
-  }, [selectedStatus, selectedCrimeGroup, firCreatedCount]); // also refetch on new FIR
+  }, [selectedStatus, selectedCrimeGroup, firCreatedCount, searchParams?.fir, searchParams?.search]);
+
 
   // Client-side instant text search
   const filteredFirs = firs.filter((f) => {

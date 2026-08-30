@@ -141,8 +141,14 @@ def search_firs(request, db):
     conditions = []
 
     if q:
-        # Search by FIR Number or Narrative
-        conditions.append(f"(FIR_Number LIKE '%{q}%' OR Narrative LIKE '%{q}%' OR Crime_Group LIKE '%{q}%')")
+        import re
+        clean_q = re.sub(r'^(fir\s*#?|#|№)', '', q, flags=re.IGNORECASE).strip()
+        search_term = clean_q if clean_q else q
+        safe_term = search_term.replace("'", "''")
+        conditions.append(
+            f"(FIR_Number LIKE '%{safe_term}%' OR Narrative LIKE '%{safe_term}%' OR "
+            f"Crime_Group LIKE '%{safe_term}%' OR Crime_Subgroup LIKE '%{safe_term}%')"
+        )
 
     crime_group = request.args.get("crime_group")
     if crime_group:

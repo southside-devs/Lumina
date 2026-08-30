@@ -259,6 +259,8 @@ export const api = {
   async getFirs(params?: {
     limit?: number;
     offset?: number;
+    search?: string;
+    q?: string;
     crime_group?: string;
     status?: string;
     station_id?: number;
@@ -266,12 +268,18 @@ export const api = {
     const queryParts: string[] = [];
     if (params?.limit) queryParts.push(`limit=${params.limit}`);
     if (params?.offset) queryParts.push(`offset=${params.offset}`);
+    const searchVal = (params?.search || params?.q || "").replace(/^[#№\s]+|[#№\s]+$/g, "").trim();
+    if (searchVal) queryParts.push(`q=${encodeURIComponent(searchVal)}`);
     if (params?.crime_group) queryParts.push(`crime_group=${encodeURIComponent(params.crime_group)}`);
     if (params?.status) queryParts.push(`status=${encodeURIComponent(params.status)}`);
     if (params?.station_id) queryParts.push(`station_id=${params.station_id}`);
 
-    const endpoint = `/firs${queryParts.length > 0 ? `?${queryParts.join("&")}` : ""}`;
+    const isSearch = Boolean(searchVal);
+    const endpoint = isSearch
+      ? `/firs/search?${queryParts.join("&")}`
+      : `/firs${queryParts.length > 0 ? `?${queryParts.join("&")}` : ""}`;
     const data = await fetchJson<{ firs: FIRItem[]; total: number } | FIRItem[]>(endpoint);
+
 
     if (data) {
       if (Array.isArray(data)) {
