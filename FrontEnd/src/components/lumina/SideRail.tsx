@@ -81,18 +81,25 @@ export function SideRail() {
         </RailItem>
 
         <div className="flex w-full flex-1 flex-col gap-3 px-2">
-          {primaryNav.map((item) => (
-            <RailItem key={item.label} label={item.label}>
-              <Link
-                to={item.to}
-                aria-label={item.label}
-                className={isItemActive(item.to) ? activeClass : idleClass}
-              >
-                <span className="material-symbols-outlined">{item.icon}</span>
-              </Link>
-            </RailItem>
-          ))}
+          {primaryNav.map((item) => {
+            const active = isItemActive(item.to);
+            return (
+              <RailItem key={item.label} label={item.label}>
+                <Link
+                  to={item.to}
+                  aria-label={item.label}
+                  aria-current={active ? "page" : undefined}
+                  className={active ? activeClass : idleClass}
+                >
+                  <span className={`material-symbols-outlined ${active ? "filled text-white" : ""}`}>
+                    {item.icon}
+                  </span>
+                </Link>
+              </RailItem>
+            );
+          })}
         </div>
+
 
 
 
