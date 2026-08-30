@@ -15,7 +15,7 @@ export function LuminaLogo({
 }: LuminaLogoProps) {
   return (
     <img
-      src="/lumina-logo.png"
+      src="./lumina-logo.png"
       alt={alt}
       className={`select-none pointer-events-none ${className}`}
       draggable={false}
