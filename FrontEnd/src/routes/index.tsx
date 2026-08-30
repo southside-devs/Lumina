@@ -51,7 +51,7 @@ export function IntelligenceHub() {
         width: el.offsetWidth,
       });
     }
-  }, [activeFilter, firs.length]);
+  }, [activeFilter, firs.length, showIncidents]);
 
 
   // Fetch live FIR records and refresh when a new FIR is filed
@@ -211,7 +211,11 @@ export function IntelligenceHub() {
                 <div
                   role="tablist"
                   aria-label="Incident filters"
-                  className="relative inline-flex items-center p-[5px] rounded-full border border-zinc-800/80 bg-zinc-950/85 backdrop-blur-2xl shadow-[0_16px_36px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.06)]"
+                  className={`relative inline-flex items-center p-[5px] rounded-full border border-zinc-800/80 bg-zinc-950/85 backdrop-blur-2xl shadow-[0_16px_36px_rgba(0,0,0,0.7),inset_0_1px_1px_rgba(255,255,255,0.06)] transition-all duration-300 ease-[cubic-bezier(0.2,0.9,0.3,1)] ${
+                    showIncidents
+                      ? "translate-y-0 opacity-100 pointer-events-auto scale-100"
+                      : "-translate-y-12 opacity-0 pointer-events-none scale-95"
+                  }`}
                 >
                   {/* Sliding Dark Elevated Glass Piece */}
                   <div
