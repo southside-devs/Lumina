@@ -133,7 +133,19 @@ export interface AIChatResponse {
   status?: string;
 }
 
-async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+export interface RawApiResponse<T> {
+  status: string;
+  message?: string;
+  data?: T;
+  meta?: {
+    total?: number;
+    limit?: number;
+    offset?: number;
+    has_more?: boolean;
+  };
+}
+
+export async function fetchRawJson<T>(endpoint: string, options?: RequestInit): Promise<RawApiResponse<T> | null> {
   try {
     const base = getApiBase();
     const url = `${base}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
@@ -151,15 +163,22 @@ async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T 
       return null;
     }
 
-    const json = await res.json();
-    if (json.status === "success" && json.data !== undefined) {
-      return json.data as T;
-    }
-    return json as T;
+    return (await res.json()) as RawApiResponse<T>;
   } catch (err) {
     console.warn(`API [${endpoint}] request failed:`, err);
     return null;
   }
+}
+
+async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
+  const json = await fetchRawJson<T>(endpoint, options);
+  if (json) {
+    if (json.status === "success" && json.data !== undefined) {
+      return json.data as T;
+    }
+    return json as unknown as T;
+  }
+  return null;
 }
 
 // ── API Services ───────────────────────────────────────────────────────────
@@ -274,7 +293,7 @@ export const api = {
     crime_group?: string;
     status?: string;
     station_id?: number;
-  }): Promise<{ firs: FIRItem[]; total: number }> {
+  }): Promise<{ firs: FIRItem[]; total: number; hasMore?: boolean }> {
     const queryParts: string[] = [];
     if (params?.limit) queryParts.push(`limit=${params.limit}`);
     if (params?.offset) queryParts.push(`offset=${params.offset}`);
@@ -288,15 +307,19 @@ export const api = {
     const endpoint = isSearch
       ? `/firs/search?${queryParts.join("&")}`
       : `/firs${queryParts.length > 0 ? `?${queryParts.join("&")}` : ""}`;
-    const data = await fetchJson<{ firs: FIRItem[]; total: number } | FIRItem[]>(endpoint);
+    const raw = await fetchRawJson<FIRItem[]>(endpoint);
 
-
-    if (data) {
-      if (Array.isArray(data)) {
-        return { firs: data, total: data.length };
+    if (raw) {
+      if (raw.status === "success" && Array.isArray(raw.data)) {
+        return {
+          firs: raw.data,
+          total: typeof raw.meta?.total === "number" ? raw.meta.total : raw.data.length,
+          hasMore: raw.meta?.has_more ?? false,
+        };
       }
-      if (data.firs) {
-        return data;
+      if (Array.isArray(raw as unknown)) {
+        const arr = raw as unknown as FIRItem[];
+        return { firs: arr, total: arr.length };
       }
     }
 

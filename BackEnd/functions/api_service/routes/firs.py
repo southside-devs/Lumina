@@ -78,11 +78,9 @@ def list_firs(request, db):
     where = " AND ".join(conditions) if conditions else ""
     where_sql = f"WHERE {where}" if where else ""
 
-    # Only select columns needed for the list view (omit Narrative to keep payload small)
+    # Select all FIR columns including Narrative, with Station and District names joined
     query = (
-        f"SELECT f.ROWID, f.ID, f.Station_ID, f.FIR_Number, f.Date, "
-        f"f.Crime_Group, f.Crime_Subgroup, f.Latitude, f.Longitude, f.Status, "
-        f"ps.Name AS Station_Name, d.Name AS District_Name "
+        f"SELECT f.*, ps.Name AS Station_Name, d.Name AS District_Name "
         f"FROM {TABLE} f "
         f"LEFT JOIN Police_Station ps ON f.Station_ID = ps.ROWID "
         f"LEFT JOIN District d ON ps.District_ID = d.ROWID "
@@ -189,12 +187,16 @@ def search_firs(request, db):
     where_sql = f"WHERE {where}" if where else ""
 
     query = (
-        f"SELECT * FROM {TABLE} {where_sql} "
-        f"ORDER BY ROWID DESC LIMIT {limit} OFFSET {offset}"
+        f"SELECT f.*, ps.Name AS Station_Name, d.Name AS District_Name "
+        f"FROM {TABLE} f "
+        f"LEFT JOIN Police_Station ps ON f.Station_ID = ps.ROWID "
+        f"LEFT JOIN District d ON ps.District_ID = d.ROWID "
+        f"{where_sql} "
+        f"ORDER BY f.ROWID DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
-    count_query = f"SELECT COUNT(*) FROM {TABLE} {where_sql}"
+    count_query = f"SELECT COUNT(*) FROM {TABLE} f {where_sql}"
     total = _extract_count(db.execute_query(count_query))
 
     rows = [_extract(r) for r in results]

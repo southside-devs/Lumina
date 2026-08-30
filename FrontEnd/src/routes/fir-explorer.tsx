@@ -57,6 +57,8 @@ function FIRExplorerView() {
   const searchParams = Route.useSearch();
   const [firs, setFirs] = useState<FIRItem[]>([]);
   const [totalFirs, setTotalFirs] = useState<number>(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams?.search || searchParams?.fir || "");
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
@@ -64,15 +66,32 @@ function FIRExplorerView() {
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
   const { firCreatedCount } = useFIREvents();
 
+  // Reset page to 1 when filters change
+  const handleStatusChange = (status: string) => {
+    setSelectedStatus(status);
+    setPage(1);
+  };
+
+  const handleCrimeGroupChange = (group: string) => {
+    setSelectedCrimeGroup(group);
+    setPage(1);
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  };
+
   useEffect(() => {
     let mounted = true;
     async function load() {
       setLoading(true);
       try {
-        const targetSearch = searchParams?.fir || searchParams?.search;
+        const targetSearch = searchParams?.fir || searchParams?.search || searchQuery || undefined;
         const res = await api.getFirs({
-          limit: 500,
-          search: targetSearch || undefined,
+          limit: pageSize,
+          offset: (page - 1) * pageSize,
+          search: targetSearch,
           status: selectedStatus !== "All Statuses" ? selectedStatus : undefined,
           crime_group: selectedCrimeGroup !== "All Crime Types" ? selectedCrimeGroup : undefined,
         });
@@ -96,18 +115,17 @@ function FIRExplorerView() {
     return () => {
       mounted = false;
     };
-  }, [selectedStatus, selectedCrimeGroup, firCreatedCount, searchParams?.fir, searchParams?.search]);
+  }, [selectedStatus, selectedCrimeGroup, page, pageSize, firCreatedCount, searchParams?.fir, searchParams?.search, searchQuery]);
 
-
-  // Client-side instant text search
+  // Client-side instant text search refinement
   const filteredFirs = firs.filter((f) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (
-      f.FIR_Number.toLowerCase().includes(q) ||
-      f.Crime_Group.toLowerCase().includes(q) ||
+      (f.FIR_Number && f.FIR_Number.toLowerCase().includes(q)) ||
+      (f.Crime_Group && f.Crime_Group.toLowerCase().includes(q)) ||
       (f.Crime_Subgroup && f.Crime_Subgroup.toLowerCase().includes(q)) ||
-      f.Narrative.toLowerCase().includes(q) ||
+      (f.Narrative && f.Narrative.toLowerCase().includes(q)) ||
       (f.District_Name && f.District_Name.toLowerCase().includes(q)) ||
       (f.Station_Name && f.Station_Name.toLowerCase().includes(q))
     );
@@ -173,7 +191,7 @@ function FIRExplorerView() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   placeholder="Search by FIR #, crime type, narrative keywords, or station..."
                   className="w-full rounded-xl border border-hairline bg-surface-2 py-2 pr-4 pl-9 text-xs text-white placeholder-zinc-500 focus:border-sky-500 focus:outline-none"
                 />
@@ -183,7 +201,7 @@ function FIRExplorerView() {
               <div className="flex items-center gap-2.5">
                 <select
                   value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  onChange={(e) => handleStatusChange(e.target.value)}
                   className="rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-xs font-mono text-zinc-300 focus:outline-none cursor-pointer"
                 >
                   {STATUS_FILTERS.map((s) => (
@@ -195,7 +213,7 @@ function FIRExplorerView() {
 
                 <select
                   value={selectedCrimeGroup}
-                  onChange={(e) => setSelectedCrimeGroup(e.target.value)}
+                  onChange={(e) => handleCrimeGroupChange(e.target.value)}
                   className="rounded-xl border border-hairline bg-surface-2 px-3 py-2 text-xs font-mono text-zinc-300 focus:outline-none cursor-pointer"
                 >
                   {CRIME_GROUPS.map((g) => (
@@ -211,7 +229,10 @@ function FIRExplorerView() {
             <div className="rounded-2xl border border-hairline bg-surface-1/70 overflow-hidden shadow-xl backdrop-blur-xl">
               <div className="flex items-center justify-between border-b border-hairline bg-surface-2/40 px-5 py-3.5">
                 <span className="font-mono text-xs text-zinc-400">
-                  Showing <span className="font-bold text-white">{filteredFirs.length}</span> matching cases
+                  Showing <span className="font-bold text-white">{filteredFirs.length}</span> cases on this page
+                  {totalFirs > 0 && (
+                    <span className="text-zinc-500"> (of <span className="text-sky-400 font-semibold">{totalFirs.toLocaleString()}</span> statewide)</span>
+                  )}
                 </span>
                 {loading && (
                   <span className="flex items-center gap-1.5 font-mono text-xs text-sky-400">
@@ -291,6 +312,91 @@ function FIRExplorerView() {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Pagination Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-4 border-t border-hairline bg-surface-2/30 px-5 py-3.5">
+                <div className="flex items-center gap-3 font-mono text-xs text-zinc-400">
+                  <span>
+                    Showing{" "}
+                    <span className="font-bold text-white">
+                      {totalFirs === 0 ? 0 : (page - 1) * pageSize + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-bold text-white">
+                      {Math.min(page * pageSize, totalFirs)}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-bold text-sky-400">
+                      {totalFirs.toLocaleString()}
+                    </span>{" "}
+                    cases
+                  </span>
+
+                  <div className="flex items-center gap-1.5 pl-3 border-l border-zinc-700">
+                    <span className="text-[11px] text-zinc-500">Per page:</span>
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="rounded-lg border border-hairline bg-surface-1 px-2 py-1 text-xs font-mono text-white focus:outline-none cursor-pointer"
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={250}>250</option>
+                      <option value={500}>500</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Page Navigation Controls */}
+                <div className="flex items-center gap-1.5 font-mono text-xs">
+                  <button
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => setPage(1)}
+                    className="rounded-lg border border-hairline bg-surface-1 px-2.5 py-1 text-zinc-300 hover:bg-surface-2 hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                    title="First Page"
+                  >
+                    «
+                  </button>
+                  <button
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    className="flex items-center gap-1 rounded-lg border border-hairline bg-surface-1 px-3 py-1 text-zinc-300 hover:bg-surface-2 hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">chevron_left</span>
+                    <span>Prev</span>
+                  </button>
+
+                  <span className="px-3 py-1 text-xs text-zinc-300 font-semibold">
+                    Page <span className="text-white">{page}</span> of{" "}
+                    <span className="text-white">{Math.max(1, Math.ceil(totalFirs / pageSize))}</span>
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={page >= Math.ceil(totalFirs / pageSize)}
+                    onClick={() => setPage((p) => p + 1)}
+                    className="flex items-center gap-1 rounded-lg border border-hairline bg-surface-1 px-3 py-1 text-zinc-300 hover:bg-surface-2 hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                  >
+                    <span>Next</span>
+                    <span className="material-symbols-outlined text-sm">chevron_right</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={page >= Math.ceil(totalFirs / pageSize)}
+                    onClick={() => setPage(Math.ceil(totalFirs / pageSize))}
+                    className="rounded-lg border border-hairline bg-surface-1 px-2.5 py-1 text-zinc-300 hover:bg-surface-2 hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-colors cursor-pointer"
+                    title="Last Page"
+                  >
+                    »
+                  </button>
+                </div>
               </div>
             </div>
 
