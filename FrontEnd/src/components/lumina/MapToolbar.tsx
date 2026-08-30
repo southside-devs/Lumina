@@ -50,11 +50,10 @@ export function MapToolbar({
   onToggleIncidents,
   showHotspots,
   onToggleHotspots,
-  showPatrols,
-  onTogglePatrols,
   onResetView,
   onClusterTuned,
 }: MapToolbarProps) {
+
   const [showConfig, setShowConfig] = useState(false);
   const [epsSpatial, setEpsSpatial] = useState(12.0);
   const [epsTemporal, setEpsTemporal] = useState(45);

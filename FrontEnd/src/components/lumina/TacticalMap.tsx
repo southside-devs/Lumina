@@ -274,28 +274,9 @@ export function TacticalMap({
 
     layerGroup.clearLayers();
 
-    // 1. Draw Patrol Routes — pure monochrome (light grey dashed lines)
-    if (showPatrols) {
-      const patrolRoutes = [
-        { from: [15.3647, 75.124],  to: [15.8497, 74.4977] }, // Hubballi -> Belagavi
-        { from: [12.9716, 77.5946], to: [12.2958, 76.6394] }, // Bengaluru -> Mysuru
-        { from: [12.9716, 77.5946], to: [12.9141, 74.856]  }, // Bengaluru -> Mangaluru
-        { from: [15.1394, 76.9214], to: [17.3297, 76.8343] }, // Ballari -> Kalaburagi
-        { from: [13.9299, 75.5681], to: [15.3647, 75.124]  }, // Shivamogga -> Hubballi
-      ];
-
-      patrolRoutes.forEach((route) => {
-        L.polyline([route.from as [number, number], route.to as [number, number]], {
-          color: "#94a3b8",
-          weight: 1.5,
-          opacity: 0.45,
-          dashArray: "4, 8",
-        }).addTo(layerGroup);
-      });
-    }
-
-    // 2. Draw ST-DBSCAN ML Hotspot Clusters — Concentric circular radar indicators with spatial radius
+    // 1. Draw ST-DBSCAN ML Hotspot Clusters — Concentric circular radar indicators with spatial radius
     if (showHotspots) {
+
       hotspotsList.forEach((spot) => {
         const isSelected = activeSpot?.id === spot.id;
         
