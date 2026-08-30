@@ -60,7 +60,7 @@ def handle(request, path_parts):
 
 def list_firs(request, db):
     """List FIRs with pagination and optional filters."""
-    limit = int(request.args.get("limit", 50))
+    limit = min(int(request.args.get("limit", 50)), 500)  # cap at 500 to stay within response size limits
     offset = int(request.args.get("offset", 0))
     station_id = request.args.get("station_id")
     crime_group = request.args.get("crime_group")
@@ -78,9 +78,16 @@ def list_firs(request, db):
     where = " AND ".join(conditions) if conditions else ""
     where_sql = f"WHERE {where}" if where else ""
 
+    # Only select columns needed for the list view (omit Narrative to keep payload small)
     query = (
-        f"SELECT * FROM {TABLE} {where_sql} "
-        f"ORDER BY ROWID DESC LIMIT {limit} OFFSET {offset}"
+        f"SELECT f.ROWID, f.ID, f.Station_ID, f.FIR_Number, f.Date, "
+        f"f.Crime_Group, f.Crime_Subgroup, f.Latitude, f.Longitude, f.Status, "
+        f"ps.Name AS Station_Name, d.Name AS District_Name "
+        f"FROM {TABLE} f "
+        f"LEFT JOIN Police_Station ps ON f.Station_ID = ps.ROWID "
+        f"LEFT JOIN District d ON ps.District_ID = d.ROWID "
+        f"{where_sql} "
+        f"ORDER BY f.ROWID DESC LIMIT {limit} OFFSET {offset}"
     )
     results = db.execute_query(query)
 
@@ -89,6 +96,7 @@ def list_firs(request, db):
 
     rows = [_extract(r) for r in results]
     return paginated(rows, total, limit, offset)
+
 
 
 def get_fir(db, fir_id):
