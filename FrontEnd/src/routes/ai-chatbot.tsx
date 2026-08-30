@@ -170,78 +170,45 @@ export function AIChatbotView() {
     const cleanText = cleanForSpeech(text);
     if (!cleanText) return;
 
-    // 1. In Kannada mode: Use backend streaming neural synthesis with tuned brisk tempo
-    if (language === "kn") {
-      try {
-        const audioUrl = api.getTTSAudioUrl(cleanText, "kn");
-        const audio = new Audio(audioUrl);
-        audio.playbackRate = 1.18; // Crisp, energetic pacing (18% faster)
-        audioPlayerRef.current = audio;
-        setSpeakingMsgId(msgId);
+    // Stream high-fidelity Google Neural voice for both Kannada (kn) and English (en-IN)
+    try {
+      const audioUrl = api.getTTSAudioUrl(cleanText, language);
+      const audio = new Audio(audioUrl);
+      audio.playbackRate = 1.18; // Crisp, energetic pacing (18% faster)
+      audioPlayerRef.current = audio;
+      setSpeakingMsgId(msgId);
 
-        audio.onplay = () => setSpeakingMsgId(msgId);
-        audio.onended = () => {
-          setSpeakingMsgId(null);
-          audioPlayerRef.current = null;
-        };
-        audio.onerror = (e) => {
-          console.warn("Kannada audio streaming note:", e);
-          setSpeakingMsgId(null);
-          audioPlayerRef.current = null;
-        };
-        audio.play().catch((err) => {
-          console.warn("Audio playback note:", err);
-          setSpeakingMsgId(null);
-          audioPlayerRef.current = null;
-        });
-      } catch (err) {
-        console.error("Kannada TTS error:", err);
+      audio.onplay = () => setSpeakingMsgId(msgId);
+      audio.onended = () => {
         setSpeakingMsgId(null);
-      }
-      return;
-    }
-
-    // 2. In English mode: Try native browser synthesis first, fallback to streaming TTS
-    if ("speechSynthesis" in window) {
-      try {
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = "en-IN";
-        utterance.rate = 1.08; // Brisk professional tempo
-        utterance.pitch = 1.0;
-
-        const voices = window.speechSynthesis.getVoices();
-        if (voices && voices.length > 0) {
-          const match = voices.find((v) => v.lang.startsWith("en-IN") || v.lang.startsWith("en"));
-          if (match) utterance.voice = match;
+        audioPlayerRef.current = null;
+      };
+      audio.onerror = (e) => {
+        console.warn("Audio streaming note, falling back to browser synthesis:", e);
+        // Fallback to native browser synthesis if streaming has network error
+        if ("speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance(cleanText);
+          utterance.lang = language === "kn" ? "kn-IN" : "en-IN";
+          utterance.rate = 1.1;
+          utterance.onend = () => setSpeakingMsgId(null);
+          utterance.onerror = () => setSpeakingMsgId(null);
+          window.speechSynthesis.speak(utterance);
+        } else {
+          setSpeakingMsgId(null);
+          audioPlayerRef.current = null;
         }
-
-        utterance.onstart = () => setSpeakingMsgId(msgId);
-        utterance.onend = () => setSpeakingMsgId(null);
-        utterance.onerror = () => setSpeakingMsgId(null);
-
-        window.speechSynthesis.speak(utterance);
-        return;
-      } catch {}
+      };
+      audio.play().catch((err) => {
+        console.warn("Audio playback note:", err);
+        setSpeakingMsgId(null);
+        audioPlayerRef.current = null;
+      });
+    } catch (err) {
+      console.error("TTS synthesis error:", err);
+      setSpeakingMsgId(null);
     }
-
-    // Fallback streaming TTS for English
-    const audioUrl = api.getTTSAudioUrl(cleanText, "en");
-    const audio = new Audio(audioUrl);
-    audio.playbackRate = 1.15;
-    audioPlayerRef.current = audio;
-    setSpeakingMsgId(msgId);
-    audio.onplay = () => setSpeakingMsgId(msgId);
-    audio.onended = () => {
-      setSpeakingMsgId(null);
-      audioPlayerRef.current = null;
-    };
-
-    audio.onerror = () => {
-      setSpeakingMsgId(null);
-      audioPlayerRef.current = null;
-    };
-    audio.play().catch(() => setSpeakingMsgId(null));
   };
+
 
 
   // Speech-to-Text (STT) Voice Recognition Toggle

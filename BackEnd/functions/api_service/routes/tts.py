@@ -55,8 +55,10 @@ def handle(request, path_parts):
 
 
 def _clean_for_speech(raw: str) -> str:
-    """Strip markdown formatting, symbols, hashtags, backticks, and emojis."""
-    text = re.sub(r'[*#_`~>[\]()|]', ' ', raw)
+    """Strip markdown formatting, symbols, hashtags, backticks, and emojis, and format slashes."""
+    # Convert slashes between numbers (e.g. 1693/2026 -> 1693 slash 2026) so numbers are articulated
+    text = re.sub(r'(\d+)\s*/\s*(\d+)', r'\1 slash \2', raw)
+    text = re.sub(r'[*#_`~>[\]()|]', ' ', text)
     text = re.sub(r'https?://\S+', '', text)
     text = re.sub(r'===.*?===', '', text)
     text = re.sub(r'[\U00010000-\U0010ffff]', '', text)  # remove emojis
@@ -67,9 +69,10 @@ def _clean_for_speech(raw: str) -> str:
 def _synthesize_audio(text: str, lang: str) -> bytes:
     """
     Split text into sentence chunks (< 150 chars) and fetch natural Google TTS audio stream.
-    Supports Kannada ('kn') and English ('en').
+    Supports Kannada ('kn') and high-fidelity Indian English ('en-IN').
     """
-    target_lang = "kn" if lang in ("kn", "kannada") else "en"
+    target_lang = "kn" if lang in ("kn", "kannada") else "en-IN"
+
 
     # Split on sentence end punctuation
     raw_sentences = [s.strip() for s in re.split(r'[।.\n!?]+', text) if s.strip()]
