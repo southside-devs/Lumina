@@ -4,15 +4,16 @@
  * Includes resilient fallbacks for offline presentation & development resilience.
  */
 
-const getApiBase = () => {
-  if (import.meta.env.VITE_API_BASE_URL) return import.meta.env.VITE_API_BASE_URL;
-  if (typeof window !== "undefined" && window.location.hostname.includes("catalystserverless")) {
-    return "/server/api_service/api";
+export const getApiBase = () => {
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    if (host.includes("catalystserverless") || host.includes("catalyst.zoho") || window.location.pathname.startsWith("/app")) {
+      return "/server/api_service/api";
+    }
   }
   return "/api";
 };
 
-const API_BASE = getApiBase();
 const DEMO_KEY = "lumina-demo-ksp-2026";
 
 export interface DashboardOverview {
@@ -134,7 +135,8 @@ export interface AIChatResponse {
 
 async function fetchJson<T>(endpoint: string, options?: RequestInit): Promise<T | null> {
   try {
-    const url = `${API_BASE}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+    const base = getApiBase();
+    const url = `${base}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
     const res = await fetch(url, {
       ...options,
       headers: {

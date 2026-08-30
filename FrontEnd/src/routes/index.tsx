@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
 export function IntelligenceHub() {
   const [firs, setFirs] = useState<FIRItem[]>([]);
   const [activeFilter, setActiveFilter] = useState("All Incidents");
-  const [showIncidents, setShowIncidents] = useState(false);
+  const [showIncidents, setShowIncidents] = useState(true);
   const [showHotspots, setShowHotspots] = useState(true);
   const [cardOpen, setCardOpen] = useState(false);
   const [selectedSpot, setSelectedSpot] = useState<TacticalHotspot | null>(null);
