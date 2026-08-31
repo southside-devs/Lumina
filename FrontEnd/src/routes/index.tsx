@@ -131,9 +131,11 @@ export function IntelligenceHub() {
         return null;
       }
       setCardOpen(true);
-      mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
       return spot;
     });
+    if (spot) {
+      mapRef.current?.panTo([spot.lat, spot.lng], { animate: true, duration: 0.4 });
+    }
     setSelectedFir(null);
   }, []);
 
@@ -144,11 +146,14 @@ export function IntelligenceHub() {
         return null;
       }
       setCardOpen(true);
-      mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
-        duration: 0.5,
-      });
       return fir;
     });
+    if (fir) {
+      mapRef.current?.panTo([Number(fir.Latitude), Number(fir.Longitude)], {
+        animate: true,
+        duration: 0.4,
+      });
+    }
     setSelectedSpot(null);
   }, []);
 
