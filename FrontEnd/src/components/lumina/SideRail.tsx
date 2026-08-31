@@ -80,6 +80,7 @@ export function SideRail() {
   return (
     <>
       <nav
+        id="side-rail"
         aria-label="Primary"
         className="fixed left-0 top-0 z-50 flex h-full w-16 flex-col items-center gap-6 overflow-visible border-r border-hairline bg-rail/70 py-4 backdrop-blur-2xl ui-no-select"
       >
