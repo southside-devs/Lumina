@@ -324,8 +324,8 @@ export function TacticalMap({
     layerGroupRef.current = layers;
 
     map.on("click", () => {
-      onSelectSpot?.(null);
-      onSelectFIR?.(null);
+      onSelectSpotRef.current?.(null);
+      onSelectFIRRef.current?.(null);
     });
 
     if (mapRef) {
@@ -479,16 +479,7 @@ export function TacticalMap({
 
 
   return (
-    <div
-      onClick={(e) => {
-        const target = e.target as HTMLElement;
-        if (!target.closest(".custom-tactical-marker, .leaflet-marker-icon, .leaflet-interactive, button, a, aside, [role='tablist']")) {
-          onSelectSpotRef.current?.(null);
-          onSelectFIRRef.current?.(null);
-        }
-      }}
-      className="absolute inset-0 overflow-hidden bg-black"
-    >
+    <div className="absolute inset-0 overflow-hidden bg-black">
       {/* Real Geographic Map Tile Container */}
       <div ref={mapContainerRef} className="absolute inset-0 h-full w-full z-0" />
 
