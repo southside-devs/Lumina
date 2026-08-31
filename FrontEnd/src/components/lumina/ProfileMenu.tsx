@@ -1,5 +1,6 @@
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import type { ProfileModalType } from "./ProfileDetailModal";
 
 interface ProfileMenuProps {
   isPrivate: boolean;
@@ -7,6 +8,7 @@ interface ProfileMenuProps {
   onClose: () => void;
   onLogout: () => void;
   onResetPasskeys: () => void;
+  onOpenDetail?: (type: ProfileModalType) => void;
 }
 
 interface MenuRowProps {
@@ -88,6 +90,7 @@ export function ProfileMenu({
   onClose,
   onLogout,
   onResetPasskeys,
+  onOpenDetail,
 }: ProfileMenuProps) {
   return (
     <div
@@ -97,7 +100,13 @@ export function ProfileMenu({
     >
       {/* Header Profile Card */}
       <div className="mb-2 p-1">
-        <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0d0f17]/90 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_16px_rgba(0,0,0,0.45)]">
+        <div 
+          onClick={() => {
+            onOpenDetail?.("profile");
+            onClose();
+          }}
+          className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0d0f17]/90 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_16px_rgba(0,0,0,0.45)] hover:border-white/20 hover:bg-[#151824] transition-all cursor-pointer"
+        >
           <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-indigo-500 to-blue-600 font-sans text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_2px_8px_rgba(0,0,0,0.4)]">
             RK
             <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-[#07070a] bg-[#34C759] shadow-[0_0_6px_#34C759]" />
@@ -128,9 +137,7 @@ export function ProfileMenu({
           badge="LIVE"
           badgeTone="green"
           onClick={() => {
-            toast.info("Active Model Context", {
-              description: "124 live nodes connected to Gemini 3.7 Flash real-time pipeline.",
-            });
+            onOpenDetail?.("model");
             onClose();
           }}
         />
@@ -141,9 +148,7 @@ export function ProfileMenu({
           badge="62%"
           badgeTone="amber"
           onClick={() => {
-            toast.info("API Token Usage", {
-              description: "142,500 / 230,000 daily tokens utilized across active queries.",
-            });
+            onOpenDetail?.("tokens");
             onClose();
           }}
         />
@@ -172,9 +177,7 @@ export function ProfileMenu({
           label="User profile details"
           hint="Badge #4521 · Karnataka State Police"
           onClick={() => {
-            toast.info("Officer Profile", {
-              description: "Insp. R. Kumar — Cyber & Strategic Intelligence Command Center.",
-            });
+            onOpenDetail?.("profile");
             onClose();
           }}
         />
@@ -183,7 +186,7 @@ export function ProfileMenu({
           label="Security & biometrics"
           hint="Reset fingerprints / passkeys"
           onClick={() => {
-            onResetPasskeys();
+            onOpenDetail?.("passkeys");
             onClose();
           }}
         />
@@ -224,9 +227,7 @@ export function ProfileMenu({
           label="Switch workspace"
           hint="Karnataka Command · Org"
           onClick={() => {
-            toast.success("Workspace Switched", {
-              description: "Connected to Karnataka Command Primary Node.",
-            });
+            onOpenDetail?.("workspace");
             onClose();
           }}
         />
