@@ -1,7 +1,8 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
-export type ProfileModalType = "profile" | "model" | "tokens" | "workspace" | "passkeys" | null;
+export type ProfileModalType = "profile" | "model" | "workspace" | "passkeys" | null;
 
 interface ProfileDetailModalProps {
   type: ProfileModalType;
@@ -27,14 +28,15 @@ export function ProfileDetailModal({
 
   if (!type) return null;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-in fade-in duration-150"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md animate-in fade-in duration-150"
     >
       <div
-        className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#090b12]/95 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl animate-in zoom-in-95 duration-150"
+        className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#090b12]/98 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl animate-in zoom-in-95 duration-150"
       >
         {/* Close Button */}
         <button
@@ -132,48 +134,6 @@ export function ProfileDetailModal({
                 <div className="flex justify-between">
                   <span className="text-zinc-400 font-mono">Pipeline Latency</span>
                   <span className="font-mono text-emerald-400">~380ms Sub-Second</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 3. API Token Usage View */}
-        {type === "tokens" && (
-          <div className="space-y-5">
-            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
-              <div className="flex size-10 items-center justify-center rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-400">
-                <span className="material-symbols-outlined text-xl">data_usage</span>
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-white">API Quota &amp; Token Meter</h2>
-                <p className="text-xs text-zinc-400 font-mono">Catalyst Serverless Telemetry</p>
-              </div>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div>
-                <div className="flex justify-between text-xs font-mono mb-1.5">
-                  <span className="text-zinc-400">Daily Quota Consumption</span>
-                  <span className="text-amber-400 font-bold">142,500 / 230,000 (62%)</span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                  <div className="h-full w-[62%] rounded-full bg-gradient-to-r from-blue-500 to-amber-500" />
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-[#0c0e16] p-3.5 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-zinc-400 font-mono">Rate Limit Capacity</span>
-                  <span className="font-bold text-white">60 Requests / Minute</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400 font-mono">Serverless Runtime</span>
-                  <span className="font-mono text-white">Python 3.11 (FastAPI on Catalyst)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400 font-mono">Vector Embeddings</span>
-                  <span className="font-mono text-emerald-400">Active &amp; Balanced</span>
                 </div>
               </div>
             </div>
@@ -282,12 +242,13 @@ export function ProfileDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full bg-white px-5 py-1.5 text-xs font-bold text-black transition-colors hover:bg-zinc-200 cursor-pointer"
+            className="rounded-full border border-white/15 bg-white/10 px-5 py-1.5 text-xs font-semibold text-zinc-200 transition-colors hover:bg-white/20 hover:text-white cursor-pointer"
           >
             Done
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

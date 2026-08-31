@@ -24,6 +24,12 @@ export interface TacticalHotspot {
   crime_types?: Record<string, number>;
   date_start?: string;
   date_end?: string;
+  // ST-DBSCAN cluster extra fields
+  cluster_id?: number;
+  size?: number;
+  centroid_lat?: number;
+  centroid_lon?: number;
+  fir_ids?: string[] | number[];
 }
 
 export const KARNATAKA_HOTSPOTS: TacticalHotspot[] = [

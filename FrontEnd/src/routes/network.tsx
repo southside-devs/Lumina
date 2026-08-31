@@ -156,12 +156,19 @@ export function NetworkTopologyView() {
               setActiveNode(firNode);
               setCurrentNetwork({
                 target: {
-                  id: fir.ROWID || fir.ID,
+                  id: fir.ROWID ?? fir.ID ?? 0,
                   name: `FIR #${fir.FIR_Number}`,
                   arrestCount: 0,
                   riskScore: 78,
                   linkedCasesCount: 1,
-                  linkedCases: [fir],
+                  linkedCases: [{
+                    FIR_ID: fir.ROWID ?? 0,
+                    FIR_Number: fir.FIR_Number,
+                    Crime_Group: fir.Crime_Group,
+                    Date: fir.Date,
+                    Station_Name: fir.Station_Name,
+                    District_Name: fir.District_Name,
+                  }],
                 },
                 nodes: [firNode, locNode, synNode],
                 coAccusedCount: 0,

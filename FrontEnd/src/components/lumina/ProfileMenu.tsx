@@ -142,17 +142,6 @@ export function ProfileMenu({
           }}
         />
         <MenuRow
-          icon="data_usage"
-          label="API token usage"
-          hint="62% of daily quota consumed"
-          badge="62%"
-          badgeTone="amber"
-          onClick={() => {
-            onOpenDetail?.("tokens");
-            onClose();
-          }}
-        />
-        <MenuRow
           icon="psychology"
           label="AI agent memory"
           hint="RAG index · 14-day window"
