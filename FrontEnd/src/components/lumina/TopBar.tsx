@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { NotificationsPopover } from "./NotificationsPopover";
 import { ProfileMenu } from "./ProfileMenu";
+import { ProfileDetailModal, type ProfileModalType } from "./ProfileDetailModal";
 import { SearchIntelligenceModal } from "./SearchIntelligenceModal";
 import { LuminaLogo } from "./LuminaLogo";
 import { INITIAL_NOTICES, useNoticeCounts, type IntelligenceNotice, type NotifTab } from "./notice-data";
@@ -19,6 +20,8 @@ export function TopBar() {
   const navigate = useNavigate();
   const [panel, setPanel] = useState<OpenPanel>("none");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [profileModal, setProfileModal] = useState<ProfileModalType>(null);
+  const [activeWorkspace, setActiveWorkspace] = useState("Karnataka State Command (Primary Node)");
   const [tab, setTab] = useState<NotifTab>("unread");
   const [notices, setNotices] = useState<IntelligenceNotice[]>(INITIAL_NOTICES);
   const [isPrivate, setIsPrivate] = useState(false);
@@ -186,11 +189,8 @@ export function TopBar() {
               isPrivate={isPrivate}
               onPrivateChange={setIsPrivate}
               onClose={() => setPanel("none")}
-              onResetPasskeys={() =>
-                toast.message("Passkeys reset queued", {
-                  description: "Biometric credentials will be cleared on next station login.",
-                })
-              }
+              onOpenDetail={(type) => setProfileModal(type)}
+              onResetPasskeys={() => setProfileModal("passkeys")}
               onLogout={() => {
                 toast.success("Session closed", {
                   description: "Insp. R. Kumar signed out of Command Center.",
@@ -201,6 +201,14 @@ export function TopBar() {
           )}
         </div>
       </div>
+
+      {/* Interactive Profile / Model / Quota Detail Modal */}
+      <ProfileDetailModal
+        type={profileModal}
+        onClose={() => setProfileModal(null)}
+        activeWorkspace={activeWorkspace}
+        onWorkspaceChange={setActiveWorkspace}
+      />
 
       {/* Spotlight Search Intelligence Command Palette Modal */}
       <SearchIntelligenceModal
