@@ -24,44 +24,53 @@ export const Route = createFileRoute("/about")({
 const CAPABILITIES = [
   {
     icon: "grid_view",
-    label: "Command Hub",
-    desc: "Live GIS crime map with real-time FIR plotting across 209 Karnataka police stations.",
+    label: "Tactical Command Hub",
+    desc: "Real-time GIS surface with 5,005 FIR telemetry, dynamic boundary overlays, and incident stream filters across 209 Karnataka police stations.",
+  },
+  {
+    icon: "radar",
+    label: "ST-DBSCAN Spatial Engine",
+    desc: "Real-time spatio-temporal clustering machine learning with live epsilon-distance and temporal-window parameter tuning.",
   },
   {
     icon: "assessment",
-    label: "Risk Analytics",
-    desc: "Zia AutoML-powered forecasts, district risk leaderboards, and resolution rate tracking.",
+    label: "Predictive Risk Analytics",
+    desc: "Zia AutoML-powered crime forecasts, district risk scoring leaderboards, and crime category distribution analytics.",
   },
   {
     icon: "hub",
-    label: "Network Topology",
-    desc: "Neo4j graph engine for criminal network mapping, suspect link isolation, and entity relational analysis.",
+    label: "Syndicate Graph Topology",
+    desc: "Neo4j graph engine for criminal network mapping, accomplice link isolation, and syndicate relational analysis.",
   },
   {
     icon: "folder_open",
-    label: "FIR Registry",
-    desc: "Structured incident registry with full search, status tracking, and report generation.",
+    label: "FIR Intelligence Registry",
+    desc: "Searchable master incident registry with deep case dossiers, suspect profiles, and live FIR filing dispatch.",
   },
   {
     icon: "auto_awesome",
-    label: "AI Copilot",
-    desc: "Conversational intelligence assistant for pattern analysis, hotspot queries, and briefing generation.",
+    label: "Voice AI Copilot",
+    desc: "Bilingual (English & Kannada) voice intelligence assistant powered by Gemini with live database RAG for instant case briefings.",
   },
   {
-    icon: "assignment",
-    label: "SmartBrowz Reports",
-    desc: "One-click PDF briefing export for strategic intelligence dissemination.",
+    icon: "picture_as_pdf",
+    label: "SmartBrowz PDF Briefings",
+    desc: "Automated executive intelligence dossier compilation and PDF export powered by Zoho SmartBrowz.",
   },
 ];
 
 const STACK = [
   { label: "Developed By", value: "Southside Devs" },
   { label: "Deployment Partner", value: "Karnataka State Police" },
-  { label: "Data Engine", value: "Zoho Catalyst Serverless + AppSail" },
-  { label: "Graph DB", value: "Neo4j (ST-DBSCAN spatial clustering)" },
-  { label: "ML Forecasting", value: "Zia AutoML" },
-  { label: "Version", value: "2.0.0-dev" },
-  { label: "Build", value: "2026" },
+  { label: "Compute Infrastructure", value: "Zoho Catalyst Serverless Function (Python 3.11 / FastAPI)" },
+  { label: "Data Layer", value: "Zoho Catalyst Native NoSQL & Live FIR Telemetry Store" },
+  { label: "Graph Engine", value: "Neo4j Graph Database (Criminal Syndicate Topology)" },
+  { label: "Spatial ML Engine", value: "ST-DBSCAN (Spatio-Temporal Spatial Hotspot Clustering)" },
+  { label: "Predictive Analytics", value: "Zia AutoML Crime Rate Forecasting Models" },
+  { label: "Cognitive AI Intelligence", value: "Google Gemini with Database RAG & Speech Synthesis" },
+  { label: "Document Dispatch", value: "Zoho SmartBrowz Automated PDF Generation" },
+  { label: "System Release", value: "v2.4.0 (Production Release)" },
+  { label: "Build Year", value: "2026" },
 ];
 
 function AboutPage() {
@@ -80,7 +89,7 @@ function AboutPage() {
               <div className="flex items-center gap-3 ui-no-select">
                 <LuminaLogo className="h-5 w-auto text-foreground" />
                 <span className="inline-flex items-center rounded-full border border-signal-brand/30 bg-signal-brand/10 px-3 py-0.5 font-mono text-[10px] font-semibold text-signal-brand">
-                  v2.0.0-dev
+                  v2.4.0 (Production Release)
                 </span>
               </div>
 
