@@ -8,15 +8,7 @@
 
 /* ── Global Safeguards ─────────────────────────────────────────────────────── */
 
-/* Prevent all media from overflowing their container */
-img,
-video,
-canvas,
-svg,
-iframe {
-  max-width: 100%;
-  height: auto;
-}
+/* Let Tailwind handle img/video max-width globally. Removed canvas/svg constraints to prevent map and icon breakage. */
 
 /* Touch devices: degrade hover-only interactions gracefully */
 @media (hover: none) {
