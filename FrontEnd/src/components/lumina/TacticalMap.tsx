@@ -206,6 +206,9 @@ export function TacticalMap({
 
   };
 
+  const onClustersLoadedRef = useRef(onClustersLoaded);
+  onClustersLoadedRef.current = onClustersLoaded;
+
   // 1. Fetch live ST-DBSCAN ML clusters immediately and whenever parameters are tuned
   useEffect(() => {
     let mounted = true;
@@ -218,7 +221,7 @@ export function TacticalMap({
         const clusters = await api.getHotspotClusters(epsS, epsT, minP);
         if (mounted && clusters && clusters.length > 0) {
           setHotspotsList(clusters);
-          onClustersLoaded?.(clusters);
+          onClustersLoadedRef.current?.(clusters);
         }
       } catch (e) {
         console.warn("Error loading ST-DBSCAN clusters:", e);
@@ -230,7 +233,7 @@ export function TacticalMap({
     return () => {
       mounted = false;
     };
-  }, [clusterParams?.epsSpatial, clusterParams?.epsTemporal, clusterParams?.minPts, onClustersLoaded]);
+  }, [clusterParams?.epsSpatial, clusterParams?.epsTemporal, clusterParams?.minPts]);
 
   // 2. Dynamic Base Map Tile Layer Swapping based on System Configuration
   useEffect(() => {
@@ -335,7 +338,7 @@ export function TacticalMap({
       layerGroupRef.current = null;
       if (mapRef) mapRef.current = null;
     };
-  }, [mapRef, onSelectSpot, onSelectFIR]);
+  }, [mapRef]);
 
   // 3. Update Layers (Live FIRs, Markers, Hotspot Circles, Patrol Routes)
   useEffect(() => {

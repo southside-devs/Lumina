@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import L from "leaflet";
 
 import { SideRail } from "@/components/lumina/SideRail";
@@ -117,58 +117,58 @@ export function IntelligenceHub() {
     { label: "Recent (2026)", count: recentCount || 12 },
   ];
 
-  const handleFilterChange = (filterName: string) => {
+  const handleFilterChange = useCallback((filterName: string) => {
     setActiveFilter(filterName);
     setShowIncidents(true);
     setShowHotspots(true);
-  };
+  }, []);
 
 
-  const handleSelectSpot = (spot: TacticalHotspot | null) => {
-    if (!spot || selectedSpot?.id === spot.id) {
-      setSelectedSpot(null);
-      setSelectedFir(null);
-      setCardOpen(false);
-      return;
-    }
-    setSelectedSpot(spot);
-    setSelectedFir(null);
-    setCardOpen(true);
-    mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
-  };
-
-  const handleSelectFir = (fir: FIRItem | null) => {
-    if (!fir || selectedFir?.ROWID === fir.ROWID) {
-      setSelectedFir(null);
-      setSelectedSpot(null);
-      setCardOpen(false);
-      return;
-    }
-    setSelectedFir(fir);
-    setSelectedSpot(null);
-    setCardOpen(true);
-    mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
-      duration: 0.5,
+  const handleSelectSpot = useCallback((spot: TacticalHotspot | null) => {
+    setSelectedSpot((prev) => {
+      if (!spot || prev?.id === spot.id) {
+        setCardOpen(false);
+        return null;
+      }
+      setCardOpen(true);
+      mapRef.current?.flyTo([spot.lat, spot.lng], 9, { duration: 0.5 });
+      return spot;
     });
-  };
+    setSelectedFir(null);
+  }, []);
 
-  const handleResetView = () => {
+  const handleSelectFir = useCallback((fir: FIRItem | null) => {
+    setSelectedFir((prev) => {
+      if (!fir || prev?.ROWID === fir.ROWID) {
+        setCardOpen(false);
+        return null;
+      }
+      setCardOpen(true);
+      mapRef.current?.flyTo([Number(fir.Latitude), Number(fir.Longitude)], 11, {
+        duration: 0.5,
+      });
+      return fir;
+    });
+    setSelectedSpot(null);
+  }, []);
+
+  const handleResetView = useCallback(() => {
     mapRef.current?.flyTo([14.8, 76.0], 8, { duration: 0.8 });
     setSelectedSpot(null);
     setSelectedFir(null);
     setCardOpen(false);
-  };
+  }, []);
 
-  const handleClustersLoaded = (newClusters: TacticalHotspot[]) => {
-    if (selectedSpot) {
-      const updated =
-        newClusters.find((c) => c.id === selectedSpot.id) ||
-        newClusters.find((c) => c.name.split(" ")[0] === selectedSpot.name.split(" ")[0]);
-      if (updated) {
-        setSelectedSpot(updated);
-      }
-    }
-  };
+  const handleClustersLoaded = useCallback((newClusters: TacticalHotspot[]) => {
+    setSelectedSpot((prev) => {
+      if (!prev) return null;
+      return (
+        newClusters.find((c) => c.id === prev.id) ||
+        newClusters.find((c) => c.name.split(" ")[0] === prev.name.split(" ")[0]) ||
+        prev
+      );
+    });
+  }, []);
 
 
 
