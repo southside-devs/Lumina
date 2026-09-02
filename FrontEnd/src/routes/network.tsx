@@ -156,12 +156,19 @@ export function NetworkTopologyView() {
               setActiveNode(firNode);
               setCurrentNetwork({
                 target: {
-                  id: fir.ROWID || fir.ID,
+                  id: fir.ROWID || fir.ID || 0,
                   name: `FIR #${fir.FIR_Number}`,
                   arrestCount: 0,
                   riskScore: 78,
                   linkedCasesCount: 1,
-                  linkedCases: [fir],
+                  linkedCases: [{
+                    FIR_ID: fir.ROWID || fir.ID || 0,
+                    FIR_Number: fir.FIR_Number,
+                    Crime_Group: fir.Crime_Group,
+                    Date: fir.Date,
+                    Station_Name: fir.Station_Name,
+                    District_Name: fir.District_Name,
+                  }],
                 },
                 nodes: [firNode, locNode, synNode],
                 coAccusedCount: 0,
@@ -291,7 +298,7 @@ export function NetworkTopologyView() {
             <div className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-zinc-700/60 rounded-br-xl" />
           </div>
 
-          <div className="relative flex h-full flex-col">
+          <div className="relative flex h-full flex-col overflow-y-auto lg:overflow-hidden pb-4 lg:pb-0">
             {/* Header: Title & Repeat Offenders Quick-Selector */}
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800/60 pb-3">
               <div>
@@ -315,7 +322,7 @@ export function NetworkTopologyView() {
               </div>
 
               {/* Target Suspect Selector Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-xl custom-scrollbar">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 w-full max-w-xl custom-scrollbar">
                 <span className="font-mono text-[10px] uppercase text-zinc-500 shrink-0 mr-1">
                   Target:
                 </span>
@@ -402,7 +409,7 @@ export function NetworkTopologyView() {
             </div>
 
             {/* Main Grid: Left Stats (240px) | Center Radar (Flex-1) | Right Target Dossier (290px) */}
-            <div className="mt-3 flex flex-1 flex-col gap-3 lg:flex-row min-h-0">
+            <div className="mt-3 flex flex-col lg:flex-row gap-3 min-h-0 shrink-0 lg:flex-1">
               {/* LEFT SIDEBAR: Stats & Connectors */}
               <div className="flex w-full lg:w-60 flex-col gap-3 overflow-y-auto pr-1">
                 {/* Investigations / Nodes Card */}
@@ -481,9 +488,9 @@ export function NetworkTopologyView() {
               </div>
 
               {/* CENTER: Radar / Criminal Topology Canvas */}
-              <div className="relative flex flex-1 items-center justify-center rounded-xl border border-zinc-800/80 bg-gradient-to-b from-zinc-950/90 via-[#07080c] to-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl overflow-hidden min-h-[380px]">
+              <div className="relative flex lg:flex-1 items-center justify-center rounded-xl border border-zinc-800/80 bg-gradient-to-b from-zinc-950/90 via-[#07080c] to-zinc-950/90 p-4 shadow-2xl backdrop-blur-xl overflow-hidden min-h-[320px] lg:min-h-[380px] w-full">
                 {/* 1:1 Aspect-Square Radar Container Centered */}
-                <div className="relative aspect-square h-[94%] max-h-[540px] flex items-center justify-center select-none">
+                <div className="relative aspect-square w-full max-w-[540px] lg:w-auto lg:h-[94%] flex items-center justify-center select-none mx-auto">
                   {/* Concentric Radar Rings */}
                   <div className="pointer-events-none absolute inset-0 rounded-full border border-zinc-800/40" />
                   <div className="pointer-events-none absolute inset-[16%] rounded-full border border-zinc-800/40" />
