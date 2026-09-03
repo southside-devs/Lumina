@@ -68,6 +68,16 @@ def bad_request(message="Bad request", details=None):
     return error(message=message, status_code=400, details=details)
 
 
+def unauthorized(message="Authentication required"):
+    """401 Unauthorized response."""
+    return error(message=message, status_code=401)
+
+
+def forbidden(message="Access forbidden"):
+    """403 Forbidden response."""
+    return error(message=message, status_code=403)
+
+
 def not_found(message="Resource not found"):
     """404 Not Found response."""
     return error(message=message, status_code=404)

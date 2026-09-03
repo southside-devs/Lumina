@@ -14,7 +14,7 @@ from flask import Request, make_response, jsonify
 
 from routes import districts, stations, firs, accused, victims
 from routes import case_accused, risk_scores, dashboard
-from routes import graph, hotspots, uploads, ai_chat, tts
+from routes import graph, hotspots, uploads, ai_chat, tts, auth
 
 # ── Logging ─────────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -26,6 +26,7 @@ logger = logging.getLogger("lumina.api")
 # ── Route registry ─────────────────────────────────────────────────────
 # Maps the second path segment (resource name) to its handler module.
 ROUTES = {
+    "auth":         auth,
     "districts":    districts,
     "stations":     stations,
     "firs":         firs,

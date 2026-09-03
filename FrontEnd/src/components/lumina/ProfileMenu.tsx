@@ -84,6 +84,8 @@ function MenuRow({
   );
 }
 
+import { useAuth } from "@/lib/auth";
+
 export function ProfileMenu({
   isPrivate,
   onPrivateChange,
@@ -92,6 +94,16 @@ export function ProfileMenu({
   onResetPasskeys,
   onOpenDetail,
 }: ProfileMenuProps) {
+  const { user } = useAuth();
+  const name = user?.name || "Insp. Rajesh Kumar";
+  const nameParts = name.split(" ").filter(Boolean);
+  const initials =
+    nameParts.length >= 2
+      ? `${nameParts[nameParts.length - 2][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+      : nameParts[0]?.slice(0, 2).toUpperCase() || "RK";
+  const email = user?.email || "r.kumar@ksp.gov.in";
+  const role = user?.role || "Admin";
+
   return (
     <div
       role="dialog"
@@ -108,19 +120,19 @@ export function ProfileMenu({
           className="flex items-center gap-3 rounded-2xl border border-white/10 bg-[#0d0f17]/90 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_16px_rgba(0,0,0,0.45)] hover:border-white/20 hover:bg-[#151824] transition-all cursor-pointer"
         >
           <div className="relative flex size-10 shrink-0 items-center justify-center rounded-full border border-white/15 bg-gradient-to-br from-indigo-500 to-blue-600 font-sans text-xs font-bold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_2px_8px_rgba(0,0,0,0.4)]">
-            RK
+            {initials}
             <span className="absolute -bottom-0.5 -right-0.5 size-2.5 rounded-full border-2 border-[#07070a] bg-[#34C759] shadow-[0_0_6px_#34C759]" />
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-[13px] font-bold text-white tracking-tight">
-              Insp. R. Kumar
+            <span className="block text-[13px] font-bold text-white tracking-tight truncate">
+              {name}
             </span>
             <span className="block truncate text-[11px] text-zinc-400 font-medium">
-              r.kumar@lumina.ai
+              {email}
             </span>
           </div>
-          <span className="shrink-0 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 font-mono text-[9px] font-bold tracking-widest text-[#007AFF] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
-            CMD CENTER
+          <span className="shrink-0 rounded-full border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 font-mono text-[9px] font-bold tracking-widest text-[#007AFF] shadow-[inset_0_1px_0_rgba(255,255,255,0.1)] uppercase">
+            {role}
           </span>
         </div>
       </div>

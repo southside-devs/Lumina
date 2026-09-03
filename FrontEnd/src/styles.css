@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "./responsive.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -146,6 +147,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   user-select: none;
   -webkit-user-select: none;
+  overflow-x: hidden; /* Prevent horizontal scroll at all breakpoints */
 }
 
 /* Allow text selection where appropriate (inputs, textareas, and explicitly marked selectable text) */
@@ -241,7 +243,8 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
 
 .karnataka-state-boundary {
   pointer-events: none;
-  vector-effect: non-scaling-stroke;
+  vector-effect: non-scaling-stroke !important;
+  shape-rendering: geometricPrecision !important;
 }
 
 .leaflet-container {

@@ -1,8 +1,9 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReportModal } from "./ReportModal";
 import { SystemConfigModal } from "./SystemConfigModal";
+import { useAuth } from "@/lib/auth";
 
 
 const primaryNav = [
@@ -56,10 +57,24 @@ export function SideRail() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const [activeIndex, setActiveIndex] = useState<number>(() => getActiveNavIndex(pathname));
+  // Track whether the nav has pivoted to the horizontal bottom bar
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 775px)").matches : false
+  );
+  const mobileQueryRef = useRef<MediaQueryList | null>(null);
 
   useEffect(() => {
     setActiveIndex(getActiveNavIndex(pathname));
   }, [pathname]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 775px)");
+    mobileQueryRef.current = mq;
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    setIsMobile(mq.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   const handleNavClick = (e: React.MouseEvent, to: string, idx: number) => {
     e.preventDefault();
@@ -70,7 +85,10 @@ export function SideRail() {
     }, 180);
   };
 
+  const { logout } = useAuth();
+
   const handleLogout = () => {
+    logout();
     toast.info("Session Closed", {
       description: "Signed out of Karnataka State Police Command Center.",
     });
@@ -80,6 +98,7 @@ export function SideRail() {
   return (
     <>
       <nav
+        id="side-rail"
         aria-label="Primary"
         className="fixed left-0 top-0 z-50 flex h-full w-16 flex-col items-center gap-6 overflow-visible border-r border-hairline bg-rail/70 py-4 backdrop-blur-2xl ui-no-select"
       >
@@ -97,14 +116,30 @@ export function SideRail() {
 
         {/* Primary Nav List with Vertical Sliding Glass Indicator */}
         <div className="relative flex w-full flex-1 flex-col gap-3 px-2">
-          {/* Absolute Sliding Glass Highlight Square */}
+          {/* Absolute Sliding Glass Highlight — slides vertically on desktop, horizontally on mobile */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-2 right-2 top-0 h-12 rounded-xl border border-hairline bg-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_8px_rgba(0,0,0,0.55)] transition-all duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
-            style={{
-              transform: `translateY(${activeIndex >= 0 ? activeIndex * 60 : 0}px)`,
-              opacity: activeIndex >= 0 ? 1 : 0,
-            }}
+            className={
+              isMobile
+                ? // Mobile: horizontal pill — top/bottom inset, width = 1/N of container
+                  "pointer-events-none absolute top-1.5 bottom-1.5 rounded-xl border border-hairline bg-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_8px_rgba(0,0,0,0.55)] transition-all duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
+                : // Desktop: vertical pill — left/right inset, height = fixed 48px
+                  "pointer-events-none absolute left-2 right-2 top-0 h-12 rounded-xl border border-hairline bg-surface-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_8px_rgba(0,0,0,0.55)] transition-all duration-[280ms] ease-[cubic-bezier(0.2,0.9,0.3,1)]"
+            }
+            style={
+              isMobile
+                ? {
+                    // Each nav item is flex:1 → 1/primaryNav.length of container width
+                    left: 0,
+                    width: `${100 / primaryNav.length}%`,
+                    transform: `translateX(${activeIndex >= 0 ? activeIndex * 100 : 0}%)`,
+                    opacity: activeIndex >= 0 ? 1 : 0,
+                  }
+                : {
+                    transform: `translateY(${activeIndex >= 0 ? activeIndex * 60 : 0}px)`,
+                    opacity: activeIndex >= 0 ? 1 : 0,
+                  }
+            }
           />
 
           {primaryNav.map((item, idx) => {

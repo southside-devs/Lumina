@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
+import { AuthGuard } from "@/lib/auth";
 
 const title = "LUMINA — Help & Documentation";
 const description =
@@ -258,8 +259,9 @@ function HelpPage() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-shell text-foreground">
-      <SideRail />
+    <AuthGuard>
+      <div className="flex h-screen overflow-hidden bg-shell text-foreground">
+        <SideRail />
 
       <div className="ml-16 flex h-full flex-1 flex-col">
         <TopBar />
@@ -658,5 +660,6 @@ function HelpPage() {
         </div>
       )}
     </div>
+    </AuthGuard>
   );
 }

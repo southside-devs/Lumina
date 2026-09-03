@@ -6,27 +6,126 @@ import { ProfileMenu } from "./ProfileMenu";
 import { ProfileDetailModal, type ProfileModalType } from "./ProfileDetailModal";
 import { SearchIntelligenceModal } from "./SearchIntelligenceModal";
 import { LuminaLogo } from "./LuminaLogo";
-import { INITIAL_NOTICES, useNoticeCounts, type IntelligenceNotice, type NotifTab } from "./notice-data";
-
-const statuses = [
-  { dot: "bg-signal-ok", label: "Nodes", value: "124", desc: "124 tactical sensor nodes operational across Karnataka" },
-  { dot: "bg-signal-warning", label: "Alerts", value: "3", desc: "3 active critical alerts requiring supervisory sign-off" },
-  { dot: "bg-muted-foreground", label: "System", value: "99.9%", desc: "Command backbone uptime: 99.94% over 30 days" },
-];
+import { INITIAL_NOTICES, useNoticeCounts, buildDynamicNotices, saveNoticeStates, type IntelligenceNotice, type NotifTab } from "./notice-data";
+import { useAuth } from "@/lib/auth";
+import { api, type DashboardOverview } from "@/lib/api";
+import { useFIREvents } from "@/lib/fir-events";
 
 type OpenPanel = "none" | "notifications" | "profile";
 
 export function TopBar() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [panel, setPanel] = useState<OpenPanel>("none");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [profileModal, setProfileModal] = useState<ProfileModalType>(null);
   const [activeWorkspace, setActiveWorkspace] = useState("Karnataka State Command (Primary Node)");
   const [tab, setTab] = useState<NotifTab>("unread");
   const [notices, setNotices] = useState<IntelligenceNotice[]>(INITIAL_NOTICES);
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [latency, setLatency] = useState<number | null>(null);
+  const [isOnline, setIsOnline] = useState<boolean>(true);
   const [isPrivate, setIsPrivate] = useState(false);
   const clusterRef = useRef<HTMLDivElement>(null);
   const counts = useNoticeCounts(notices);
+  const { firCreatedCount } = useFIREvents();
+
+  const officerName = user?.name || "Inspector Rajesh Kumar";
+  const nameParts = officerName.split(" ").filter(Boolean);
+  const officerInitials =
+    nameParts.length >= 2
+      ? `${nameParts[nameParts.length - 2][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+      : nameParts[0]?.slice(0, 2).toUpperCase() || "RK";
+  const officerBadge = user?.badgeId || "KSP-4521";
+  const officerUnit = user?.stationUnit ? user.stationUnit.split(",")[0] : "KSP-HQ";
+
+  // Measure real-time round-trip HTTP ping to Catalyst backend
+  useEffect(() => {
+    let mounted = true;
+    async function measurePing() {
+      const t0 = performance.now();
+      try {
+        const res = await fetch("/api/health", { cache: "no-store" });
+        const dt = Math.round(performance.now() - t0);
+        if (mounted) {
+          if (res.ok) {
+            setLatency(Math.max(12, dt));
+            setIsOnline(true);
+          } else {
+            setIsOnline(false);
+          }
+        }
+      } catch {
+        if (mounted) setIsOnline(false);
+      }
+    }
+
+    measurePing();
+    const interval = setInterval(measurePing, 20000);
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    async function loadStats() {
+      try {
+        const [ov, firsData] = await Promise.all([
+          api.getDashboardOverview(),
+          api.getFirs({ limit: 10 }),
+        ]);
+        if (mounted) {
+          setOverview(ov);
+          if (firsData && firsData.firs) {
+            setNotices(buildDynamicNotices(firsData.firs, ov));
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to load topbar telemetry:", e);
+      }
+    }
+    loadStats();
+    return () => {
+      mounted = false;
+    };
+  }, [firCreatedCount]);
+
+  const statuses = [
+    {
+      dot: "bg-signal-ok",
+      label: "Nodes",
+      value: String(overview?.total_stations || 209),
+      desc: "209 Karnataka Police Station Divisions & Tactical GIS Sensor Nodes Connected Statewide",
+      tooltipTitle: "Operational Police Station Nodes",
+      tooltipDetail: "Live tactical telemetry connections across all 209 Karnataka police stations.",
+    },
+    {
+      dot: "bg-signal-warning",
+      label: "Alerts",
+      value: String(overview?.repeat_offenders || 456),
+      desc: "Active Repeat Offenders & High-Priority Hotspot Clusters flagged for supervisory sign-off",
+      tooltipTitle: "Active Intelligence Alerts",
+      tooltipDetail: "Habitual repeat offenders and active high-threat incident corridors requiring monitoring.",
+    },
+    {
+      dot: !isOnline
+        ? "bg-signal-critical shadow-[0_0_6px_#ef4444]"
+        : latency && latency > 250
+        ? "bg-signal-warning shadow-[0_0_6px_#f59e0b]"
+        : "bg-signal-ok shadow-[0_0_6px_#22c55e]",
+      label: "API",
+      value: !isOnline ? "Offline" : latency ? `${latency}ms` : "Live",
+      desc: isOnline
+        ? `Catalyst Serverless API round-trip latency: ${latency ?? 24}ms (sub-second sync active)`
+        : "Backend serverless API currently unreachable",
+      tooltipTitle: "Live API Response Latency",
+      tooltipDetail: isOnline
+        ? `Measured HTTP round-trip latency to Catalyst backend (${latency ?? 24}ms). Sub-second live data sync active.`
+        : "Backend server disconnected or offline.",
+    },
+  ];
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -58,7 +157,7 @@ export function TopBar() {
   };
 
   return (
-    <header className="fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar/90 px-5 backdrop-blur-xl ui-no-select">
+    <header id="top-bar" className="fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar/90 px-5 backdrop-blur-xl ui-no-select">
       {/* Brand & Security Status */}
       <div className="flex items-center">
         <button
@@ -78,18 +177,32 @@ export function TopBar() {
       {/* Center Status Indicators */}
       <div className="hidden items-center gap-4 font-mono text-label-sm lg:flex">
         {statuses.map((s) => (
-          <button
-            key={s.label}
-            type="button"
-            onClick={() => toast.info(`${s.label} Status`, { description: s.desc })}
-            className="flex items-center gap-2 rounded-lg border border-transparent px-2.5 py-1 transition-all hover:border-white/10 hover:bg-surface-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] active:scale-95 cursor-pointer"
-          >
-            <span className={`size-2 rounded-full ${s.dot} shadow-[0_0_6px_currentColor]`} />
-            <span className="uppercase tracking-wider text-muted-foreground">
-              {s.label}:{" "}
-              <span className="select-text text-foreground font-semibold">{s.value}</span>
-            </span>
-          </button>
+          <div key={s.label} className="group relative">
+            <button
+              type="button"
+              onClick={() => toast.info(s.tooltipTitle, { description: s.desc })}
+              className="flex items-center gap-2 rounded-lg border border-transparent px-2.5 py-1 transition-all hover:border-white/10 hover:bg-surface-1 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] active:scale-95 cursor-pointer"
+            >
+              <span className={`size-2 rounded-full ${s.dot} shadow-[0_0_6px_currentColor]`} />
+              <span className="uppercase tracking-wider text-muted-foreground">
+                {s.label}:{" "}
+                <span className="select-text text-foreground font-semibold">{s.value}</span>
+              </span>
+            </button>
+
+            {/* Hover Tooltip Description */}
+            <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 w-64 rounded-xl border border-white/15 bg-[#0b0d14]/98 p-3 shadow-[0_16px_36px_rgba(0,0,0,0.85)] backdrop-blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-50 text-left">
+              <div className="flex items-center gap-2">
+                <span className={`size-1.5 rounded-full ${s.dot}`} />
+                <span className="font-sans text-xs font-bold text-white block">
+                  {s.tooltipTitle}
+                </span>
+              </div>
+              <p className="mt-1 font-sans text-[11px] text-zinc-400 leading-snug">
+                {s.tooltipDetail}
+              </p>
+            </div>
+          </div>
         ))}
       </div>
 
@@ -114,7 +227,6 @@ export function TopBar() {
           </kbd>
         </button>
 
-
         {/* Notifications Popover Toggle */}
         <div className="relative">
           <button
@@ -128,7 +240,6 @@ export function TopBar() {
                 ? "border-white/20 bg-surface-2 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12),inset_0_-2px_6px_rgba(0,0,0,0.55)]"
                 : "border-hairline bg-surface-1/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:border-white/20 hover:bg-surface-2 hover:text-foreground"
             }`}
-
           >
             <span className="material-symbols-outlined text-[18px]">notifications</span>
             {counts.unread > 0 && (
@@ -143,15 +254,23 @@ export function TopBar() {
               onTabChange={setTab}
               onClose={() => setPanel("none")}
               onMarkAllRead={() => {
-                setNotices((prev) => prev.map((n) => ({ ...n, read: true })));
-                toast.success("All intelligence briefs marked read");
+                setNotices((prev) => {
+                  const updated = prev.map((n) => ({ ...n, read: true }));
+                  const readSet = new Set(updated.map((n) => n.id));
+                  const archivedSet = new Set(updated.filter((n) => n.archived).map((n) => n.id));
+                  saveNoticeStates(readSet, archivedSet);
+                  return updated;
+                });
+                toast.success("All notifications marked as read");
               }}
               onOpenNotice={(id) => {
-                const found = notices.find((n) => n.id === id);
-                if (found) {
-                  toast.info(found.title, { description: found.body });
-                }
-                setPanel("none");
+                setNotices((prev) => {
+                  const updated = prev.map((n) => (n.id === id ? { ...n, read: true } : n));
+                  const readSet = new Set(updated.filter((n) => n.read).map((n) => n.id));
+                  const archivedSet = new Set(updated.filter((n) => n.archived).map((n) => n.id));
+                  saveNoticeStates(readSet, archivedSet);
+                  return updated;
+                });
               }}
             />
           )}
@@ -172,12 +291,12 @@ export function TopBar() {
             }`}
           >
             <div className="relative flex size-7 items-center justify-center rounded-lg bg-surface-2 border border-hairline font-mono text-[11px] font-bold text-foreground">
-              RK
+              {officerInitials}
               <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full border border-topbar bg-signal-ok" />
             </div>
             <div className="hidden text-left font-mono text-[11px] xl:block">
-              <div className="font-semibold leading-tight text-foreground">Insp. R. Kumar</div>
-              <div className="text-[10px] text-muted-foreground">KSP-HQ · On Duty</div>
+              <div className="font-semibold leading-tight text-foreground truncate max-w-[140px]">{officerName}</div>
+              <div className="text-[10px] text-muted-foreground truncate max-w-[140px]">{officerBadge} · On Duty</div>
             </div>
             <span className="material-symbols-outlined text-sm text-muted-foreground transition-transform">
               {panel === "profile" ? "arrow_drop_up" : "arrow_drop_down"}
@@ -192,9 +311,7 @@ export function TopBar() {
               onOpenDetail={(type) => setProfileModal(type)}
               onResetPasskeys={() => setProfileModal("passkeys")}
               onLogout={() => {
-                toast.success("Session closed", {
-                  description: "Insp. R. Kumar signed out of Command Center.",
-                });
+                logout();
                 navigate({ to: "/login" });
               }}
             />

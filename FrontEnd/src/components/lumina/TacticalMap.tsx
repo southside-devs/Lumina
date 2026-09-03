@@ -288,21 +288,114 @@ export function TacticalMap({
     initialTileLayer.bringToBack();
     tileLayerRef.current = initialTileLayer;
 
-    // Karnataka State Administrative Boundary GeoJSON Layer
-    const boundaryLayer = L.geoJSON(karnatakaGeoJson as any, {
-      interactive: false,
-      style: {
-        color: "#e2e8f0",
-        weight: 1.5,
-        opacity: 0.75,
-        dashArray: "5, 5",
-        fillColor: "transparent",
-        fillOpacity: 0,
-        lineCap: "square",
-        lineJoin: "miter",
-        className: "karnataka-state-boundary",
-      },
-    }).addTo(map);
+    // Administrative boundary coordinates from GeoJSON
+    const rawGeo = karnatakaGeoJson as any;
+    const rings: [number, number][][] =
+      rawGeo.features[0].geometry.type === "Polygon"
+        ? rawGeo.features[0].geometry.coordinates.map((ring: number[][]) =>
+            ring.map((c: number[]) => [c[1], c[0]] as [number, number])
+          )
+        : rawGeo.features[0].geometry.coordinates.flatMap((poly: number[][][]) =>
+            poly.map((ring: number[][]) =>
+              ring.map((c: number[]) => [c[1], c[0]] as [number, number])
+            )
+          );
+
+    // Dedicated SVG Vector Overlay for Karnataka State Administrative Boundary
+    // By attaching to the map container (rather than a scaled Leaflet tile/overlay pane),
+    // the root <svg> stays fixed at 1:1 screen resolution without GPU texture scaling blur.
+    // Smooth zoom animations are rendered by applying matching CSS cubic-bezier transforms
+    // to an inner <g> element where `vector-effect: non-scaling-stroke` preserves exact
+    // 1.5px stroke width and 5px dot spacing without any rasterization blur.
+    const mapContainer = map.getContainer();
+    const svgOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgOverlay.setAttribute("class", "karnataka-boundary-overlay");
+    svgOverlay.style.position = "absolute";
+    svgOverlay.style.inset = "0";
+    svgOverlay.style.width = "100%";
+    svgOverlay.style.height = "100%";
+    svgOverlay.style.pointerEvents = "none";
+    svgOverlay.style.zIndex = "450";
+    svgOverlay.style.overflow = "visible";
+
+    const gElem = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    gElem.style.transformOrigin = "0 0";
+    svgOverlay.appendChild(gElem);
+
+    const boundaryPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    boundaryPath.setAttribute("class", "karnataka-state-boundary");
+    boundaryPath.setAttribute("stroke", "#e2e8f0");
+    boundaryPath.setAttribute("stroke-width", "1.5");
+    boundaryPath.setAttribute("stroke-dasharray", "5, 5");
+    boundaryPath.setAttribute("stroke-opacity", "0.75");
+    boundaryPath.setAttribute("stroke-linecap", "square");
+    boundaryPath.setAttribute("stroke-linejoin", "miter");
+    boundaryPath.setAttribute("fill", "transparent");
+    boundaryPath.style.vectorEffect = "non-scaling-stroke";
+    boundaryPath.style.shapeRendering = "geometricPrecision";
+    gElem.appendChild(boundaryPath);
+
+    mapContainer.appendChild(svgOverlay);
+
+    const buildPathData = (): string => {
+      let d = "";
+      for (const ring of rings) {
+        if (!ring.length) continue;
+        for (let i = 0; i < ring.length; i++) {
+          const pt = map.latLngToContainerPoint(ring[i]);
+          d += (i === 0 ? "M " : " L ") + pt.x.toFixed(1) + " " + pt.y.toFixed(1);
+        }
+        d += " Z ";
+      }
+      return d;
+    };
+
+    const updatePath = () => {
+      boundaryPath.setAttribute("d", buildPathData());
+    };
+
+    // Initial render
+    updatePath();
+
+    let isZoomAnimating = false;
+
+    const onMove = () => {
+      if (!isZoomAnimating) {
+        updatePath();
+      }
+    };
+
+    const onAnimZoom = (e: L.ZoomAnimEvent) => {
+      if (isZoomAnimating) {
+        gElem.style.transition = "none";
+        gElem.style.transform = "none";
+        updatePath();
+      }
+      isZoomAnimating = true;
+
+      const currentZoom = map.getZoom();
+      const scale = map.getZoomScale(e.zoom, currentZoom);
+      const centerPoint = map.latLngToContainerPoint(e.center);
+      const cx = centerPoint.x;
+      const cy = centerPoint.y;
+      const tx = cx * (1 - scale);
+      const ty = cy * (1 - scale);
+
+      gElem.style.transition = "transform 0.25s cubic-bezier(0, 0, 0.25, 1)";
+      gElem.style.transform = `translate3d(${tx}px, ${ty}px, 0) scale(${scale})`;
+    };
+
+    const onZoomEnd = () => {
+      isZoomAnimating = false;
+      gElem.style.transition = "none";
+      gElem.style.transform = "none";
+      updatePath();
+    };
+
+    map.on("move", onMove);
+    map.on("zoomanim", onAnimZoom);
+    map.on("zoomend", onZoomEnd);
+    map.on("resize", updatePath);
 
     if (!prefersReducedMotion) {
       setTimeout(() => {
@@ -313,16 +406,6 @@ export function TacticalMap({
           });
         }
       }, 350);
-
-      // Force sharp re-rasterization on zoom end so vector paths never stay blurred
-      map.once("zoomend", () => {
-        boundaryLayer.setStyle({
-          color: "#e2e8f0",
-          weight: 1.5,
-          opacity: 0.75,
-          dashArray: "5, 5",
-        });
-      });
     }
 
     const layers = L.layerGroup().addTo(map);
@@ -339,6 +422,11 @@ export function TacticalMap({
     }
 
     return () => {
+      map.off("move", onMove);
+      map.off("zoomanim", onAnimZoom);
+      map.off("zoomend", onZoomEnd);
+      map.off("resize", updatePath);
+      svgOverlay.remove();
       map.remove();
       mapInstanceRef.current = null;
       layerGroupRef.current = null;

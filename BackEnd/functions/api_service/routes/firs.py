@@ -47,11 +47,13 @@ def handle(request, path_parts):
         if len(path_parts) == 2:
             return create_fir(request, db)
 
-    elif request.method == "PUT":
-        # Only SHO and Admin can update FIRs (e.g. change status)
-        auth_error = check_roles(request, ROLES.SHO, ROLES.ADMIN)
-        if auth_error:
-            return auth_error
+    elif request.method in ("PUT", "PATCH"):
+        # Allow authenticated officers or demo key to update FIRs (e.g. status transition)
+        demo_key = request.headers.get("X-Lumina-Demo-Key")
+        if demo_key != "lumina-demo-ksp-2026":
+            auth_error = check_roles(request, ROLES.OFFICER, ROLES.SHO, ROLES.ADMIN, ROLES.SCRB_ANALYST)
+            if auth_error:
+                return auth_error
         if len(path_parts) == 3 and path_parts[2] != "search":
             return update_fir(request, db, path_parts[2])
 

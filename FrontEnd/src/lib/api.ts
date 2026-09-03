@@ -149,11 +149,18 @@ export async function fetchRawJson<T>(endpoint: string, options?: RequestInit): 
   try {
     const base = getApiBase();
     const url = `${base}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+    const token = typeof window !== "undefined" ? localStorage.getItem("lumina_auth_token") : null;
+    const authHeaders: Record<string, string> = {};
+    if (token) {
+      authHeaders["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(url, {
       ...options,
       headers: {
         "Content-Type": "application/json",
         "X-Lumina-Demo-Key": DEMO_KEY,
+        ...authHeaders,
         ...options?.headers,
       },
     });
@@ -468,6 +475,22 @@ export const api = {
       Longitude: longitude,
       Station_ID: 1,
     };
+  },
+
+  /**
+   * Update an existing FIR record's status (e.g. Under Investigation -> Chargesheeted)
+   */
+  async updateFirStatus(firId: number | string, status: string): Promise<boolean> {
+    try {
+      const res = await fetchRawJson(`/firs/${firId}`, {
+        method: "PUT",
+        body: JSON.stringify({ Status: status }),
+      });
+      return res?.status === "success";
+    } catch (e) {
+      console.warn(`Failed to update FIR #${firId} status:`, e);
+      return false;
+    }
   },
 
   /**
