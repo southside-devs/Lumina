@@ -58,7 +58,7 @@ export function TopBar() {
   };
 
   return (
-    <header className="fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar/90 px-5 backdrop-blur-xl ui-no-select">
+    <header id="top-bar" className="fixed top-0 left-16 z-40 flex h-14 w-[calc(100%-4rem)] items-center justify-between border-b border-hairline bg-topbar/90 px-5 backdrop-blur-xl ui-no-select">
       {/* Brand & Security Status */}
       <div className="flex items-center">
         <button
