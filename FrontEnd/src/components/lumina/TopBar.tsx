@@ -7,6 +7,7 @@ import { ProfileDetailModal, type ProfileModalType } from "./ProfileDetailModal"
 import { SearchIntelligenceModal } from "./SearchIntelligenceModal";
 import { LuminaLogo } from "./LuminaLogo";
 import { INITIAL_NOTICES, useNoticeCounts, type IntelligenceNotice, type NotifTab } from "./notice-data";
+import { useAuth } from "@/lib/auth";
 
 const statuses = [
   { dot: "bg-signal-ok", label: "Nodes", value: "124", desc: "124 tactical sensor nodes operational across Karnataka" },
@@ -18,6 +19,7 @@ type OpenPanel = "none" | "notifications" | "profile";
 
 export function TopBar() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [panel, setPanel] = useState<OpenPanel>("none");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [profileModal, setProfileModal] = useState<ProfileModalType>(null);
@@ -27,6 +29,15 @@ export function TopBar() {
   const [isPrivate, setIsPrivate] = useState(false);
   const clusterRef = useRef<HTMLDivElement>(null);
   const counts = useNoticeCounts(notices);
+
+  const officerName = user?.name || "Inspector Rajesh Kumar";
+  const nameParts = officerName.split(" ").filter(Boolean);
+  const officerInitials =
+    nameParts.length >= 2
+      ? `${nameParts[nameParts.length - 2][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+      : nameParts[0]?.slice(0, 2).toUpperCase() || "RK";
+  const officerBadge = user?.badgeId || "KSP-4521";
+  const officerUnit = user?.stationUnit ? user.stationUnit.split(",")[0] : "KSP-HQ";
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -172,12 +183,12 @@ export function TopBar() {
             }`}
           >
             <div className="relative flex size-7 items-center justify-center rounded-lg bg-surface-2 border border-hairline font-mono text-[11px] font-bold text-foreground">
-              RK
+              {officerInitials}
               <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full border border-topbar bg-signal-ok" />
             </div>
             <div className="hidden text-left font-mono text-[11px] xl:block">
-              <div className="font-semibold leading-tight text-foreground">Insp. R. Kumar</div>
-              <div className="text-[10px] text-muted-foreground">KSP-HQ · On Duty</div>
+              <div className="font-semibold leading-tight text-foreground truncate max-w-[140px]">{officerName}</div>
+              <div className="text-[10px] text-muted-foreground truncate max-w-[140px]">{officerBadge} · On Duty</div>
             </div>
             <span className="material-symbols-outlined text-sm text-muted-foreground transition-transform">
               {panel === "profile" ? "arrow_drop_up" : "arrow_drop_down"}
@@ -192,9 +203,7 @@ export function TopBar() {
               onOpenDetail={(type) => setProfileModal(type)}
               onResetPasskeys={() => setProfileModal("passkeys")}
               onLogout={() => {
-                toast.success("Session closed", {
-                  description: "Insp. R. Kumar signed out of Command Center.",
-                });
+                logout();
                 navigate({ to: "/login" });
               }}
             />

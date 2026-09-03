@@ -149,11 +149,18 @@ export async function fetchRawJson<T>(endpoint: string, options?: RequestInit): 
   try {
     const base = getApiBase();
     const url = `${base}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
+    const token = typeof window !== "undefined" ? localStorage.getItem("lumina_auth_token") : null;
+    const authHeaders: Record<string, string> = {};
+    if (token) {
+      authHeaders["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(url, {
       ...options,
       headers: {
         "Content-Type": "application/json",
         "X-Lumina-Demo-Key": DEMO_KEY,
+        ...authHeaders,
         ...options?.headers,
       },
     });

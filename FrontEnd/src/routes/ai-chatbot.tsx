@@ -4,6 +4,7 @@ import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { api, type FIRItem } from "@/lib/api";
 import { useSystemConfig, getPlaybackRateFromConfig } from "@/lib/config";
+import { AuthGuard } from "@/lib/auth";
 
 const CHAT_STORAGE_KEY = "lumina_ai_chat_history";
 
@@ -407,8 +408,9 @@ export function AIChatbotView() {
   const recentInvestigations = language === "kn" ? RECENT_INVESTIGATIONS_KN : RECENT_INVESTIGATIONS_EN;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#07080c] text-foreground font-sans selection:bg-white/20">
-      <SideRail />
+    <AuthGuard>
+      <div className="flex h-screen overflow-hidden bg-[#07080c] text-foreground font-sans selection:bg-white/20">
+        <SideRail />
 
       <div className="ml-16 flex h-full flex-1">
         {/* RECENT INVESTIGATIONS Sub-sidebar */}
@@ -904,5 +906,6 @@ export function AIChatbotView() {
         </div>
       </div>
     </div>
+    </AuthGuard>
   );
 }

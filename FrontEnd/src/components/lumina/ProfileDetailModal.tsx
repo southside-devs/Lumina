@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { toast } from "sonner";
 
+import { useAuth } from "@/lib/auth";
+
 export type ProfileModalType = "profile" | "model" | "workspace" | "passkeys" | null;
 
 interface ProfileDetailModalProps {
@@ -17,6 +19,19 @@ export function ProfileDetailModal({
   activeWorkspace = "Karnataka State Command (Primary Node)",
   onWorkspaceChange,
 }: ProfileDetailModalProps) {
+  const { user } = useAuth();
+  const name = user?.name || "Inspector Rajesh Kumar";
+  const nameParts = name.split(" ").filter(Boolean);
+  const initials =
+    nameParts.length >= 2
+      ? `${nameParts[nameParts.length - 2][0]}${nameParts[nameParts.length - 1][0]}`.toUpperCase()
+      : nameParts[0]?.slice(0, 2).toUpperCase() || "RK";
+  const badgeId = user?.badgeId || "KSP-4521";
+  const unit = user?.stationUnit || "Cyber & Strategic Command HQ, Bengaluru";
+  const email = user?.email || "r.kumar@ksp.gov.in";
+  const role = user?.role || "Admin";
+  const rank = user?.rank || "Police Inspector";
+
   useEffect(() => {
     if (!type) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -53,48 +68,44 @@ export function ProfileDetailModal({
           <div className="space-y-5">
             <div className="flex items-center gap-3.5 border-b border-white/10 pb-4">
               <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-gradient-to-br from-indigo-500 to-blue-600 font-sans text-base font-bold text-white shadow-lg">
-                RK
+                {initials}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base font-bold text-white">Inspector Rajesh Kumar</h2>
+                  <h2 className="text-base font-bold text-white">{name}</h2>
                   <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] font-bold text-emerald-400">
                     ON DUTY
                   </span>
                 </div>
                 <p className="text-xs text-zinc-400 font-mono mt-0.5">
-                  Badge #4521 · Karnataka State Police
+                  Badge #{badgeId} · Karnataka State Police
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider block">Division</span>
-                <span className="font-semibold text-white mt-1 block">Cyber &amp; Strategic Intel</span>
+                <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider block">Rank / Role</span>
+                <span className="font-semibold text-white mt-1 block truncate">{rank} ({role})</span>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
                 <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider block">Clearance</span>
-                <span className="font-semibold text-blue-400 mt-1 block">Level 3 · Command Admin</span>
+                <span className="font-semibold text-blue-400 mt-1 block">Level 3 · Command Access</span>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider block">Station HQ</span>
-                <span className="font-semibold text-white mt-1 block">KSP Central Command, Bengaluru</span>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-                <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider block">Jurisdiction</span>
-                <span className="font-semibold text-white mt-1 block">209 Police Stations (Statewide)</span>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 col-span-2">
+                <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-wider block">Station Unit / Division</span>
+                <span className="font-semibold text-white mt-1 block">{unit}</span>
               </div>
             </div>
 
             <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3.5 text-xs font-mono text-zinc-300 space-y-1.5">
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-400">Official Email:</span>
-                <span className="text-white">r.kumar@lumina.ai</span>
+                <span className="text-white">{email}</span>
               </div>
               <div className="flex justify-between text-[11px]">
                 <span className="text-zinc-400">Authentication:</span>
-                <span className="text-emerald-400 font-bold">FIDO2 Biometric Passkey Enrolled</span>
+                <span className="text-emerald-400 font-bold">HMAC-SHA256 Signed Key Session</span>
               </div>
             </div>
           </div>

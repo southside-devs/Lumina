@@ -12,6 +12,7 @@ import { DistrictTable } from "@/components/lumina/DistrictTable";
 import { api, type DashboardOverview, type CrimeTrend, type DistrictSummary } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
+import { AuthGuard } from "@/lib/auth";
 
 
 const title = "LUMINA — Crime Intelligence Overview";
@@ -137,67 +138,69 @@ function Overview() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-shell text-foreground">
-      <SideRail />
+    <AuthGuard>
+      <div className="flex h-screen overflow-hidden bg-shell text-foreground">
+        <SideRail />
 
-      <div className="ml-16 flex h-full flex-1 flex-col">
-        <TopBar />
+        <div className="ml-16 flex h-full flex-1 flex-col">
+          <TopBar />
 
-        <main className="custom-scrollbar mt-14 flex-1 overflow-y-auto p-4 pt-6">
-          <TabBar />
+          <main className="custom-scrollbar mt-14 flex-1 overflow-y-auto p-4 pt-6">
+            <TabBar />
 
-          <div className="mx-auto max-w-7xl space-y-6">
-            {/* Header with Title and Action Button */}
-            <header className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="font-display text-headline-lg tracking-tight text-white flex items-center gap-3">
-                  Statewide Crime Analytics
-                  <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
-                    LIVE INTEL
+            <div className="mx-auto max-w-7xl space-y-6">
+              {/* Header with Title and Action Button */}
+              <header className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <h1 className="font-display text-headline-lg tracking-tight text-white flex items-center gap-3">
+                    Statewide Crime Analytics
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 font-mono text-[10px] font-semibold text-emerald-400">
+                      LIVE INTEL
+                    </span>
+                  </h1>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Statewide FIR volume trends, repeat-offender alerts, district risk scores and station readiness in one dark-mode intelligence overview.
+                  </p>
+                </div>
+
+                {/* Action: Export Strategic Briefing PDF with live data */}
+                <button
+                  type="button"
+                  onClick={handleExportBriefing}
+                  disabled={loading}
+                  aria-label="Export Official Strategic Intelligence Briefing PDF"
+                  className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 font-sans text-xs font-semibold text-amber-300 shadow-sm backdrop-blur-xl transition-all hover:bg-amber-500/20 hover:border-amber-500/60 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                  title="Generate and print official Karnataka State Police Strategic Intelligence PDF Briefing with live KPIs"
+                >
+                  <span className="material-symbols-outlined text-[18px] text-amber-400">
+                    picture_as_pdf
                   </span>
-                </h1>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Statewide FIR volume trends, repeat-offender alerts, district risk scores and station readiness in one dark-mode intelligence overview.
-                </p>
+                  <span>Export Briefing</span>
+                </button>
+              </header>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
+                {kpis.map((kpi) => (
+                  <KpiCard key={kpi.label} {...kpi} />
+                ))}
               </div>
 
-              {/* Action: Export Strategic Briefing PDF with live data */}
-              <button
-                type="button"
-                onClick={handleExportBriefing}
-                disabled={loading}
-                aria-label="Export Official Strategic Intelligence Briefing PDF"
-                className="flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-3.5 py-2 font-sans text-xs font-semibold text-amber-300 shadow-sm backdrop-blur-xl transition-all hover:bg-amber-500/20 hover:border-amber-500/60 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                title="Generate and print official Karnataka State Police Strategic Intelligence PDF Briefing with live KPIs"
-              >
-                <span className="material-symbols-outlined text-[18px] text-amber-400">
-                  picture_as_pdf
-                </span>
-                <span>Export Briefing</span>
-              </button>
-            </header>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                <CrimeGroupChart data={crimeTrends} loading={loading} />
+                <FirStatusDonut
+                  statusBreakdown={overview?.status_breakdown}
+                  totalFirs={overview?.total_firs}
+                />
+              </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-              {kpis.map((kpi) => (
-                <KpiCard key={kpi.label} {...kpi} />
-              ))}
+              <DistrictTable districts={districts} loading={loading} />
+
+              <div className="h-8" />
             </div>
-
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <CrimeGroupChart data={crimeTrends} loading={loading} />
-              <FirStatusDonut
-                statusBreakdown={overview?.status_breakdown}
-                totalFirs={overview?.total_firs}
-              />
-            </div>
-
-            <DistrictTable districts={districts} loading={loading} />
-
-            <div className="h-8" />
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </AuthGuard>
   );
 }
 

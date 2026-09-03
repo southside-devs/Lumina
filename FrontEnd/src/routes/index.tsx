@@ -9,6 +9,7 @@ import { IncidentCard } from "@/components/lumina/IncidentCard";
 import { MapToolbar } from "@/components/lumina/MapToolbar";
 import { api, type FIRItem } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
+import { AuthGuard } from "@/lib/auth";
 
 const title = "LUMINA — Strategic Intelligence Hub";
 const description =
@@ -178,7 +179,8 @@ export function IntelligenceHub() {
 
 
   return (
-    <div className="flex h-screen overflow-hidden bg-shell text-foreground">
+    <AuthGuard>
+      <div className="flex h-screen overflow-hidden bg-shell text-foreground">
       <SideRail />
 
       <div className="ml-16 flex h-full flex-1 flex-col">
@@ -325,5 +327,6 @@ export function IntelligenceHub() {
         </main>
       </div>
     </div>
+    </AuthGuard>
   );
 }

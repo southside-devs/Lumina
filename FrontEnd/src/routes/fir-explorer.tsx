@@ -6,6 +6,7 @@ import { TopBar } from "@/components/lumina/TopBar";
 import { api, type FIRItem } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 import { generateOfficialFIRPDF } from "@/lib/pdf-generator";
+import { AuthGuard } from "@/lib/auth";
 
 
 const title = "LUMINA — FIR Investigation & Case Explorer";
@@ -146,8 +147,9 @@ function FIRExplorerView() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-shell text-foreground font-sans">
-      <SideRail />
+    <AuthGuard>
+      <div className="flex h-screen overflow-hidden bg-shell text-foreground font-sans">
+        <SideRail />
 
       <div className="ml-16 flex h-full flex-1 flex-col">
         <TopBar />
@@ -526,5 +528,6 @@ function FIRExplorerView() {
         </div>
       )}
     </div>
+    </AuthGuard>
   );
 }
