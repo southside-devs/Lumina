@@ -3,6 +3,7 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ReportModal } from "./ReportModal";
 import { SystemConfigModal } from "./SystemConfigModal";
+import { useAuth } from "@/lib/auth";
 
 
 const primaryNav = [
@@ -70,7 +71,10 @@ export function SideRail() {
     }, 180);
   };
 
+  const { logout } = useAuth();
+
   const handleLogout = () => {
+    logout();
     toast.info("Session Closed", {
       description: "Signed out of Karnataka State Police Command Center.",
     });

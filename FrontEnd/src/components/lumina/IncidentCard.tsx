@@ -136,13 +136,15 @@ export function IncidentCard({ onClose, spot, fir }: IncidentCardProps) {
         </button>
       </div>
 
-      {/* Active Patrol Telemetry */}
+      {/* Recommended Patrol Unit (Phase 3 Integration) */}
       <div className="mt-4 rounded-xl border border-hairline bg-surface-2/60 p-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-xs font-medium text-foreground truncate max-w-[200px]" title={activePatrol}>
+          <span className="text-xs font-semibold text-foreground truncate max-w-[190px]" title={activePatrol}>
             {activePatrol}
           </span>
-          <span className="font-mono text-label-md text-muted-foreground">{distance}</span>
+          <span className="rounded border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 font-mono text-[9px] font-bold text-sky-400">
+            Sector Standby
+          </span>
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3">
           <div
@@ -155,9 +157,9 @@ export function IncidentCard({ onClose, spot, fir }: IncidentCardProps) {
         <div className="mt-2 flex items-center justify-between font-mono text-label-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <span className="material-symbols-outlined text-[12px]">schedule</span>
-            ETA: {eta}
+            Response Window: {eta}
           </span>
-          <span className="text-sky-400 font-bold">1.2 km to checkpoint</span>
+          <span className="text-zinc-400 font-medium">Phase 3 Dispatch</span>
         </div>
       </div>
 

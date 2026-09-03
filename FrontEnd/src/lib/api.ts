@@ -478,6 +478,22 @@ export const api = {
   },
 
   /**
+   * Update an existing FIR record's status (e.g. Under Investigation -> Chargesheeted)
+   */
+  async updateFirStatus(firId: number | string, status: string): Promise<boolean> {
+    try {
+      const res = await fetchRawJson(`/firs/${firId}`, {
+        method: "PUT",
+        body: JSON.stringify({ Status: status }),
+      });
+      return res?.status === "success";
+    } catch (e) {
+      console.warn(`Failed to update FIR #${firId} status:`, e);
+      return false;
+    }
+  },
+
+  /**
    * Search FIR records
    */
   async searchFirs(query: string): Promise<FIRItem[]> {

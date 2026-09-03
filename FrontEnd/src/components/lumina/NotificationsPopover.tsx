@@ -1,4 +1,5 @@
 import { filterNotices, groupByDay, type IntelligenceNotice, type NotifTab } from "./notice-data";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 const TABS: { id: NotifTab; label: string }[] = [
@@ -30,6 +31,7 @@ export function NotificationsPopover({
   onMarkAllRead,
   onOpenNotice,
 }: NotificationsPopoverProps) {
+  const navigate = useNavigate();
   const visible = filterNotices(notices, tab);
   const groups = groupByDay(visible);
   const unreadCount = notices.filter((n) => !n.read && !n.archived).length;
@@ -115,6 +117,10 @@ export function NotificationsPopover({
                     onClick={() => {
                       onOpenNotice(notice.id);
                       toast.info(notice.title, { description: notice.body });
+                      if (notice.targetRoute) {
+                        onClose();
+                        navigate({ to: notice.targetRoute });
+                      }
                     }}
                     className="group relative flex flex-col gap-2 rounded-2xl border border-white/[0.08] bg-[#0c0e16]/80 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_4px_14px_rgba(0,0,0,0.35)] backdrop-blur-md transition-all duration-150 hover:border-white/20 hover:bg-[#131622]/90 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_6px_20px_rgba(0,0,0,0.45)] cursor-pointer"
                   >

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
+import { toast } from "sonner";
 import { api, type FIRItem } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 import { generateOfficialFIRPDF } from "@/lib/pdf-generator";
@@ -65,12 +66,37 @@ function FIRExplorerView() {
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [selectedCrimeGroup, setSelectedCrimeGroup] = useState("All Crime Types");
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
-  const { firCreatedCount } = useFIREvents();
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const { firCreatedCount, notifyFIRCreated } = useFIREvents();
 
   // Reset page to 1 when filters change
   const handleStatusChange = (status: string) => {
     setSelectedStatus(status);
     setPage(1);
+  };
+
+  const handleUpdateFirStatus = async (fir: FIRItem, newStatus: string) => {
+    if (fir.Status === newStatus || isUpdatingStatus) return;
+    setIsUpdatingStatus(true);
+    const prevStatus = fir.Status;
+
+    // Optimistically update
+    const updated = { ...fir, Status: newStatus };
+    setSelectedFir(updated);
+    setFirs((prev) => prev.map((f) => (f.ROWID === fir.ROWID ? updated : f)));
+
+    const ok = await api.updateFirStatus(fir.ROWID, newStatus);
+    setIsUpdatingStatus(false);
+    if (ok) {
+      toast.success(`Case #${fir.FIR_Number} Status Updated`, {
+        description: `Investigation workflow moved to "${newStatus}".`,
+      });
+      notifyFIRCreated();
+    } else {
+      setSelectedFir(fir);
+      setFirs((prev) => prev.map((f) => (f.ROWID === fir.ROWID ? fir : f)));
+      toast.error("Failed to update case status in database");
+    }
   };
 
   const handleCrimeGroupChange = (group: string) => {
@@ -438,6 +464,37 @@ function FIRExplorerView() {
               >
                 <span className="material-symbols-outlined text-lg">close</span>
               </button>
+            </div>
+
+            {/* Interactive Investigation Workflow Status */}
+            <div className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-900/70 p-3 shadow-inner">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-base text-blue-400">published_with_changes</span>
+                <div>
+                  <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400 block">
+                    Investigation Workflow Stage
+                  </span>
+                  <span className="font-sans text-xs text-zinc-300">
+                    State Police Official Case Status
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={selectedFir.Status}
+                  disabled={isUpdatingStatus}
+                  onChange={(e) => handleUpdateFirStatus(selectedFir, e.target.value)}
+                  className="rounded-lg border border-zinc-700 bg-zinc-800 py-1.5 px-3 font-mono text-xs font-bold text-white shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 focus:outline-none cursor-pointer"
+                >
+                  <option value="Under Investigation">Under Investigation</option>
+                  <option value="Chargesheeted">Chargesheeted</option>
+                  <option value="Closed">Closed</option>
+                  <option value="Convicted">Convicted</option>
+                </select>
+                {isUpdatingStatus && (
+                  <span className="size-4 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                )}
+              </div>
             </div>
 
             {/* Crime Classification */}
