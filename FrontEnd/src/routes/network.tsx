@@ -155,6 +155,7 @@ export function NetworkTopologyView() {
               setNodes([firNode, locNode, synNode]);
               setActiveNode(firNode);
               setCurrentNetwork({
+                target: {
                   id: fir.ROWID ?? fir.ID ?? 0,
                   name: `FIR #${fir.FIR_Number}`,
                   arrestCount: 0,
