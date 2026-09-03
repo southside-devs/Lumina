@@ -243,7 +243,8 @@ nav[aria-label="Primary"] a[aria-current="page"] .material-symbols-outlined {
 
 .karnataka-state-boundary {
   pointer-events: none;
-  vector-effect: non-scaling-stroke;
+  vector-effect: non-scaling-stroke !important;
+  shape-rendering: geometricPrecision !important;
 }
 
 .leaflet-container {

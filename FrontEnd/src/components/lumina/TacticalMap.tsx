@@ -288,10 +288,15 @@ export function TacticalMap({
     initialTileLayer.bringToBack();
     tileLayerRef.current = initialTileLayer;
 
+    // Dedicated SVG Vector Renderer for the Administrative Boundary
+    // Prevents raster Canvas scaling blur during map zoom transitions and flyTo
+    const boundarySvgRenderer = L.svg({ padding: 0.5 });
+
     // Karnataka State Administrative Boundary GeoJSON Layer
     const boundaryLayer = L.geoJSON(karnatakaGeoJson as any, {
       interactive: false,
       style: {
+        renderer: boundarySvgRenderer,
         color: "#e2e8f0",
         weight: 1.5,
         opacity: 0.75,
@@ -301,7 +306,7 @@ export function TacticalMap({
         lineCap: "square",
         lineJoin: "miter",
         className: "karnataka-state-boundary",
-      },
+      } as any,
     }).addTo(map);
 
     if (!prefersReducedMotion) {
@@ -314,8 +319,8 @@ export function TacticalMap({
         }
       }, 350);
 
-      // Force sharp re-rasterization on zoom end so vector paths never stay blurred
-      map.once("zoomend", () => {
+      // Re-apply style on zoomend to guarantee crisp subpixel rendering
+      map.on("zoomend", () => {
         boundaryLayer.setStyle({
           color: "#e2e8f0",
           weight: 1.5,
