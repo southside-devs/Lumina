@@ -76,9 +76,16 @@ def get_current_user(request):
 
     Returns None if the user is not authenticated.
     """
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.split(" ", 1)[1].strip()
+    token = (
+        request.headers.get("X-Lumina-Token", "")
+        or request.headers.get("X-Auth-Token", "")
+    )
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
+
+    if token:
         try:
             from routes.auth import decode_jwt_token
             payload = decode_jwt_token(token)
@@ -94,7 +101,7 @@ def get_current_user(request):
                     "unit": payload.get("unit", ""),
                 }
         except Exception as e:
-            logger.warning(f"Error validating Bearer token: {e}")
+            logger.warning(f"Error validating token: {e}")
 
     demo_key = request.headers.get("X-Lumina-Demo-Key", "")
     if demo_key == _DEMO_API_KEY or not demo_key:

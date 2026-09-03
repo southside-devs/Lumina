@@ -19,7 +19,7 @@ def handle(request, path_parts):
         resp = make_response("", 204)
         resp.headers["Access-Control-Allow-Origin"] = "*"
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
-        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Demo-Key"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Token, X-Auth-Token, X-Lumina-Demo-Key"
         return resp
 
     text = ""

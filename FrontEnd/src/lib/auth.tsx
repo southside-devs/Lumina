@@ -92,7 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const apiBase = getApiBase();
         const res = await fetch(`${apiBase}/auth/me`, {
           headers: {
-            Authorization: `Bearer ${storedToken}`,
+            "X-Lumina-Token": storedToken,
+            "X-Auth-Token": storedToken,
             "X-Lumina-Demo-Key": "lumina-demo-ksp-2026",
           },
         });
@@ -258,7 +259,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (currentToken) {
         fetch(`${apiBase}/auth/logout`, {
           method: "POST",
-          headers: { Authorization: `Bearer ${currentToken}` },
+          headers: {
+            "X-Lumina-Token": currentToken,
+            "X-Auth-Token": currentToken,
+          },
         }).catch(() => {});
       }
     } catch {

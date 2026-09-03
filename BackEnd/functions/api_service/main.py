@@ -59,7 +59,7 @@ def handler(request: Request):
         response = make_response("", 204)
         response.headers["Access-Control-Allow-Origin"] = "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Demo-Key"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Token, X-Auth-Token, X-Lumina-Demo-Key"
         return response
 
     try:
@@ -109,7 +109,7 @@ def handler(request: Request):
             # Add CORS headers to all responses
             response.headers["Access-Control-Allow-Origin"] = "*"
             response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Demo-Key"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Lumina-Token, X-Auth-Token, X-Lumina-Demo-Key"
             
             return response
         else:

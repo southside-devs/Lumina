@@ -382,9 +382,14 @@ def register_handler(request: Request):
 
 
 def me_handler(request: Request):
-    """Get active authenticated officer profile from Bearer token."""
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
+    """Get active authenticated officer profile from Bearer or custom token."""
+    token = request.headers.get("X-Lumina-Token", "") or request.headers.get("X-Auth-Token", "")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header.split(" ", 1)[1].strip()
+
+    if not token:
         # Check demo fallback
         demo_key = request.headers.get("X-Lumina-Demo-Key", "")
         if demo_key == "lumina-demo-ksp-2026":
@@ -401,9 +406,8 @@ def me_handler(request: Request):
                     "email": default_officer["email"],
                 }
             })
-        return unauthorized("Valid Authorization Bearer token required.")
+        return unauthorized("Valid session token required.")
 
-    token = auth_header.split(" ", 1)[1].strip()
     payload = decode_jwt_token(token)
     if not payload:
         return unauthorized("Session token has expired or is invalid. Please sign in again.")

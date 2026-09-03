@@ -8,7 +8,7 @@ import { SearchIntelligenceModal } from "./SearchIntelligenceModal";
 import { LuminaLogo } from "./LuminaLogo";
 import { INITIAL_NOTICES, useNoticeCounts, buildDynamicNotices, saveNoticeStates, type IntelligenceNotice, type NotifTab } from "./notice-data";
 import { useAuth } from "@/lib/auth";
-import { api, type DashboardOverview } from "@/lib/api";
+import { api, getApiBase, type DashboardOverview } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 
 type OpenPanel = "none" | "notifications" | "profile";
@@ -45,7 +45,7 @@ export function TopBar() {
     async function measurePing() {
       const t0 = performance.now();
       try {
-        const res = await fetch("/api/health", { cache: "no-store" });
+        const res = await fetch(`${getApiBase()}/health`, { cache: "no-store" });
         const dt = Math.round(performance.now() - t0);
         if (mounted) {
           if (res.ok) {
