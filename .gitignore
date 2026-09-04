@@ -29,6 +29,7 @@ client/node_modules/
 # ── Zoho Catalyst ───────────────────────────────────────────────────────────
 .catalyst/
 catalyst-debug.log
+*.zip
 
 # ── Generated Data (keep schema, ignore bulk CSVs) ──────────────────────────
 data/synthetic/*.csv

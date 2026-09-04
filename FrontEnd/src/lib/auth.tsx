@@ -302,26 +302,35 @@ export function useAuth(): AuthContextType {
 
 /**
  * Route Guard Component
- * Wraps protected views. If user is unauthenticated, redirects to /login with redirect intent.
+ * Wraps protected views and root outlet.
+ * If user is unauthenticated, immediately redirects to /login with redirect intent.
+ * Permits unauthenticated access ONLY on /login.
  */
 export function AuthGuard({ children }: { children: ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isLoginPage = location.pathname === "/login";
+
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !isLoginPage) {
       const currentPath = location.pathname || "/";
       navigate({
         to: "/login",
-        search: currentPath !== "/" ? { redirect: currentPath } : undefined,
+        search: currentPath !== "/" && currentPath !== "/login" ? { redirect: currentPath } : undefined,
       });
     }
-  }, [isAuthenticated, isLoading, navigate, location.pathname]);
+  }, [isAuthenticated, isLoading, isLoginPage, navigate, location.pathname]);
+
+  // Permit login page for unauthenticated users
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#07080b] p-4 text-white">
+      <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[#07080b] p-4 text-white font-sans">
         <div className="flex size-14 items-center justify-center rounded-2xl border border-blue-500/30 bg-blue-500/10 shadow-[0_0_25px_rgba(59,130,246,0.35)] animate-pulse">
           <span className="material-symbols-outlined text-2xl text-blue-400">shield_lock</span>
         </div>
@@ -343,3 +352,4 @@ export function AuthGuard({ children }: { children: ReactNode }) {
 
   return <>{children}</>;
 }
+

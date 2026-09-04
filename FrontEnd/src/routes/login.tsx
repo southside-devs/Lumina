@@ -6,7 +6,16 @@ import { LuminaLogo } from "@/components/lumina/LuminaLogo";
 import { TacticalLoader } from "@/components/lumina/TacticalLoader";
 import { useAuth, type OfficerUser } from "@/lib/auth";
 
+interface LoginSearchParams {
+  redirect?: string;
+}
+
 export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>): LoginSearchParams => {
+    return {
+      redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "LUMINA — Officer Authentication | Karnataka State Police" },
@@ -48,6 +57,7 @@ const DEMO_PRESETS = [
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const search = Route.useSearch();
   const { login, register, ssoLogin, isAuthenticated, user } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -65,17 +75,25 @@ export function LoginPage() {
 
   // Parse redirect target if user was bounced from a protected route
   const getRedirectTarget = () => {
+    if (
+      search.redirect &&
+      search.redirect.startsWith("/") &&
+      search.redirect !== "/login" &&
+      !search.redirect.startsWith("/login?")
+    ) {
+      return search.redirect;
+    }
     try {
       const hash = window.location.hash || "";
       const queryIdx = hash.indexOf("?");
       if (queryIdx !== -1) {
         const params = new URLSearchParams(hash.slice(queryIdx));
         const redir = params.get("redirect");
-        if (redir && redir.startsWith("/")) return redir;
+        if (redir && redir.startsWith("/") && redir !== "/login" && !redir.startsWith("/login?")) return redir;
       }
       const searchParams = new URLSearchParams(window.location.search);
       const redir = searchParams.get("redirect");
-      if (redir && redir.startsWith("/")) return redir;
+      if (redir && redir.startsWith("/") && redir !== "/login" && !redir.startsWith("/login?")) return redir;
     } catch {
       // Fallback to default
     }
