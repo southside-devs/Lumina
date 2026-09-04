@@ -59,6 +59,13 @@ export function LoginPage() {
   const [bootLabel, setBootLabel] = useState("INITIALIZING");
   const [pendingUser, setPendingUser] = useState<OfficerUser | null>(null);
 
+  // Password complexity helpers for registration
+  const passMinLength = password.length >= 8;
+  const passUppercase = /[A-Z]/.test(password);
+  const passLowercase = /[a-z]/.test(password);
+  const passDigit = /[0-9]/.test(password);
+  const passSymbol = /[!@#$%^&*()\-_=+[\]{}|;:,.<>?]/.test(password);
+
   // Parse redirect target if user was bounced from a protected route
   const getRedirectTarget = () => {
     if (
@@ -133,8 +140,24 @@ export function LoginPage() {
         setErrorMessage("Please enter a valid official email address for account recovery.");
         return;
       }
-      if (password.length < 8) {
+      if (!passMinLength) {
         setErrorMessage("Security key must be at least 8 characters long.");
+        return;
+      }
+      if (!passUppercase) {
+        setErrorMessage("Security key must contain at least one uppercase letter (A-Z).");
+        return;
+      }
+      if (!passLowercase) {
+        setErrorMessage("Security key must contain at least one lowercase letter (a-z).");
+        return;
+      }
+      if (!passDigit) {
+        setErrorMessage("Security key must contain at least one numeric digit (0-9).");
+        return;
+      }
+      if (!passSymbol) {
+        setErrorMessage("Security key must contain at least one special symbol (!@#$%^&*...).");
         return;
       }
 
@@ -450,6 +473,34 @@ export function LoginPage() {
                     </span>
                   </button>
                 </div>
+                {isSignUp && (
+                  <div className="mt-2.5 grid grid-cols-2 gap-1.5 rounded-xl border border-white/5 bg-white/[0.02] p-2.5 text-[10px] font-mono">
+                    <span className={`flex items-center gap-1 ${passMinLength ? "text-emerald-400" : "text-zinc-500"}`}>
+                      <span className="material-symbols-outlined text-xs">
+                        {passMinLength ? "check" : "radio_button_unchecked"}
+                      </span>
+                      8+ Characters
+                    </span>
+                    <span className={`flex items-center gap-1 ${passUppercase ? "text-emerald-400" : "text-zinc-500"}`}>
+                      <span className="material-symbols-outlined text-xs">
+                        {passUppercase ? "check" : "radio_button_unchecked"}
+                      </span>
+                      Uppercase (A-Z)
+                    </span>
+                    <span className={`flex items-center gap-1 ${passLowercase ? "text-emerald-400" : "text-zinc-500"}`}>
+                      <span className="material-symbols-outlined text-xs">
+                        {passLowercase ? "check" : "radio_button_unchecked"}
+                      </span>
+                      Lowercase (a-z)
+                    </span>
+                    <span className={`flex items-center gap-1 ${passDigit && passSymbol ? "text-emerald-400" : "text-zinc-500"}`}>
+                      <span className="material-symbols-outlined text-xs">
+                        {passDigit && passSymbol ? "check" : "radio_button_unchecked"}
+                      </span>
+                      Number &amp; Symbol
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Action Buttons */}

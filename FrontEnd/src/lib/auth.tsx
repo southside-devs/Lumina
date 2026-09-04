@@ -152,9 +152,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ badge_id: badgeId, password }),
     });
 
-    const json = await res.json().catch(() => ({}));
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // Non-JSON response (e.g. 502/504 Bad Gateway / Proxy connection refused)
+    }
+
     if (!res.ok) {
-      const msg = json?.message || "Authentication failed. Invalid Badge ID or Security Key.";
+      if (!json) {
+        if (res.status === 502 || res.status === 504 || res.status === 500) {
+          throw new Error("Lumina API backend is offline. Ensure Python server is running on port 3000.");
+        }
+        throw new Error("Authentication failed. Unable to communicate with auth service.");
+      }
+      const msg = json?.message || json?.error || "Authentication failed. Invalid Badge ID or Security Key.";
       throw new Error(msg);
     }
 
@@ -195,9 +207,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }),
     });
 
-    const json = await res.json().catch(() => ({}));
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // Non-JSON response (e.g. 502/504 Bad Gateway / Proxy connection refused)
+    }
+
     if (!res.ok) {
-      const msg = json?.message || "Registration failed. Check your officer credentials.";
+      if (!json) {
+        if (res.status === 502 || res.status === 504 || res.status === 500) {
+          throw new Error("Lumina API backend is offline. Ensure Python server is running on port 3000.");
+        }
+        throw new Error("Registration failed. Unable to communicate with auth service.");
+      }
+      const msg = json?.message || json?.error || "Registration failed. Check your officer credentials.";
       throw new Error(msg);
     }
 
@@ -230,8 +254,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
     });
 
-    const json = await res.json().catch(() => ({}));
+    let json: any = null;
+    try {
+      json = await res.json();
+    } catch {
+      // Non-JSON
+    }
+
     if (!res.ok) {
+      if (!json && (res.status === 502 || res.status === 504 || res.status === 500)) {
+        throw new Error("Lumina API backend is offline. Ensure Python server is running on port 3000.");
+      }
       throw new Error(json?.message || "SSO Authentication Gateway unreachable.");
     }
 
