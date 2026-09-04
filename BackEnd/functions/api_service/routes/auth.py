@@ -15,10 +15,12 @@ import base64
 import hmac
 import hashlib
 import secrets
+import re
 import logging
 from flask import Request, jsonify, make_response
 from utils.db import DataStore
 from utils.response import success, created, not_found, bad_request, unauthorized, forbidden
+from utils.mailer import send_password_reset_email
 
 logger = logging.getLogger("lumina.auth_routes")
 
@@ -98,6 +100,33 @@ def verify_password(password: str, salt_hex: str, expected_hash_hex: str) -> boo
     except Exception as e:
         logger.error(f"Error verifying password: {e}")
         return False
+
+
+def _validate_password_complexity(password: str) -> tuple[bool, str]:
+    """Validate enterprise password security requirements."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not any(c.isupper() for c in password):
+        return False, "Password must contain at least one uppercase letter (A-Z)."
+    if not any(c.islower() for c in password):
+        return False, "Password must contain at least one lowercase letter (a-z)."
+    if not any(c.isdigit() for c in password):
+        return False, "Password must contain at least one numeric digit (0-9)."
+    if not any(c in "!@#$%^&*()-_=+[]{}|;:,.<>?" for c in password):
+        return False, "Password must contain at least one special symbol (!@#$%^&*...)."
+    return True, ""
+
+
+def _mask_email(email: str) -> str:
+    """Mask email for display (e.g. r.kumar@ksp.gov.in -> r.k****@ksp.gov.in)."""
+    if not email or "@" not in email:
+        return "registered official email"
+    user_part, domain_part = email.split("@", 1)
+    if len(user_part) <= 2:
+        masked_user = user_part[0] + "****"
+    else:
+        masked_user = user_part[:2] + "****" + user_part[-1]
+    return f"{masked_user}@{domain_part}"
 
 
 # ── Minimal Standard-Library JWT Implementation ──────────────────────────
@@ -394,24 +423,36 @@ def register_handler(request: Request):
     officer_name = (data.get("officer_name") or data.get("officerName") or "").strip()
     station_unit = (data.get("station_unit") or data.get("stationUnit") or "Karnataka State Police").strip()
     rank = (data.get("rank") or "Police Officer").strip()
-    email = (data.get("email") or f"{badge_id.lower()}@ksp.gov.in").strip()
+    email = (data.get("email") or "").strip().lower()
     role = (data.get("role") or "Officer").strip()
 
     if not badge_id:
-        return bad_request("Badge ID is required.")
+        return bad_request("Karnataka Police Badge ID is required.")
     if len(badge_id) < 3:
         return bad_request("Badge ID must be at least 3 characters.")
-    if not password or len(password) < 8:
-        return bad_request("Password must be at least 8 characters long.")
     if not officer_name:
         return bad_request("Officer Name & Rank are required.")
+    if not email or "@" not in email or "." not in email:
+        return bad_request("A valid official email address is required for security key recovery.")
 
-    # Check if Badge ID is already taken
-    existing = _find_officer_by_badge_or_email(badge_id)
-    if existing:
+    # Strict password complexity
+    is_valid_pass, pass_err = _validate_password_complexity(password)
+    if not is_valid_pass:
+        return bad_request(pass_err)
+
+    # Check if Badge ID or Email is already registered
+    existing_badge = _find_officer_by_badge_or_email(badge_id)
+    if existing_badge:
         return make_response(jsonify({
             "status": "error",
             "message": f"Officer with Badge ID '{badge_id}' is already registered in Lumina."
+        }), 409)
+
+    existing_email = _find_officer_by_badge_or_email(email)
+    if existing_email:
+        return make_response(jsonify({
+            "status": "error",
+            "message": f"Officer with Email '{email}' is already registered in Lumina."
         }), 409)
 
     # Hash password with random salt
@@ -533,31 +574,11 @@ def logout_handler(request: Request):
 
 def sso_handler(request: Request):
     """Authenticate via Karnataka State Police Single Sign-On gateway."""
-    default_officer = DEFAULT_OFFICERS[0]  # Insp. Rajesh Kumar
-    token_payload = {
-        "sub": str(default_officer["id"]),
-        "badge_id": default_officer["badge_id"],
-        "name": default_officer["officer_name"],
-        "rank": default_officer["rank"],
-        "role": default_officer["role"],
-        "unit": default_officer["station_unit"],
-        "email": default_officer["email"],
-    }
-    token = create_jwt_token(token_payload)
-    logger.info(f"SSO Gateway Access granted for '{default_officer['badge_id']}'.")
-
-    return success({
-        "token": token,
-        "officer": {
-            "id": str(default_officer["id"]),
-            "badge_id": default_officer["badge_id"],
-            "name": default_officer["officer_name"],
-            "rank": default_officer["rank"],
-            "station_unit": default_officer["station_unit"],
-            "role": default_officer["role"],
-            "email": default_officer["email"],
-        }
-    })
+    # Production security policy: SSO requires active PKI smartcard or intranet directory ticket
+    return make_response(jsonify({
+        "status": "error",
+        "message": "KSP Single Sign-On requires an active PKI smartcard certificate or official intranet session. Please authenticate directly using your Badge ID or Official Email."
+    }), 403)
 
 
 def forgot_password_handler(request: Request):
@@ -590,8 +611,11 @@ def forgot_password_handler(request: Request):
         dummy_salt = secrets.token_bytes(16)
         hashlib.pbkdf2_hmac("sha256", b"dummy_password_timing_defense", dummy_salt, 100000)
         logger.info(f"Forgot password requested for non-existent identifier '{identifier}'. Dummy timing defense applied.")
+        masked = _mask_email(identifier) if "@" in identifier else "your registered email"
         return success({
-            "message": standard_message
+            "message": f"If the credential is registered, a single-use verification PIN has been dispatched to {masked}.",
+            "masked_email": masked,
+            "expires_in_seconds": 600,
         })
 
     badge_id = officer["badge_id"]
@@ -627,14 +651,22 @@ def forgot_password_handler(request: Request):
         "requested_at": now,
     }
 
-    logger.info(f"Security reset PIN generated for officer '{badge_id}'. PIN dispatched to secure audit channel.")
+    # Dispatch email to officer's registered address
+    officer_email = officer.get("email", "")
+    officer_name = officer.get("officer_name", "Officer")
+    dispatched, dispatch_status = send_password_reset_email(officer_email, officer_name, badge_id, pin)
+    masked_email = _mask_email(officer_email)
+
+    logger.info(
+        f"Security reset PIN generated for officer '{badge_id}'. "
+        f"Dispatch result: {dispatched} ({dispatch_status})."
+    )
 
     return success({
-        "message": standard_message,
+        "message": f"If the credential is registered, a single-use verification PIN has been dispatched to {masked_email}.",
         "badge_id": badge_id,
+        "masked_email": masked_email,
         "expires_in_seconds": 600,
-        # For development/demo resilience: return preview_code so user and evaluators can verify without external SMTP setup
-        "preview_code": pin
     })
 
 
@@ -692,16 +724,9 @@ def reset_password_handler(request: Request):
         return unauthorized(f"Invalid verification PIN. {remaining_attempts} attempt(s) remaining before security lockout.")
 
     # Password complexity validation
-    if len(new_password) < 8:
-        return bad_request("Password must be at least 8 characters long.")
-    if not any(c.isupper() for c in new_password):
-        return bad_request("Password must contain at least one uppercase letter.")
-    if not any(c.islower() for c in new_password):
-        return bad_request("Password must contain at least one lowercase letter.")
-    if not any(c.isdigit() for c in new_password):
-        return bad_request("Password must contain at least one number.")
-    if not any(c in "!@#$%^&*()-_=+[]{}|;:,.<>?" for c in new_password):
-        return bad_request("Password must contain at least one special symbol.")
+    is_valid_pass, pass_err = _validate_password_complexity(new_password)
+    if not is_valid_pass:
+        return bad_request(pass_err)
 
     # Disallow reusing exact same password
     if verify_password(new_password, officer["salt"], officer["password_hash"]):

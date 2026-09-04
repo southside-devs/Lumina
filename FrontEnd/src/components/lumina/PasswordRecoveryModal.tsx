@@ -19,13 +19,14 @@ export function PasswordRecoveryModal({
   const { forgotPassword, resetPassword } = useAuth();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [badgeOrEmail, setBadgeOrEmail] = useState(initialBadgeId || "KSP-4521");
+  const [badgeOrEmail, setBadgeOrEmail] = useState(initialBadgeId);
   const [targetBadge, setTargetBadge] = useState("");
+  const [maskedEmail, setMaskedEmail] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [previewCode, setPreviewCode] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -33,12 +34,13 @@ export function PasswordRecoveryModal({
   useEffect(() => {
     if (isOpen) {
       setStep(1);
-      setBadgeOrEmail(initialBadgeId || "KSP-4521");
+      setBadgeOrEmail(initialBadgeId || "");
       setCode("");
       setNewPassword("");
       setConfirmPassword("");
-      setPreviewCode(null);
+      setMaskedEmail(null);
       setErrorMessage(null);
+      setResendCooldown(0);
     }
   }, [isOpen, initialBadgeId]);
 
@@ -50,6 +52,15 @@ export function PasswordRecoveryModal({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   if (!isOpen) return null;
 
@@ -63,7 +74,7 @@ export function PasswordRecoveryModal({
   const isPasswordValid =
     hasMinLength && hasUppercase && hasLowercase && hasDigit && hasSymbol && passwordsMatch;
 
-  // Step 1: Request PIN
+  // Step 1: Request PIN via Email
   const handleRequestPin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanId = badgeOrEmail.trim();
@@ -78,17 +89,39 @@ export function PasswordRecoveryModal({
     try {
       const data = await forgotPassword(cleanId);
       setTargetBadge(data.badge_id || cleanId.toUpperCase());
-      if (data.preview_code) {
-        setPreviewCode(data.preview_code);
-      }
+      setMaskedEmail(data.masked_email || null);
       setStep(2);
-      toast.info("Security Verification Dispatched", {
-        description: data.message || "Enter the 6-digit cryptographic PIN to reset your password.",
+      setResendCooldown(60); // 60s cooldown before allowing resend
+
+      toast.info("Verification PIN Dispatched", {
+        description: `A 6-digit cryptographic PIN was sent to ${data.masked_email || "your registered email"}.`,
       });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to initiate recovery.";
       setErrorMessage(msg);
       toast.error("Recovery Fault", { description: msg });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Resend PIN handler
+  const handleResendPin = async () => {
+    if (resendCooldown > 0 || isLoading) return;
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const cleanId = targetBadge || badgeOrEmail.trim();
+      const data = await forgotPassword(cleanId);
+      setMaskedEmail(data.masked_email || null);
+      setResendCooldown(60);
+      toast.success("PIN Re-dispatched", {
+        description: `A fresh 6-digit PIN has been dispatched to ${data.masked_email || "your email"}.`,
+      });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to resend PIN.";
+      setErrorMessage(msg);
+      toast.error("Resend Fault", { description: msg });
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +134,7 @@ export function PasswordRecoveryModal({
 
     const cleanCode = code.trim();
     if (!cleanCode || cleanCode.length < 6) {
-      setErrorMessage("Please enter the complete 6-digit verification code.");
+      setErrorMessage("Please enter the complete 6-digit verification code from your email.");
       return;
     }
 
@@ -142,7 +175,7 @@ export function PasswordRecoveryModal({
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 p-4 backdrop-blur-md animate-in fade-in duration-150 font-sans text-white"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/85 p-4 backdrop-blur-md animate-in fade-in duration-150 font-sans text-white"
     >
       <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#090b12]/98 p-6 shadow-[0_25px_80px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.12)] backdrop-blur-3xl animate-in zoom-in-95 duration-150">
         {/* Modal Header */}
@@ -185,7 +218,7 @@ export function PasswordRecoveryModal({
 
         {/* Error Notification */}
         {errorMessage && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-300 animate-in fade-in">
             <span className="material-symbols-outlined text-base text-red-400 shrink-0">error</span>
             <span className="font-mono text-[11px] leading-tight">{errorMessage}</span>
           </div>
@@ -195,9 +228,9 @@ export function PasswordRecoveryModal({
         {step === 1 && (
           <form onSubmit={handleRequestPin} className="space-y-4">
             <p className="text-xs text-zinc-300 leading-relaxed">
-              Enter your assigned <strong className="text-white">Badge ID</strong> or official{" "}
-              <strong className="text-white">@ksp.gov.in</strong> email. A single-use 6-digit
-              cryptographic PIN will be dispatched for key rotation.
+              Enter your assigned <strong className="text-white">Badge ID</strong> or registered official{" "}
+              <strong className="text-white">Email Address</strong>. A single-use 6-digit
+              cryptographic PIN will be dispatched to your email for key rotation.
             </p>
 
             <div>
@@ -229,7 +262,8 @@ export function PasswordRecoveryModal({
                 Security Enforcement
               </div>
               <p>• Account enumeration protected with constant-time cryptographic response.</p>
-              <p>• Maximum 4 requests per 15-minute window.</p>
+              <p>• Maximum 4 requests per 15-minute sliding window.</p>
+              <p>• PIN dispatched directly to verified email address only.</p>
             </div>
 
             <div className="pt-2 flex items-center justify-end gap-2">
@@ -249,7 +283,7 @@ export function PasswordRecoveryModal({
                   <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
                 ) : (
                   <>
-                    <span>Generate Reset PIN</span>
+                    <span>Dispatch Recovery PIN</span>
                     <span className="material-symbols-outlined text-base">arrow_forward</span>
                   </>
                 )}
@@ -274,31 +308,35 @@ export function PasswordRecoveryModal({
               </button>
             </div>
 
-            {/* Live Preview PIN Notification (Resilience for Serverless Demos without SMTP) */}
-            {previewCode && (
-              <div className="flex items-center justify-between gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-emerald-300 animate-in fade-in">
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className="material-symbols-outlined text-emerald-400 text-lg shrink-0">key</span>
-                  <div className="min-w-0">
-                    <p className="font-mono font-bold tracking-wider">SECURE PIN: {previewCode}</p>
-                    <p className="text-[10px] text-emerald-400/80">Valid for 10 minutes</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setCode(previewCode)}
-                  className="shrink-0 rounded-lg border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-1 font-mono text-[10px] font-bold text-emerald-200 hover:bg-emerald-500/30 transition-colors cursor-pointer"
-                >
-                  Auto-fill
-                </button>
+            {/* Email Dispatch Notice Banner */}
+            <div className="flex items-start gap-3 rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 text-xs text-blue-200">
+              <span className="material-symbols-outlined text-blue-400 text-xl shrink-0 mt-0.5">mark_email_read</span>
+              <div className="space-y-1 min-w-0">
+                <div className="font-semibold text-white">PIN Dispatched to Email</div>
+                <p className="text-zinc-300 leading-relaxed font-mono text-[11px]">
+                  A 6-digit PIN was sent to <strong className="text-blue-300">{maskedEmail || "your registered email"}</strong>.
+                </p>
+                <p className="text-[10px] text-zinc-400">
+                  Valid for 10 minutes. If not in your inbox, please check your spam or junk folder.
+                </p>
               </div>
-            )}
+            </div>
 
             {/* 6-Digit PIN input */}
             <div>
-              <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
-                6-Digit Verification PIN
-              </label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+                  6-Digit Verification PIN
+                </label>
+                <button
+                  type="button"
+                  disabled={resendCooldown > 0 || isLoading}
+                  onClick={handleResendPin}
+                  className="font-mono text-[11px] text-blue-400 hover:text-blue-300 disabled:text-zinc-600 disabled:no-underline hover:underline cursor-pointer disabled:cursor-not-allowed transition-colors"
+                >
+                  {resendCooldown > 0 ? `Resend PIN (${resendCooldown}s)` : "Resend PIN"}
+                </button>
+              </div>
               <input
                 type="text"
                 maxLength={6}

@@ -19,7 +19,7 @@ export interface RegisterPayload {
   officerName: string;
   stationUnit?: string;
   rank?: string;
-  email?: string;
+  email: string;
 }
 
 interface AuthContextType {
@@ -31,7 +31,7 @@ interface AuthContextType {
   register: (payload: RegisterPayload) => Promise<OfficerUser>;
   ssoLogin: () => Promise<OfficerUser>;
   logout: () => void;
-  forgotPassword: (badgeOrEmail: string) => Promise<{ message: string; badge_id?: string; preview_code?: string; expires_in_seconds?: number }>;
+  forgotPassword: (badgeOrEmail: string) => Promise<{ message: string; badge_id?: string; masked_email?: string; expires_in_seconds?: number }>;
   resetPassword: (payload: { badgeId: string; code: string; newPassword: string }) => Promise<OfficerUser>;
 }
 

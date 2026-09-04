@@ -22,51 +22,35 @@ export const Route = createFileRoute("/login")({
       { title: "LUMINA — Officer Authentication | Karnataka State Police" },
       {
         name: "description",
-        content: "Enterprise biometric and badge authentication portal for Lumina Command Center.",
+        content: "Enterprise law enforcement authentication portal for Lumina Strategic Crime Intelligence.",
       },
     ],
   }),
   component: LoginPage,
 });
 
-const DEMO_PRESETS = [
-  {
-    badge: "KSP-4521",
-    pass: "Karnataka@Police2026",
-    name: "Insp. Rajesh Kumar",
-    label: "Insp. R. Kumar · Admin",
-    rank: "Police Inspector",
-    unit: "Cyber & Strategic Command HQ",
-  },
-  {
-    badge: "KSP-1092",
-    pass: "Cyber@Command2026",
-    name: "SP Ananya Sharma",
-    label: "SP A. Sharma · Analyst",
-    rank: "Superintendent of Police",
-    unit: "CID Cyber Crime Division",
-  },
-  {
-    badge: "KSP-8820",
-    pass: "Khaki@Safe2026",
-    name: "SHO Vikram Rao",
-    label: "SHO V. Rao · Station Head",
-    rank: "Station House Officer",
-    unit: "Indiranagar Police Station",
-  },
-];
+const REMEMBER_BADGE_KEY = "lumina_remembered_badge";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const search = Route.useSearch();
-  const { login, register, ssoLogin, isAuthenticated, user } = useAuth();
+  const { login, register, isAuthenticated, user } = useAuth();
 
   const [isSignUp, setIsSignUp] = useState(false);
-  const [badgeId, setBadgeId] = useState("KSP-4521");
-  const [password, setPassword] = useState("Karnataka@Police2026");
-  const [officerName, setOfficerName] = useState("Inspector Rajesh Kumar");
-  const [stationUnit, setStationUnit] = useState("Cyber & Strategic Command HQ, Bengaluru");
+
+  // Remembered badge ID or clean empty state
+  const [rememberBadge, setRememberBadge] = useState(() => {
+    return Boolean(localStorage.getItem(REMEMBER_BADGE_KEY));
+  });
+  const [badgeId, setBadgeId] = useState(() => {
+    return localStorage.getItem(REMEMBER_BADGE_KEY) || "";
+  });
+
+  const [password, setPassword] = useState("");
+  const [officerName, setOfficerName] = useState("");
+  const [stationUnit, setStationUnit] = useState("");
   const [rank, setRank] = useState("Police Inspector");
+  const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
@@ -97,7 +81,7 @@ export function LoginPage() {
       const redir = searchParams.get("redirect");
       if (redir && redir.startsWith("/") && redir !== "/login" && !redir.startsWith("/login?")) return redir;
     } catch {
-      // Fallback to default
+      // Fallback
     }
     return "/";
   };
@@ -111,35 +95,37 @@ export function LoginPage() {
     }
   }, [isAuthenticated, isBooting, navigate, redirectTarget]);
 
-  const handleSelectPreset = (preset: typeof DEMO_PRESETS[0]) => {
-    setBadgeId(preset.badge);
-    setPassword(preset.pass);
-    setOfficerName(preset.name);
-    setRank(preset.rank);
-    setStationUnit(preset.unit);
-    setErrorMessage(null);
-  };
-
   const handleAccessSystem = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    const cleanBadge = badgeId.trim().toUpperCase();
-    if (!cleanBadge) {
-      setErrorMessage("Please provide your Karnataka Police Badge ID.");
-      toast.error("Authentication Error", { description: "Please enter your Badge ID." });
+    const cleanIdentifier = badgeId.trim();
+    if (!cleanIdentifier) {
+      setErrorMessage("Please enter your Karnataka Police Badge ID or Official Email.");
+      toast.error("Authentication Error", { description: "Identifier cannot be empty." });
       return;
     }
 
     if (!password) {
-      setErrorMessage("Please enter your security access password.");
+      setErrorMessage("Please enter your security access key.");
       toast.error("Authentication Error", { description: "Password cannot be empty." });
       return;
+    }
+
+    // Save or clear remembered badge
+    if (rememberBadge && !cleanIdentifier.includes("@")) {
+      localStorage.setItem(REMEMBER_BADGE_KEY, cleanIdentifier.toUpperCase());
+    } else if (!rememberBadge) {
+      localStorage.removeItem(REMEMBER_BADGE_KEY);
     }
 
     if (isSignUp) {
       if (!officerName.trim()) {
         setErrorMessage("Please enter your official Officer Name & Rank.");
+        return;
+      }
+      if (!email.trim() || !email.includes("@") || !email.includes(".")) {
+        setErrorMessage("Please enter a valid official email address for account recovery.");
         return;
       }
       if (password.length < 8) {
@@ -152,11 +138,12 @@ export function LoginPage() {
         setIsBooting(true);
 
         const newUser = await register({
-          badgeId: cleanBadge,
+          badgeId: cleanIdentifier.toUpperCase(),
           password,
           officerName: officerName.trim(),
-          stationUnit: stationUnit.trim(),
-          rank: rank.trim(),
+          stationUnit: stationUnit.trim() || "Karnataka State Police",
+          rank: rank.trim() || "Police Inspector",
+          email: email.trim().toLowerCase(),
         });
 
         setPendingUser(newUser);
@@ -171,36 +158,27 @@ export function LoginPage() {
         setBootLabel("AUTHENTICATING OFFICER KEY");
         setIsBooting(true);
 
-        const loggedInUser = await login(cleanBadge, password);
+        const loggedInUser = await login(cleanIdentifier, password);
         setPendingUser(loggedInUser);
       } catch (err: unknown) {
         setIsBooting(false);
-        const msg = err instanceof Error ? err.message : "Invalid Badge ID or Security Key.";
+        const msg = err instanceof Error ? err.message : "Invalid Badge ID / Email or Security Key.";
         setErrorMessage(msg);
         toast.error("Access Denied", { description: msg });
       }
     }
   };
 
-  const handleSso = async () => {
-    setErrorMessage(null);
-    try {
-      setBootLabel("KSP PORTAL SSO");
-      setIsBooting(true);
-      const ssoUser = await ssoLogin();
-      setPendingUser(ssoUser);
-    } catch (err: unknown) {
-      setIsBooting(false);
-      const msg = err instanceof Error ? err.message : "SSO Gateway unreachable.";
-      setErrorMessage(msg);
-      toast.error("SSO Fault", { description: msg });
-    }
+  const handleSso = () => {
+    toast.info("KSP Intranet SSO", {
+      description: "Direct Single Sign-On requires official police VPN or PKI smartcard hardware. Please authenticate with your Badge ID or Official Email.",
+    });
   };
 
   const handleBootComplete = () => {
     setIsBooting(false);
     const activeOfficer = pendingUser || user;
-    toast.success(isSignUp ? "Officer Key Created" : "Access Granted", {
+    toast.success(isSignUp ? "Officer Identity Enrolled" : "Access Granted", {
       description: `Welcome, ${activeOfficer?.name || "Officer"}. Command console initialized.`,
     });
     navigate({ to: redirectTarget });
@@ -217,7 +195,7 @@ export function LoginPage() {
 
       {/* Main Split Authentication Card */}
       <div className="relative z-10 grid w-full max-w-4xl grid-cols-1 md:grid-cols-2 overflow-hidden rounded-[1.75rem] border border-white/[0.1] bg-[#0c0d12]/95 shadow-[0_30px_100px_rgba(0,0,0,0.85),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-3xl">
-        {/* Left Side: KSP Branding & Platform Info */}
+        {/* Left Side: KSP Branding & Official Security Notice */}
         <div className="flex flex-col justify-between border-b md:border-b-0 md:border-r border-white/[0.08] bg-[#08090e]/90 p-8 sm:p-10">
           <div>
             {/* KSP Emblem & State Police Title */}
@@ -245,7 +223,7 @@ export function LoginPage() {
           {/* Middle Body Copy */}
           <div className="my-8 space-y-3">
             <p className="text-sm font-medium leading-relaxed text-zinc-300">
-              Statewide Crime Analytics, Spatiotemporal Hotspot Detection &amp; Syndicate Topology.
+              Statewide Crime Analytics, Spatiotemporal Hotspot Detection &amp; Syndicate Relational Topology.
             </p>
             <p className="text-xs text-zinc-400">
               Authorized law enforcement personnel only. Sessions are cryptographically signed and audited.
@@ -258,30 +236,32 @@ export function LoginPage() {
             </div>
           </div>
 
-          {/* Quick Demo Credentials Switcher */}
-          <div className="space-y-2 border-t border-white/[0.06] pt-4">
-            <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500 block">
-              Quick Officer Profile Selector:
-            </span>
-            <div className="flex flex-col gap-1.5">
-              {DEMO_PRESETS.map((preset) => {
-                const isSelected = badgeId === preset.badge;
-                return (
-                  <button
-                    key={preset.badge}
-                    type="button"
-                    onClick={() => handleSelectPreset(preset)}
-                    className={`flex items-center justify-between rounded-xl px-2.5 py-1.5 text-left text-xs font-mono transition-all cursor-pointer ${
-                      isSelected
-                        ? "border border-blue-500/40 bg-blue-500/15 text-blue-300 shadow-[0_0_10px_rgba(59,130,246,0.2)]"
-                        : "border border-white/5 bg-white/[0.02] text-zinc-400 hover:border-white/15 hover:text-white hover:bg-white/[0.05]"
-                    }`}
-                  >
-                    <span className="truncate">{preset.label}</span>
-                    <span className="text-[10px] text-zinc-500 shrink-0 ml-2 font-bold">{preset.badge}</span>
-                  </button>
-                );
-              })}
+          {/* Statutory Security Advisory & System Compliance Notice */}
+          <div className="space-y-3.5 border-t border-white/[0.06] pt-5">
+            <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3.5 space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-amber-400 font-mono">
+                <span className="material-symbols-outlined text-sm">gavel</span>
+                Restricted Law Enforcement System
+              </div>
+              <p className="text-[10px] leading-relaxed text-zinc-400">
+                Unauthorized access to KSP Lumina Command infrastructure is strictly prohibited. Access attempts are digitally fingerprinted, logged, and prosecutable under the Information Technology Act and Bharatiya Nyaya Sanhita (BNS).
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-zinc-400">
+              <div className="rounded-lg border border-white/5 bg-white/[0.01] p-2">
+                <span className="text-zinc-500 block text-[9px]">ENCRYPTION</span>
+                <span className="font-bold text-zinc-300">PBKDF2-SHA256</span>
+              </div>
+              <div className="rounded-lg border border-white/5 bg-white/[0.01] p-2">
+                <span className="text-zinc-500 block text-[9px]">SESSION</span>
+                <span className="font-bold text-zinc-300">256-Bit HS256 JWT</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-[10px] font-mono text-zinc-500 px-1">
+              <span>CYBER COMMAND SOC: ACTIVE</span>
+              <span>BANGALORE HQ</span>
             </div>
           </div>
         </div>
@@ -297,7 +277,7 @@ export function LoginPage() {
                 </h2>
                 <p className="mt-1 text-xs text-zinc-400">
                   {isSignUp
-                    ? "Register officer credentials in Lumina Vault"
+                    ? "Enroll official credentials in Lumina Security Vault"
                     : "Access the Karnataka Command Center"}
                 </p>
               </div>
@@ -328,7 +308,7 @@ export function LoginPage() {
                 <>
                   <div>
                     <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
-                      Officer Name &amp; Rank
+                      Officer Name &amp; Rank <span className="text-red-400">*</span>
                     </label>
                     <div className="relative flex items-center">
                       <span className="material-symbols-outlined absolute left-3.5 text-[18px] text-zinc-500">
@@ -347,6 +327,28 @@ export function LoginPage() {
 
                   <div>
                     <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+                      Official Email Address <span className="text-red-400">*</span>
+                    </label>
+                    <div className="relative flex items-center">
+                      <span className="material-symbols-outlined absolute left-3.5 text-[18px] text-zinc-500">
+                        mail
+                      </span>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="e.g. officer@ksp.gov.in or officer@gmail.com"
+                        className="w-full rounded-xl border border-white/10 bg-[#090a0f] py-3 pr-4 pl-11 text-sm text-white placeholder:text-zinc-600 transition-all focus:border-blue-500/50 focus:bg-black focus:outline-none focus:ring-1 focus:ring-blue-500/50"
+                        required
+                      />
+                    </div>
+                    <p className="mt-1 text-[10px] font-mono text-zinc-500">
+                      Required for security key recovery and verification dispatches.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
                       Station / Division Unit
                     </label>
                     <div className="relative flex items-center">
@@ -359,7 +361,6 @@ export function LoginPage() {
                         onChange={(e) => setStationUnit(e.target.value)}
                         placeholder="e.g. Belagavi North Division"
                         className="w-full rounded-xl border border-white/10 bg-[#090a0f] py-3 pr-4 pl-11 text-sm text-white placeholder:text-zinc-600 transition-all focus:border-blue-500/50 focus:bg-black focus:outline-none focus:ring-1 focus:ring-blue-500/50"
-                        required
                       />
                     </div>
                   </div>
@@ -368,7 +369,7 @@ export function LoginPage() {
 
               <div>
                 <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
-                  Karnataka Police Badge ID
+                  {isSignUp ? "Karnataka Police Badge ID" : "Badge ID or Official Email"}
                 </label>
                 <div className="relative flex items-center">
                   <span className="material-symbols-outlined absolute left-3.5 text-[18px] text-zinc-500">
@@ -378,14 +379,28 @@ export function LoginPage() {
                     type="text"
                     value={badgeId}
                     onChange={(e) => {
-                      setBadgeId(e.target.value.toUpperCase());
+                      setBadgeId(e.target.value);
                       setErrorMessage(null);
                     }}
-                    placeholder="e.g. KSP-4521"
+                    placeholder={isSignUp ? "e.g. KSP-4521" : "e.g. KSP-4521 or officer@ksp.gov.in"}
                     className="w-full rounded-xl border border-white/10 bg-[#090a0f] py-3 pr-4 pl-11 text-sm text-white placeholder:text-zinc-600 transition-all focus:border-blue-500/50 focus:bg-black focus:outline-none focus:ring-1 focus:ring-blue-500/50 font-mono"
                     required
                   />
                 </div>
+                {!isSignUp && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <input
+                      type="checkbox"
+                      id="rememberBadge"
+                      checked={rememberBadge}
+                      onChange={(e) => setRememberBadge(e.target.checked)}
+                      className="size-3.5 rounded border border-white/20 bg-[#090a0f] text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer accent-blue-600"
+                    />
+                    <label htmlFor="rememberBadge" className="font-mono text-[11px] text-zinc-400 cursor-pointer select-none">
+                      Remember Badge ID on this terminal
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -438,7 +453,7 @@ export function LoginPage() {
                   type="submit"
                   className="group flex w-full items-center justify-center gap-2 rounded-full bg-white py-3 px-6 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.35)] transition-all hover:bg-zinc-200 active:scale-[0.985] cursor-pointer"
                 >
-                  <span>{isSignUp ? "Register Officer Key & Enter" : "Authenticate & Access Console"}</span>
+                  <span>{isSignUp ? "Enroll Officer Key & Enter" : "Authenticate & Access Console"}</span>
                   <span className="material-symbols-outlined text-lg transition-transform duration-150 group-hover:translate-x-1">
                     arrow_forward
                   </span>
@@ -447,7 +462,7 @@ export function LoginPage() {
                 <button
                   type="button"
                   onClick={handleSso}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-2.5 px-6 text-xs font-semibold text-zinc-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-white active:scale-[0.985] cursor-pointer"
+                  className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-2.5 px-6 text-xs font-semibold text-zinc-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-white active:scale-[0.985] cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-base text-blue-400">vpn_key</span>
                   <span>Karnataka State Police SSO Gateway</span>
