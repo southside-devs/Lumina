@@ -228,7 +228,7 @@ export function LoginPage() {
           <div>
             {/* KSP Emblem & State Police Title */}
             <div className="flex items-center gap-3.5">
-              <KspEmblem className="size-11 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.4)]" />
+              <KspEmblem className="size-13 sm:size-14 drop-shadow-[0_0_14px_rgba(255,255,255,0.25)]" />
               <div className="flex flex-col leading-tight">
                 <span className="font-display text-[15px] font-black uppercase tracking-wider text-white">
                   KARNATAKA STATE
