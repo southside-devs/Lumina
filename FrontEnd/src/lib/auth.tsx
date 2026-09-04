@@ -31,6 +31,8 @@ interface AuthContextType {
   register: (payload: RegisterPayload) => Promise<OfficerUser>;
   ssoLogin: () => Promise<OfficerUser>;
   logout: () => void;
+  forgotPassword: (badgeOrEmail: string) => Promise<{ message: string; badge_id?: string; preview_code?: string; expires_in_seconds?: number }>;
+  resetPassword: (payload: { badgeId: string; code: string; newPassword: string }) => Promise<OfficerUser>;
 }
 
 const TOKEN_KEY = "lumina_auth_token";
@@ -278,6 +280,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const forgotPassword = useCallback(async (badgeOrEmail: string) => {
+    const apiBase = getApiBase();
+    const res = await fetch(`${apiBase}/auth/forgot-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Lumina-Demo-Key": "lumina-demo-ksp-2026",
+      },
+      body: JSON.stringify({ badge_id: badgeOrEmail }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = json?.message || "Failed to initiate security key reset.";
+      throw new Error(msg);
+    }
+    return json?.data || {};
+  }, []);
+
+  const resetPassword = useCallback(async (payload: { badgeId: string; code: string; newPassword: string }): Promise<OfficerUser> => {
+    const apiBase = getApiBase();
+    const res = await fetch(`${apiBase}/auth/reset-password`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Lumina-Demo-Key": "lumina-demo-ksp-2026",
+      },
+      body: JSON.stringify({
+        badge_id: payload.badgeId,
+        code: payload.code,
+        new_password: payload.newPassword,
+      }),
+    });
+
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = json?.message || "Failed to reset security key.";
+      throw new Error(msg);
+    }
+
+    const { token: sessionToken, officer } = json.data;
+    const authenticatedUser: OfficerUser = {
+      id: String(officer.id),
+      badgeId: officer.badge_id,
+      name: officer.name,
+      rank: officer.rank,
+      stationUnit: officer.station_unit,
+      role: officer.role,
+      email: officer.email,
+    };
+
+    localStorage.setItem(TOKEN_KEY, sessionToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
+    setToken(sessionToken);
+    setUser(authenticatedUser);
+
+    return authenticatedUser;
+  }, []);
+
   const value: AuthContextType = {
     user,
     token,
@@ -287,6 +348,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     register,
     ssoLogin,
     logout,
+    forgotPassword,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

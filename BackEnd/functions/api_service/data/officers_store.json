@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1",
+    "badge_id": "KSP-4521",
+    "email": "r.kumar@ksp.gov.in",
+    "password_hash": "75af34272e78ca2818315a7c731f74dbad267e9e438780ff168467b576807107",
+    "salt": "1e2c4b46a7ad42ce9dc732c8e82d7e8b",
+    "officer_name": "Inspector Rajesh Kumar",
+    "rank": "Police Inspector",
+    "station_unit": "Cyber & Strategic Command HQ, Bengaluru",
+    "role": "Admin",
+    "status": "Active",
+    "created_at": "2026-01-01T00:00:00Z",
+    "password_changed_at": 1788513135
+  },
+  {
+    "id": "2",
+    "badge_id": "KSP-1092",
+    "email": "a.sharma@ksp.gov.in",
+    "password_hash": "3bb0b6c1da6290f4db708b5fc6a205a229ebce549a644dcba287fb7cde68cf24",
+    "salt": "8752087253bc036edab7c7360d8d3624",
+    "officer_name": "SP Ananya Sharma",
+    "rank": "Superintendent of Police",
+    "station_unit": "CID Cyber Crime Division",
+    "role": "SCRB_Analyst",
+    "status": "Active",
+    "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "3",
+    "badge_id": "KSP-8820",
+    "email": "v.rao@ksp.gov.in",
+    "password_hash": "503b5ca8823656928f7ee82450a7286aab150a6b60d48edc7e8121e450014208",
+    "salt": "27a3798d6c58d94f90fa19781733be63",
+    "officer_name": "SHO Vikram Rao",
+    "rank": "Station House Officer",
+    "station_unit": "Indiranagar Police Station, Bengaluru",
+    "role": "SHO",
+    "status": "Active",
+    "created_at": "2026-01-01T00:00:00Z"
+  }
+]

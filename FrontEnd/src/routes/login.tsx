@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { KspEmblem } from "@/components/lumina/KspEmblem";
 import { LuminaLogo } from "@/components/lumina/LuminaLogo";
 import { TacticalLoader } from "@/components/lumina/TacticalLoader";
+import { PasswordRecoveryModal } from "@/components/lumina/PasswordRecoveryModal";
 import { useAuth, type OfficerUser } from "@/lib/auth";
 
 interface LoginSearchParams {
@@ -68,6 +69,7 @@ export function LoginPage() {
   const [rank, setRank] = useState("Police Inspector");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
 
   const [isBooting, setIsBooting] = useState(false);
   const [bootLabel, setBootLabel] = useState("INITIALIZING");
@@ -387,9 +389,20 @@ export function LoginPage() {
               </div>
 
               <div>
-                <label className="mb-1 block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
-                  Security Password Key
-                </label>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="block font-mono text-[11px] uppercase tracking-wider text-zinc-400">
+                    Security Password Key
+                  </label>
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={() => setShowRecoveryModal(true)}
+                      className="font-mono text-[11px] text-blue-400/90 hover:text-blue-300 transition-colors hover:underline cursor-pointer"
+                    >
+                      Forgot Key?
+                    </button>
+                  )}
+                </div>
                 <div className="relative flex items-center">
                   <span className="material-symbols-outlined absolute left-3.5 text-[18px] text-zinc-500">
                     lock
@@ -447,19 +460,26 @@ export function LoginPage() {
           <div className="mt-6 text-center">
             <button
               type="button"
-              onClick={() =>
-                toast.info("State Cyber Command Admin Support", {
-                  description:
-                    "Contact the KSP State Cyber Command Helpdesk at support@ksp.gov.in or Internal Ext #4001.",
-                })
-              }
+              onClick={() => setShowRecoveryModal(true)}
               className="text-xs text-zinc-500 transition-colors hover:text-zinc-300 hover:underline cursor-pointer font-mono text-[11px]"
             >
-              Trouble authenticating? Contact Cyber Command Admin
+              Trouble authenticating? Reset Security Key
             </button>
           </div>
         </div>
       </div>
+
+      {/* Password Recovery Vault Modal */}
+      <PasswordRecoveryModal
+        isOpen={showRecoveryModal}
+        onClose={() => setShowRecoveryModal(false)}
+        initialBadgeId={badgeId}
+        onSuccess={(updatedBadge, newPass) => {
+          setBadgeId(updatedBadge);
+          setPassword(newPass);
+          setErrorMessage(null);
+        }}
+      />
     </div>
   );
 }
