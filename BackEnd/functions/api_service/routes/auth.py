@@ -67,17 +67,6 @@ DEFAULT_OFFICERS = [
         "role": "SHO",
         "status": "Active",
     },
-    {
-        "id": "4",
-        "badge_id": "KSP-0143",
-        "email": "omarvfais@gmail.com",
-        "password": "@1Itsmeomar",
-        "officer_name": "Command Officer Omar",
-        "rank": "Police Inspector",
-        "station_unit": "Cyber & Strategic Command HQ, Bengaluru",
-        "role": "Admin",
-        "status": "Active",
-    },
 ]
 
 
