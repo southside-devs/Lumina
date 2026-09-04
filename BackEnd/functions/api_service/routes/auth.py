@@ -67,6 +67,17 @@ DEFAULT_OFFICERS = [
         "role": "SHO",
         "status": "Active",
     },
+    {
+        "id": "4",
+        "badge_id": "KSP-0143",
+        "email": "omarvfais@gmail.com",
+        "password": "@1Itsmeomar",
+        "officer_name": "Command Officer Omar",
+        "rank": "Police Inspector",
+        "station_unit": "Cyber & Strategic Command HQ, Bengaluru",
+        "role": "Admin",
+        "status": "Active",
+    },
 ]
 
 
@@ -292,11 +303,23 @@ def _init_officers(db: DataStore = None):
     _CACHE_INITIALIZED = True
 
 
+def _normalize_badge(val: str) -> str:
+    """Normalize badge identifier by stripping all whitespace and hyphens for resilient matching."""
+    return re.sub(r"[\s\-_]+", "", val).lower()
+
+
 def _find_officer_by_badge_or_email(identifier: str) -> dict | None:
-    """Look up an officer by Badge ID or Email (case-insensitive)."""
-    clean_id = identifier.strip().lower()
+    """Look up an officer by Badge ID or Email (case-insensitive and whitespace-tolerant)."""
+    raw_clean = identifier.strip().lower()
+    norm_id = _normalize_badge(identifier)
     for o in _OFFICERS_CACHE:
-        if o["badge_id"].lower() == clean_id or o["email"].lower() == clean_id:
+        o_badge = o.get("badge_id", "")
+        o_email = o.get("email", "").lower()
+        if o_email and o_email == raw_clean:
+            return o
+        if o_badge.lower() == raw_clean:
+            return o
+        if _normalize_badge(o_badge) == norm_id:
             return o
     return None
 

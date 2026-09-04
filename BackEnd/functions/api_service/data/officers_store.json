@@ -38,5 +38,18 @@
     "role": "SHO",
     "status": "Active",
     "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "badge_id": "KSP-0143",
+    "email": "omarvfais@gmail.com",
+    "password_hash": "728c1bcc4b3b98cc1c0d58b6cc9e07e2ead40712d50b9b155d6bf972329a7077",
+    "salt": "1c30fa0e12b27d6e44912d15d3080f69",
+    "officer_name": "Command Officer Omar",
+    "rank": "Police Inspector",
+    "station_unit": "Cyber & Strategic Command HQ, Bengaluru",
+    "role": "Admin",
+    "status": "Active",
+    "created_at": "2026-01-01T00:00:00Z"
   }
 ]

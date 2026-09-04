@@ -106,6 +106,11 @@ export function LoginPage() {
       return;
     }
 
+    // Normalize badge formatting (e.g., 'KSP - 0143' -> 'KSP-0143') while keeping emails intact
+    const normalizedIdentifier = cleanIdentifier.includes("@")
+      ? cleanIdentifier.toLowerCase()
+      : cleanIdentifier.replace(/\s*-\s*/g, "-").replace(/\s+/g, "").toUpperCase();
+
     if (!password) {
       setErrorMessage("Please enter your security access key.");
       toast.error("Authentication Error", { description: "Password cannot be empty." });
@@ -114,7 +119,7 @@ export function LoginPage() {
 
     // Save or clear remembered badge
     if (rememberBadge && !cleanIdentifier.includes("@")) {
-      localStorage.setItem(REMEMBER_BADGE_KEY, cleanIdentifier.toUpperCase());
+      localStorage.setItem(REMEMBER_BADGE_KEY, normalizedIdentifier);
     } else if (!rememberBadge) {
       localStorage.removeItem(REMEMBER_BADGE_KEY);
     }
@@ -138,7 +143,7 @@ export function LoginPage() {
         setIsBooting(true);
 
         const newUser = await register({
-          badgeId: cleanIdentifier.toUpperCase(),
+          badgeId: normalizedIdentifier,
           password,
           officerName: officerName.trim(),
           stationUnit: stationUnit.trim() || "Karnataka State Police",
@@ -158,7 +163,7 @@ export function LoginPage() {
         setBootLabel("AUTHENTICATING OFFICER KEY");
         setIsBooting(true);
 
-        const loggedInUser = await login(cleanIdentifier, password);
+        const loggedInUser = await login(normalizedIdentifier, password);
         setPendingUser(loggedInUser);
       } catch (err: unknown) {
         setIsBooting(false);
