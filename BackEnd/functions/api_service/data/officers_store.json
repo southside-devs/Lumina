@@ -38,5 +38,18 @@
     "role": "SHO",
     "status": "Active",
     "created_at": "2026-01-01T00:00:00Z"
+  },
+  {
+    "id": "4",
+    "badge_id": "KSP-8821",
+    "email": "v.gowda@ksp.gov.in",
+    "password_hash": "2277b0ded35aa9cf933ee53e2f38afa8ca0ca516c556ef78b2863e9b7386119c",
+    "salt": "8f3596c7a6f575fe47b75f6142205be5",
+    "officer_name": "Inspector Vikram Gowda",
+    "rank": "Police Inspector",
+    "station_unit": "Cyber & Strategic Command HQ, Bengaluru",
+    "role": "Officer",
+    "status": "Active",
+    "created_at": "2026-09-04T19:25:01Z"
   }
 ]

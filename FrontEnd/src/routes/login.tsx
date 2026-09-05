@@ -197,12 +197,6 @@ export function LoginPage() {
     }
   };
 
-  const handleSso = () => {
-    toast.info("KSP Intranet SSO", {
-      description: "Direct Single Sign-On requires official police VPN or PKI smartcard hardware. Please authenticate with your Badge ID or Official Email.",
-    });
-  };
-
   const handleBootComplete = () => {
     setIsBooting(false);
     const activeOfficer = pendingUser || user;
@@ -503,8 +497,8 @@ export function LoginPage() {
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-2 space-y-2.5">
+              {/* Action Button */}
+              <div className="pt-2">
                 <button
                   type="submit"
                   className="group flex w-full items-center justify-center gap-2 rounded-full bg-white py-3 px-6 text-sm font-bold text-black shadow-[0_0_20px_rgba(255,255,255,0.35)] transition-all hover:bg-zinc-200 active:scale-[0.985] cursor-pointer"
@@ -513,15 +507,6 @@ export function LoginPage() {
                   <span className="material-symbols-outlined text-lg transition-transform duration-150 group-hover:translate-x-1">
                     arrow_forward
                   </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSso}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] py-2.5 px-6 text-xs font-semibold text-zinc-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] transition-all hover:border-white/25 hover:bg-white/[0.08] hover:text-white active:scale-[0.985] cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-base text-blue-400">vpn_key</span>
-                  <span>Karnataka State Police SSO Gateway</span>
                 </button>
               </div>
             </form>

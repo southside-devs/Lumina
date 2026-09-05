@@ -1,0 +1,36 @@
+{
+  "5006": [
+    {
+      "id": "att_eb99a7f186a4",
+      "fir_id": 5006,
+      "file_name": "cctv_frame_01.jpg",
+      "stored_name": "evidence_1788549442_98c1d00f_cctv_frame_01.jpg",
+      "content_type": "image/jpeg",
+      "file_size": 32,
+      "uploaded_at": "2026-09-04T19:17:22.355052Z",
+      "url": "/api/uploads/files/5006/evidence_1788549442_98c1d00f_cctv_frame_01.jpg"
+    },
+    {
+      "id": "att_fe4b0fe3a498",
+      "fir_id": 5006,
+      "file_name": "inventory_audit_loss.pdf",
+      "stored_name": "evidence_1788549442_75092931_inventory_audit_loss.pdf",
+      "content_type": "application/pdf",
+      "file_size": 42,
+      "uploaded_at": "2026-09-04T19:17:22.362287Z",
+      "url": "/api/uploads/files/5006/evidence_1788549442_75092931_inventory_audit_loss.pdf"
+    }
+  ],
+  "5007": [
+    {
+      "id": "att_e3564971b552",
+      "fir_id": 5007,
+      "file_name": "crime_scene_photo.jpg",
+      "stored_name": "evidence_1788550074_0265de3c_crime_scene_photo.jpg",
+      "content_type": "image/jpeg",
+      "file_size": 45,
+      "uploaded_at": "2026-09-04T19:27:54.321776Z",
+      "url": "/api/uploads/files/5007/evidence_1788550074_0265de3c_crime_scene_photo.jpg"
+    }
+  ]
+}

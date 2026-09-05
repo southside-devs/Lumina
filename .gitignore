@@ -43,6 +43,7 @@ data/synthetic/*.csv
 Thumbs.db
 .DS_Store
 
-# ── Logs ────────────────────────────────────────────────────────────────────
+# ── Logs & Dynamic Uploads ──────────────────────────────────────────────
 *.log
 logs/
+BackEnd/functions/api_service/data/uploads/

@@ -7,7 +7,7 @@ interface ProfileMenuProps {
   onPrivateChange: (value: boolean) => void;
   onClose: () => void;
   onLogout: () => void;
-  onResetPasskeys: () => void;
+  onResetPasskeys?: () => void;
   onOpenDetail?: (type: ProfileModalType) => void;
 }
 
@@ -179,15 +179,6 @@ export function ProfileMenu({
           hint="Badge #4521 · Karnataka State Police"
           onClick={() => {
             onOpenDetail?.("profile");
-            onClose();
-          }}
-        />
-        <MenuRow
-          icon="fingerprint"
-          label="Security & biometrics"
-          hint="Reset fingerprints / passkeys"
-          onClick={() => {
-            onOpenDetail?.("passkeys");
             onClose();
           }}
         />

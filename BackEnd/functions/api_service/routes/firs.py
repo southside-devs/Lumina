@@ -95,6 +95,12 @@ def list_firs(request, db):
     total = _extract_count(db.execute_query(count_query))
 
     rows = [_extract(r) for r in results]
+    try:
+        from routes.uploads import get_attachments_for_fir
+        for r in rows:
+            r["attachments"] = get_attachments_for_fir(r.get("ROWID") or r.get("ID"))
+    except Exception:
+        pass
     return paginated(rows, total, limit, offset)
 
 
@@ -132,6 +138,13 @@ def get_fir(db, fir_id):
         fir_data["accused"] = accused
     except Exception:
         fir_data["accused"] = []
+
+    # Fetch attached evidence documents / photos
+    try:
+        from routes.uploads import get_attachments_for_fir
+        fir_data["attachments"] = get_attachments_for_fir(row_id)
+    except Exception:
+        fir_data["attachments"] = []
 
     return success(fir_data)
 
@@ -202,6 +215,12 @@ def search_firs(request, db):
     total = _extract_count(db.execute_query(count_query))
 
     rows = [_extract(r) for r in results]
+    try:
+        from routes.uploads import get_attachments_for_fir
+        for r in rows:
+            r["attachments"] = get_attachments_for_fir(r.get("ROWID") or r.get("ID"))
+    except Exception:
+        pass
     return paginated(rows, total, limit, offset)
 
 

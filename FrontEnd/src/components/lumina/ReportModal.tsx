@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { toast } from "sonner";
-import { api, type CreateFIRResult } from "@/lib/api";
+import { api, type CreateFIRResult, type AttachmentItem } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 
 interface ReportModalProps {
@@ -39,8 +39,22 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setAttachedFiles(Array.from(e.target.files));
+      const newFiles = Array.from(e.target.files);
+      setAttachedFiles((prev) => {
+        const combined = [...prev];
+        for (const file of newFiles) {
+          if (!combined.some((f) => f.name === file.name && f.size === file.size)) {
+            combined.push(file);
+          }
+        }
+        return combined;
+      });
     }
+  };
+
+  const handleRemoveFile = (index: number, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleDropzoneClick = () => {
@@ -89,6 +103,19 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
         suspect_details: suspectDetails,
       });
 
+      // Upload attached evidence files if any were selected
+      if (attachedFiles.length > 0) {
+        toast.loading("Securing evidence attachments...", { id: "evidence-upload" });
+        try {
+          const attachments = await api.uploadFirAttachments(result.ROWID, attachedFiles);
+          result.attachments = attachments;
+          toast.success(`${attachments.length} evidence attachment(s) indexed & stored.`, { id: "evidence-upload" });
+        } catch (uploadErr) {
+          console.warn("Evidence upload non-fatal warning:", uploadErr);
+          toast.dismiss("evidence-upload");
+        }
+      }
+
       setCreatedFIR(result);
       setIsSubmitting(false);
       setIsSubmitted(true);
@@ -121,23 +148,23 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="flex size-8 items-center justify-center rounded-lg border border-hairline text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+            className="flex size-8 items-center justify-center rounded-lg border border-hairline text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-lg">close</span>
           </button>
         </div>
 
         {isSubmitted ? (
-          <div className="flex flex-col items-center justify-center p-12 text-center gap-4">
+          <div className="flex flex-col items-center justify-center p-10 text-center gap-4">
             <div className="flex size-16 items-center justify-center rounded-full bg-signal-ok/20 text-signal-ok">
               <span className="material-symbols-outlined text-4xl">check_circle</span>
             </div>
             <h3 className="font-display text-xl font-bold">Report Submitted</h3>
             <p className="text-sm text-muted-foreground">
-              Incident has been logged in the LUMINA Command Center database.
+              Incident and evidence have been logged in the LUMINA Command Center database.
             </p>
             {createdFIR && (
-              <div className="w-full rounded-xl border border-hairline bg-[#121214] p-4 text-left space-y-2">
+              <div className="w-full rounded-xl border border-hairline bg-[#121214] p-4 text-left space-y-3">
                 <p className="text-[10px] font-mono font-bold uppercase text-signal-brand">FIR Reference Details</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-mono text-xs">
                   <span className="text-muted-foreground">FIR Number:</span>
@@ -149,6 +176,40 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
                   <span className="text-muted-foreground">Date Filed:</span>
                   <span className="text-white">{createdFIR.Date || new Date().toLocaleDateString()}</span>
                 </div>
+
+                {createdFIR.attachments && createdFIR.attachments.length > 0 && (
+                  <div className="pt-2.5 border-t border-hairline space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-mono uppercase text-sky-400 font-bold">
+                      <span className="flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">attach_file</span>
+                        Secured Evidence Attachments
+                      </span>
+                      <span>{createdFIR.attachments.length} file(s)</span>
+                    </div>
+                    <div className="space-y-1 max-h-36 overflow-y-auto custom-scrollbar">
+                      {createdFIR.attachments.map((att) => (
+                        <div
+                          key={att.id}
+                          className="flex items-center justify-between rounded-lg bg-white/5 px-2.5 py-1.5 text-xs font-mono"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="material-symbols-outlined text-sm text-sky-400">
+                              {att.content_type.includes("pdf")
+                                ? "picture_as_pdf"
+                                : att.content_type.includes("image")
+                                ? "image"
+                                : "description"}
+                            </span>
+                            <span className="truncate text-zinc-200 text-xs">{att.file_name}</span>
+                          </div>
+                          <span className="text-[10px] text-zinc-400">
+                            {(att.file_size / 1024).toFixed(1)} KB
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <button
@@ -167,7 +228,7 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
                 setCreatedFIR(null);
                 onClose();
               }}
-              className="mt-2 rounded-full border border-hairline px-6 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+              className="mt-2 rounded-full border border-hairline px-6 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors cursor-pointer"
             >
               Close
             </button>
@@ -325,29 +386,81 @@ export function ReportModal({ isOpen, onClose }: ReportModalProps) {
               </label>
               <div
                 onClick={handleDropzoneClick}
-                className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-hairline bg-[#121214] py-5 px-4 text-center hover:border-white/20 transition-colors"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (e.dataTransfer.files) {
+                    const dropped = Array.from(e.dataTransfer.files);
+                    setAttachedFiles((prev) => {
+                      const combined = [...prev];
+                      for (const file of dropped) {
+                        if (!combined.some((f) => f.name === file.name && f.size === file.size)) {
+                          combined.push(file);
+                        }
+                      }
+                      return combined;
+                    });
+                  }
+                }}
+                className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-hairline bg-[#121214] py-4 px-4 text-center hover:border-white/30 transition-colors"
               >
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="material-symbols-outlined text-lg">note_add</span>
+                  <span className="material-symbols-outlined text-lg text-sky-400">note_add</span>
                   <span>
                     {attachedFiles.length > 0
-                      ? `${attachedFiles.length} file(s) selected`
-                      : "Click to upload photos, videos, or documents"}
+                      ? `${attachedFiles.length} evidence file(s) attached`
+                      : "Drag & drop or click to upload photos, CCTV, or documents"}
                   </span>
                 </div>
-                {attachedFiles.length > 0 && (
-                  <div className="mt-2 text-[10px] text-muted-foreground/60">
-                    {attachedFiles.map((f) => f.name).join(", ")}
-                  </div>
-                )}
+                <p className="mt-1 text-[10px] text-zinc-500 font-mono">
+                  Supported: JPG, PNG, WEBP, PDF, DOCX (Up to 15MB per file)
+                </p>
                 <input
                   type="file"
                   multiple
                   ref={fileInputRef}
                   onChange={handleFileChange}
+                  accept=".jpg,.jpeg,.png,.webp,.pdf,.txt,.doc,.docx"
                   className="hidden"
                 />
               </div>
+
+              {attachedFiles.length > 0 && (
+                <div className="space-y-1 max-h-32 overflow-y-auto custom-scrollbar pt-1">
+                  {attachedFiles.map((file, idx) => (
+                    <div
+                      key={`${file.name}-${idx}`}
+                      className="flex items-center justify-between rounded-lg border border-zinc-800 bg-[#121214] px-2.5 py-1.5 text-xs"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="material-symbols-outlined text-sm text-sky-400">
+                          {file.type.includes("pdf")
+                            ? "picture_as_pdf"
+                            : file.type.includes("image")
+                            ? "image"
+                            : "description"}
+                        </span>
+                        <span className="truncate text-zinc-200 text-xs font-mono">{file.name}</span>
+                        <span className="text-[10px] text-zinc-500 font-mono">
+                          ({(file.size / 1024).toFixed(1)} KB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveFile(idx, e)}
+                        className="rounded p-1 text-zinc-400 hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                        title="Remove file"
+                      >
+                        <span className="material-symbols-outlined text-sm">close</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Footer Buttons */}

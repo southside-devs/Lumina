@@ -39,6 +39,17 @@ export interface DistrictSummary {
   risk_level?: "High" | "Medium" | "Low";
 }
 
+export interface AttachmentItem {
+  id: string;
+  fir_id: number;
+  file_name: string;
+  stored_name: string;
+  content_type: string;
+  file_size: number;
+  uploaded_at: string;
+  url: string;
+}
+
 export interface FIRItem {
   ROWID: number;
   ID?: number;
@@ -53,6 +64,7 @@ export interface FIRItem {
   Status: "Under Investigation" | "Chargesheeted" | "Closed" | "Convicted" | "Acquitted" | string;
   District_Name?: string;
   Station_Name?: string;
+  attachments?: AttachmentItem[];
 }
 
 export interface RiskScoreItem {
@@ -126,6 +138,7 @@ export interface CreateFIRResult {
   Latitude: number;
   Longitude: number;
   Station_ID: number;
+  attachments?: AttachmentItem[];
 }
 
 export interface AIChatResponse {
@@ -636,6 +649,109 @@ export const api = {
       return "📊 [LUMINA Strategic Intel]: Bengaluru Urban leads statewide FIR density (523 active FIRs), followed by Belagavi (260) and Mangaluru (206). Theft and Assault represent 31% of total volume.";
     }
     return `📊 [LUMINA AI Copilot]: Processed 5,000 statewide records across 209 mapped police stations. All intelligence feeds are live and operational.`;
+  },
+
+  /**
+   * Upload one or more evidence files for an FIR.
+   * Uses multipart/form-data with seamless fallback to Base64 JSON.
+   */
+  async uploadFirAttachments(firId: number | string, files: File[]): Promise<AttachmentItem[]> {
+    if (!files || files.length === 0) return [];
+    try {
+      const formData = new FormData();
+      for (const file of files) {
+        formData.append("files", file);
+      }
+      const base = getApiBase();
+      const token = typeof window !== "undefined" ? localStorage.getItem("lumina_auth_token") : null;
+      const headers: Record<string, string> = {
+        "X-Lumina-Demo-Key": DEMO_KEY,
+      };
+      if (token) {
+        headers["X-Lumina-Token"] = token;
+        headers["X-Auth-Token"] = token;
+      }
+
+      const res = await fetch(`${base}/uploads/fir/${firId}`, {
+        method: "POST",
+        headers,
+        body: formData,
+      });
+
+      if (!res.ok) {
+        return await this.uploadFirAttachmentsBase64(firId, files);
+      }
+
+      const json = await res.json();
+      if (json && json.status === "success" && json.data?.attachments) {
+        return json.data.attachments as AttachmentItem[];
+      }
+      return [];
+    } catch (err) {
+      console.warn("Multipart upload error, attempting Base64 fallback:", err);
+      return await this.uploadFirAttachmentsBase64(firId, files);
+    }
+  },
+
+  /**
+   * Fallback Base64 JSON upload for proxies or gateways that strip multipart/form-data
+   */
+  async uploadFirAttachmentsBase64(firId: number | string, files: File[]): Promise<AttachmentItem[]> {
+    try {
+      const attachments = await Promise.all(
+        files.map(async (file) => {
+          const data = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+          return {
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            data,
+          };
+        })
+      );
+
+      const res = await fetchRawJson<{ attachments: AttachmentItem[] }>(`/uploads/fir/${firId}`, {
+        method: "POST",
+        body: JSON.stringify({ attachments }),
+      });
+
+      if (res && res.status === "success" && res.data?.attachments) {
+        return res.data.attachments;
+      }
+      return [];
+    } catch (e) {
+      console.error("Base64 upload fallback also failed:", e);
+      return [];
+    }
+  },
+
+  /**
+   * Fetch all attached evidence items for an FIR
+   */
+  async getFirAttachments(firId: number | string): Promise<AttachmentItem[]> {
+    try {
+      const res = await fetchRawJson<{ attachments: AttachmentItem[] }>(`/uploads/fir/${firId}`);
+      if (res && res.status === "success" && res.data?.attachments) {
+        return res.data.attachments;
+      }
+      return [];
+    } catch (e) {
+      console.warn(`Failed fetching attachments for FIR #${firId}:`, e);
+      return [];
+    }
+  },
+
+  /**
+   * Get direct preview or download stream URL for an uploaded evidence file
+   */
+  getAttachmentFileUrl(firId: number | string, filename: string): string {
+    const base = getApiBase();
+    return `${base}/uploads/files/${firId}/${encodeURIComponent(filename)}`;
   },
 
   /**

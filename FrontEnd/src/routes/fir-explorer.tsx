@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { toast } from "sonner";
-import { api, type FIRItem } from "@/lib/api";
+import { api, type FIRItem, type AttachmentItem } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 import { generateOfficialFIRPDF } from "@/lib/pdf-generator";
 import { AuthGuard } from "@/lib/auth";
@@ -66,8 +66,29 @@ function FIRExplorerView() {
   const [selectedStatus, setSelectedStatus] = useState("All Statuses");
   const [selectedCrimeGroup, setSelectedCrimeGroup] = useState("All Crime Types");
   const [selectedFir, setSelectedFir] = useState<FIRItem | null>(null);
+  const [modalAttachments, setModalAttachments] = useState<AttachmentItem[]>([]);
+  const [loadingAttachments, setLoadingAttachments] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const { firCreatedCount, notifyFIRCreated } = useFIREvents();
+
+  // Load attachments when an FIR is selected
+  useEffect(() => {
+    if (selectedFir) {
+      if (selectedFir.attachments && selectedFir.attachments.length > 0) {
+        setModalAttachments(selectedFir.attachments);
+      } else {
+        setLoadingAttachments(true);
+        api.getFirAttachments(selectedFir.ROWID)
+          .then((atts) => {
+            setModalAttachments(atts);
+            setLoadingAttachments(false);
+          })
+          .catch(() => setLoadingAttachments(false));
+      }
+    } else {
+      setModalAttachments([]);
+    }
+  }, [selectedFir]);
 
   // Reset page to 1 when filters change
   const handleStatusChange = (status: string) => {
@@ -297,7 +318,18 @@ function FIRExplorerView() {
                           onClick={() => setSelectedFir(fir)}
                         >
                           <td className="px-5 py-2.5 font-bold text-sky-400">
-                            #{fir.FIR_Number}
+                            <div className="flex items-center gap-2">
+                              <span>#{fir.FIR_Number}</span>
+                              {fir.attachments && fir.attachments.length > 0 && (
+                                <span
+                                  className="inline-flex items-center gap-0.5 rounded bg-sky-500/15 border border-sky-500/30 px-1 py-0.5 text-[9px] font-mono text-sky-400 font-bold"
+                                  title={`${fir.attachments.length} evidence attachment(s) indexed`}
+                                >
+                                  <span className="material-symbols-outlined text-[11px]">attach_file</span>
+                                  <span>{fir.attachments.length}</span>
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-5 py-2.5 text-zinc-400">
                             {fir.Date || "2025-11-10"}
@@ -519,6 +551,65 @@ function FIRExplorerView() {
               </p>
             </div>
 
+            {/* Secured Evidence & Annexures */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[10px] uppercase text-zinc-400 tracking-wider font-bold flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm text-sky-400">attach_file</span>
+                  Secured Evidence &amp; Annexures ({modalAttachments.length})
+                </span>
+                {loadingAttachments && (
+                  <span className="text-[10px] text-zinc-500 font-mono animate-pulse">Checking records...</span>
+                )}
+              </div>
+
+              {modalAttachments.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {modalAttachments.map((att) => {
+                    const fileUrl = att.url.startsWith("http")
+                      ? att.url
+                      : api.getAttachmentFileUrl(att.fir_id, att.stored_name);
+                    const isImg = att.content_type.includes("image");
+                    const isPdf = att.content_type.includes("pdf");
+                    return (
+                      <a
+                        key={att.id}
+                        href={fileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center justify-between p-2.5 rounded-lg border border-zinc-800 bg-zinc-950 hover:bg-zinc-800/80 hover:border-sky-500/50 transition-all group cursor-pointer"
+                        title={`Download / Preview ${att.file_name}`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <div className="size-7 rounded bg-sky-500/10 border border-sky-500/20 flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-sm text-sky-400">
+                              {isPdf ? "picture_as_pdf" : isImg ? "image" : "description"}
+                            </span>
+                          </div>
+                          <div className="truncate text-left">
+                            <p className="text-xs text-zinc-200 font-mono truncate group-hover:text-sky-300 transition-colors">
+                              {att.file_name}
+                            </p>
+                            <p className="text-[10px] text-zinc-500 font-mono">
+                              {(att.file_size / 1024).toFixed(1)} KB • {att.uploaded_at ? new Date(att.uploaded_at).toLocaleDateString() : "Uploaded"}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="material-symbols-outlined text-xs text-zinc-500 group-hover:text-white transition-colors shrink-0 ml-1">
+                          open_in_new
+                        </span>
+                      </a>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex items-center justify-between py-2 px-3 rounded-lg border border-dashed border-zinc-800/80 bg-zinc-950/40 text-xs text-zinc-500">
+                  <span>No physical or digital exhibits appended to this FIR.</span>
+                  <span className="text-[10px] font-mono text-zinc-600">Form No. 1 Annexure Blank</span>
+                </div>
+              )}
+            </div>
+
             {/* Coordinates & Geo Location */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-3.5 flex items-center justify-between font-mono text-xs">
               <div>
@@ -555,7 +646,7 @@ function FIRExplorerView() {
 
               <button
                 type="button"
-                onClick={() => generateOfficialFIRPDF(selectedFir)}
+                onClick={() => generateOfficialFIRPDF(selectedFir, modalAttachments)}
                 className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-500/10 px-3.5 py-2 font-semibold text-sky-300 hover:bg-sky-500/20 hover:border-sky-500/60 shadow-md cursor-pointer transition-all"
               >
                 <span className="material-symbols-outlined text-sm">description</span>

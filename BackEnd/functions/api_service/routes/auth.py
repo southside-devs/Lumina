@@ -322,17 +322,32 @@ def _find_officer_by_id(officer_id: str) -> dict | None:
     return None
 
 
-def _check_rate_limit(key: str, max_requests: int = 4, window_seconds: int = 900) -> bool:
-    """Returns True if request is allowed, False if rate limited."""
+def _get_client_ip(request: Request) -> str:
+    """Extract real client IP address, safely handling reverse proxies, CDNs, and load balancers."""
+    forwarded = request.headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP", "")
+    if real_ip:
+        return real_ip.strip()
+    return request.remote_addr or "127.0.0.1"
+
+
+def _check_rate_limit(key: str, max_requests: int = 4, window_seconds: int = 900) -> tuple[bool, int]:
+    """
+    Sliding-window rate limiter.
+    Returns (is_allowed: bool, retry_after_seconds: int).
+    """
     now = time.time()
     timestamps = RATE_LIMIT_STORE.get(key, [])
     timestamps = [t for t in timestamps if now - t < window_seconds]
     if len(timestamps) >= max_requests:
         RATE_LIMIT_STORE[key] = timestamps
-        return False
+        retry_after = int(window_seconds - (now - timestamps[0])) + 1
+        return False, max(retry_after, 1)
     timestamps.append(now)
     RATE_LIMIT_STORE[key] = timestamps
-    return True
+    return True, 0
 
 
 # ── Route Dispatcher ─────────────────────────────────────────────────────
@@ -386,6 +401,15 @@ def login_handler(request: Request):
 
     if not badge_id.strip() or not password:
         return bad_request("Both Badge ID and Password are required.")
+
+    client_ip = _get_client_ip(request)
+    login_allowed, login_retry = _check_rate_limit(f"login_ip:{client_ip}", max_requests=15, window_seconds=900)
+    if not login_allowed:
+        mins = max(1, login_retry // 60)
+        return make_response(jsonify({
+            "status": "error",
+            "message": f"Too many authentication attempts from this terminal. Please wait {mins} minute(s)."
+        }), 429)
 
     officer = _find_officer_by_badge_or_email(badge_id)
     if not officer:
@@ -604,13 +628,34 @@ def forgot_password_handler(request: Request):
     if not identifier:
         return bad_request("Badge ID or Official Email is required.")
 
-    # Rate limiting by identifier and client IP (max 4 requests per 15 minutes)
-    client_ip = request.remote_addr or "unknown"
-    rate_key = f"{client_ip}:{identifier.lower()}"
-    if not _check_rate_limit(rate_key, max_requests=4, window_seconds=900):
+    client_ip = _get_client_ip(request)
+    clean_id = _normalize_badge(identifier) if "@" not in identifier else identifier.lower()
+
+    # Tier 1: IP-level rate limiting (max 10 recovery requests per 15 minutes per IP across all accounts)
+    ip_allowed, ip_retry_after = _check_rate_limit(f"forgot_ip:{client_ip}", max_requests=10, window_seconds=900)
+    if not ip_allowed:
+        mins = max(1, ip_retry_after // 60)
         return make_response(jsonify({
             "status": "error",
-            "message": "Too many security reset attempts. For state cyber security, please wait 15 minutes before retrying."
+            "message": f"Too many security reset attempts from this terminal. For state cyber security, please wait {mins} minute(s)."
+        }), 429)
+
+    # Tier 2: Target account rate limiting (max 3 PIN dispatches per 15 minutes per account across all IPs)
+    target_allowed, target_retry_after = _check_rate_limit(f"forgot_target:{clean_id}", max_requests=3, window_seconds=900)
+    if not target_allowed:
+        mins = max(1, target_retry_after // 60)
+        return make_response(jsonify({
+            "status": "error",
+            "message": f"Security dispatch limit reached for this officer credential. Please wait {mins} minute(s) before requesting another PIN."
+        }), 429)
+
+    # Tier 3: Specific IP + Target combination (max 3 per 15 minutes)
+    pair_allowed, pair_retry = _check_rate_limit(f"forgot_pair:{client_ip}:{clean_id}", max_requests=3, window_seconds=900)
+    if not pair_allowed:
+        mins = max(1, pair_retry // 60)
+        return make_response(jsonify({
+            "status": "error",
+            "message": f"Too many reset attempts for this credential. Please wait {mins} minute(s) before retrying."
         }), 429)
 
     officer = _find_officer_by_badge_or_email(identifier)
@@ -694,6 +739,15 @@ def reset_password_handler(request: Request):
 
     if not identifier or not code or not new_password:
         return bad_request("Badge ID, Verification PIN, and New Password are required.")
+
+    client_ip = _get_client_ip(request)
+    pin_allowed, pin_retry = _check_rate_limit(f"reset_pin_ip:{client_ip}", max_requests=10, window_seconds=900)
+    if not pin_allowed:
+        mins = max(1, pin_retry // 60)
+        return make_response(jsonify({
+            "status": "error",
+            "message": f"Too many verification attempts from this terminal. Please wait {mins} minute(s)."
+        }), 429)
 
     officer = _find_officer_by_badge_or_email(identifier)
     if not officer:

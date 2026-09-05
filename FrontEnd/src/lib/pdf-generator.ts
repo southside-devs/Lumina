@@ -4,7 +4,7 @@
  * with official Karnataka State Police emblem, legal classification headers, and seal blocks.
  */
 
-import type { FIRItem } from "./api";
+import { api, type FIRItem, type AttachmentItem } from "./api";
 
 export interface BriefingData {
   title?: string;
@@ -20,11 +20,20 @@ export interface BriefingData {
 /**
  * Generates an official Form No. 1 First Information Report (BNSS 2023 / CrPC 154)
  */
-export function generateOfficialFIRPDF(fir: FIRItem) {
+export async function generateOfficialFIRPDF(fir: FIRItem, explicitAttachments?: AttachmentItem[]) {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
     alert("Please allow popups in your browser to download the Official FIR PDF.");
     return;
+  }
+
+  let attachments = explicitAttachments || fir.attachments;
+  if (!attachments) {
+    try {
+      attachments = await api.getFirAttachments(fir.ROWID);
+    } catch {
+      attachments = [];
+    }
   }
 
   const district = fir.District_Name || "Bengaluru Urban";
@@ -311,7 +320,45 @@ export function generateOfficialFIRPDF(fir: FIRItem) {
     "${fir.Narrative}"
   </div>
 
-  <div class="section-head">4. Preliminary Investigation Directives &amp; Action Taken</div>
+  <div class="section-head">4. Enclosed Evidence, Physical Exhibits &amp; Annexures</div>
+  ${
+    attachments && attachments.length > 0
+      ? `
+  <table class="grid-table" style="margin-bottom: 14px;">
+    <thead>
+      <tr style="background: #f1f5f9; font-size: 10px; text-transform: uppercase;">
+        <th style="width: 12%; text-align: center;">Item #</th>
+        <th style="width: 38%;">Exhibit / Document Title</th>
+        <th style="width: 20%;">MIME Classification</th>
+        <th style="width: 15%;">Payload Size</th>
+        <th style="width: 15%;">Registry Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${attachments
+        .map(
+          (att, index) => `
+      <tr>
+        <td style="text-align: center; font-weight: bold; font-family: monospace;">EX-${String(index + 1).padStart(2, "0")}</td>
+        <td style="font-family: monospace; font-weight: 600; color: #0f172a;">${att.file_name}</td>
+        <td style="font-size: 10px; font-family: monospace; color: #334155;">${att.content_type}</td>
+        <td style="font-size: 10px; font-family: monospace; color: #334155;">${(att.file_size / 1024).toFixed(1)} KB</td>
+        <td style="font-size: 9px; font-family: monospace; font-weight: bold; color: #0369a1;">SECURED IN VAULT</td>
+      </tr>
+      `
+        )
+        .join("")}
+    </tbody>
+  </table>
+  `
+      : `
+  <div class="narrative-box" style="margin-bottom: 14px; font-style: italic; color: #64748b;">
+    No physical or digital exhibits appended at initial registration. (Form No. 1 Annexure-A is kept on reserve for supplementary forensic submissions).
+  </div>
+  `
+  }
+
+  <div class="section-head">5. Preliminary Investigation Directives &amp; Action Taken</div>
   <table class="grid-table">
     <tr>
       <th>Investigating Officer</th>

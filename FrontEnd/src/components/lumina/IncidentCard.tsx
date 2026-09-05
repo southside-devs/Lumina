@@ -67,6 +67,17 @@ export function IncidentCard({ onClose, spot, fir }: IncidentCardProps) {
               {Number(fir.Latitude).toFixed(4)}, {Number(fir.Longitude).toFixed(4)}
             </span>
           </div>
+          {fir.attachments && fir.attachments.length > 0 && (
+            <div className="flex items-center justify-between font-mono text-[10px] text-sky-400 pt-1 border-t border-zinc-800">
+              <span className="flex items-center gap-1">
+                <span className="material-symbols-outlined text-[13px]">attach_file</span>
+                <span>EVIDENCE ANNEXURES</span>
+              </span>
+              <span className="font-bold text-white bg-sky-500/20 px-1.5 py-0.5 rounded border border-sky-500/30">
+                {fir.attachments.length} file{fir.attachments.length > 1 ? "s" : ""}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Action Links */}
@@ -81,6 +92,7 @@ export function IncidentCard({ onClose, spot, fir }: IncidentCardProps) {
           </Link>
           <Link
             to="/fir-explorer"
+            search={{ fir: fir.FIR_Number } as any}
             className="flex-1 flex items-center justify-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             <span>Open Case Dossier</span>

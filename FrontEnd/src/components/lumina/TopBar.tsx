@@ -309,7 +309,6 @@ export function TopBar() {
               onPrivateChange={setIsPrivate}
               onClose={() => setPanel("none")}
               onOpenDetail={(type) => setProfileModal(type)}
-              onResetPasskeys={() => setProfileModal("passkeys")}
               onLogout={() => {
                 logout();
                 navigate({ to: "/login" });
