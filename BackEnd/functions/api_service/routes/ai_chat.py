@@ -8,8 +8,6 @@ from utils.response import success, bad_request, server_error
 from utils.auth import check_any_authenticated
 from utils.db import DataStore
 
-_DEFAULT_API_TOKEN = base64.b64decode("QVEuQWI4Uk42SzRfTHJSb1hxc3VCMVk2Zy1tNFRzcE83SWVzRDdYdi1PUUJGWU1tZTJUMXc=").decode("utf-8")
-
 
 def handle(request, path_parts):
     """Route dispatcher for /api/ai-chat endpoints."""
@@ -259,7 +257,7 @@ def process_chat(request):
         context_data = data.get('context', '')
         language = str(data.get('language', 'en')).lower().strip()  # 'en' or 'kn'
 
-        api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY') or _DEFAULT_API_TOKEN
+        api_key = os.environ.get('GEMINI_API_KEY') or os.environ.get('GOOGLE_API_KEY')
         if not api_key:
             return server_error("GEMINI_API_KEY environment variable is not configured on this server.")
 
