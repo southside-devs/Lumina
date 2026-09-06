@@ -211,6 +211,7 @@ def decode_jwt_token(token: str) -> dict | None:
 
 _OFFICERS_CACHE: list[dict] = []
 _CACHE_INITIALIZED = False
+_CURRENT_REQUEST: Request | None = None
 OFFICERS_FILE = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "data", "officers_store.json"))
 
 # In-memory security stores for reset sessions and rate limiting
@@ -218,46 +219,55 @@ RESET_SESSIONS: dict[str, dict] = {}
 RATE_LIMIT_STORE: dict[str, list[float]] = {}
 
 
-def _get_cache_segment():
+def _get_cache_segment(req: Request = None):
     """Retrieve default Catalyst Cache segment for cross-worker cloud persistence."""
     try:
         import zcatalyst_sdk
-        try:
-            app = zcatalyst_sdk.get_app()
-        except Exception:
-            app = zcatalyst_sdk.initialize()
-        return app.cache().segment()
+        app = None
+        effective_req = req or _CURRENT_REQUEST
+        if effective_req:
+            try:
+                app = zcatalyst_sdk.initialize(effective_req)
+            except Exception:
+                pass
+        if not app:
+            try:
+                app = zcatalyst_sdk.get_app()
+            except Exception:
+                try:
+                    app = zcatalyst_sdk.initialize()
+                except Exception:
+                    pass
+        if app:
+            return app.cache().segment()
+        return None
     except Exception as e:
         logger.debug(f"Catalyst Cache unavailable: {e}")
         return None
 
 
-def _save_officers():
+def _save_officers(req: Request = None):
     """Save registered officers to disk and Catalyst Cache to survive server restarts."""
     global _OFFICERS_CACHE
-    # 1. Primary persistent file (local development)
-    try:
-        os.makedirs(os.path.dirname(OFFICERS_FILE), exist_ok=True)
-        with open(OFFICERS_FILE, "w", encoding="utf-8") as f:
-            json.dump(_OFFICERS_CACHE, f, indent=2)
-    except Exception as e:
-        logger.debug(f"Could not persist officers to primary file: {e}")
+    # 1. Primary persistent file (local development & /tmp for serverless)
+    for candidate in [OFFICERS_FILE, "/tmp/lumina_officers_store.json"]:
         try:
-            tmp_path = "/tmp/lumina_officers_store.json"
-            with open(tmp_path, "w", encoding="utf-8") as f:
-                json.dump(_OFFICERS_CACHE, f)
-        except Exception:
-            pass
+            os.makedirs(os.path.dirname(candidate), exist_ok=True)
+            with open(candidate, "w", encoding="utf-8") as f:
+                json.dump(_OFFICERS_CACHE, f, indent=2)
+        except Exception as e:
+            logger.debug(f"Could not persist officers to {candidate}: {e}")
 
     # 2. Catalyst Distributed Cache (Multi-worker cloud persistence)
     try:
-        segment = _get_cache_segment()
+        segment = _get_cache_segment(req)
         if segment:
+            payload = json.dumps(_OFFICERS_CACHE)
             try:
-                segment.put("lumina_registered_officers", json.dumps(_OFFICERS_CACHE))
+                segment.put("lumina_registered_officers", payload)
             except Exception:
                 try:
-                    segment.update("lumina_registered_officers", json.dumps(_OFFICERS_CACHE))
+                    segment.update("lumina_registered_officers", payload)
                 except Exception as ue:
                     logger.debug(f"Catalyst Cache update note: {ue}")
             logger.info("Persisted registered officers to Catalyst Cache.")
@@ -265,7 +275,7 @@ def _save_officers():
         logger.debug(f"Catalyst Cache put note: {ce}")
 
 
-def _refresh_officers_from_stores():
+def _refresh_officers_from_stores(req: Request = None):
     """Load newly registered officers from Catalyst Cache or filesystem."""
     global _OFFICERS_CACHE
     existing_badges = {o["badge_id"].lower() for o in _OFFICERS_CACHE if "badge_id" in o}
@@ -273,9 +283,18 @@ def _refresh_officers_from_stores():
 
     # 1. Check Catalyst Cache (shared across all cloud worker instances)
     try:
-        segment = _get_cache_segment()
+        segment = _get_cache_segment(req)
         if segment:
-            raw = segment.get_value("lumina_registered_officers")
+            raw = None
+            try:
+                raw = segment.get_value("lumina_registered_officers")
+            except Exception:
+                try:
+                    cache_obj = segment.get("lumina_registered_officers")
+                    if cache_obj:
+                        raw = cache_obj.get("cache_value")
+                except Exception:
+                    pass
             if raw:
                 cached = json.loads(raw)
                 if isinstance(cached, list) and cached:
@@ -307,11 +326,11 @@ def _refresh_officers_from_stores():
     return new_found
 
 
-def _init_officers(db: DataStore = None):
+def _init_officers(db: DataStore = None, req: Request = None):
     """Ensure Officer table and pre-seeded officers exist in memory / database."""
     global _OFFICERS_CACHE, _CACHE_INITIALIZED
     if _CACHE_INITIALIZED and _OFFICERS_CACHE:
-        _refresh_officers_from_stores()
+        _refresh_officers_from_stores(req)
         return
 
     # Try loading from persistent file first
@@ -360,10 +379,10 @@ def _init_officers(db: DataStore = None):
         _OFFICERS_CACHE = merged
     else:
         _OFFICERS_CACHE = seeded
-        _save_officers()
+        _save_officers(req)
 
     # Also check Catalyst Cache
-    _refresh_officers_from_stores()
+    _refresh_officers_from_stores(req)
     _CACHE_INITIALIZED = True
 
 
@@ -372,7 +391,7 @@ def _normalize_badge(val: str) -> str:
     return re.sub(r"[\s\-_]+", "", val).lower()
 
 
-def _find_officer_by_badge_or_email(identifier: str) -> dict | None:
+def _find_officer_by_badge_or_email(identifier: str, req: Request = None) -> dict | None:
     """Look up an officer by Badge ID or Email (case-insensitive and whitespace-tolerant)."""
     raw_clean = identifier.strip().lower()
     norm_id = _normalize_badge(identifier)
@@ -387,7 +406,7 @@ def _find_officer_by_badge_or_email(identifier: str) -> dict | None:
             return o
 
     # If not found, refresh from Catalyst Cache / disk stores in case another worker registered the officer
-    if _refresh_officers_from_stores():
+    if _refresh_officers_from_stores(req):
         for o in _OFFICERS_CACHE:
             o_badge = o.get("badge_id", "")
             o_email = o.get("email", "").lower()
@@ -451,8 +470,11 @@ def handle(request: Request, path_parts: list[str]):
       /api/auth/forgot-password
       /api/auth/reset-password
     """
+    global _CURRENT_REQUEST
+    _CURRENT_REQUEST = request
+
     db = DataStore(request)
-    _init_officers(db)
+    _init_officers(db, request)
 
     sub_action = path_parts[2] if len(path_parts) >= 3 else ""
 
@@ -499,16 +521,19 @@ def login_handler(request: Request):
             "message": f"Too many authentication attempts from this terminal. Please wait {mins} minute(s)."
         }), 429)
 
-    officer = _find_officer_by_badge_or_email(badge_id)
+    officer = _find_officer_by_badge_or_email(badge_id, request)
     if not officer and "enrollment_sync" in data:
         # Seamlessly auto-heal on new/cold serverless container if valid enrollment sync is provided
         sync_info = data.get("enrollment_sync") or {}
         if isinstance(sync_info, dict) and sync_info.get("email"):
             salt_hex, hash_hex = hash_password(password)
             new_id = str(len(_OFFICERS_CACHE) + 1)
+            raw_badge = (sync_info.get("badge_id") or "").strip().upper()
+            if not raw_badge:
+                raw_badge = badge_id.strip().upper() if "@" not in badge_id else "KSP-" + secrets.token_hex(3).upper()
             officer = {
                 "id": new_id,
-                "badge_id": badge_id.strip().upper(),
+                "badge_id": raw_badge,
                 "email": sync_info.get("email", "").strip().lower(),
                 "password_hash": hash_hex,
                 "salt": salt_hex,
@@ -520,14 +545,19 @@ def login_handler(request: Request):
                 "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             }
             _OFFICERS_CACHE.append(officer)
-            _save_officers()
+            _save_officers(request)
             logger.info(f"Officer '{officer['badge_id']}' self-healed via enrollment sync.")
 
     if not officer:
         logger.warning(f"Auth failed: Badge ID '{badge_id}' not found.")
         return unauthorized("Invalid Badge ID or Password.")
 
-    if not verify_password(password, officer["salt"], officer["password_hash"]):
+    pw_valid = False
+    if officer.get("salt") and officer.get("password_hash"):
+        pw_valid = verify_password(password, officer["salt"], officer["password_hash"])
+    elif officer.get("password"):
+        pw_valid = (password == officer["password"])
+    if not pw_valid:
         logger.warning(f"Auth failed: Invalid password for '{badge_id}'.")
         return unauthorized("Invalid Badge ID or Password.")
 
@@ -645,7 +675,7 @@ def register_handler(request: Request):
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }
     _OFFICERS_CACHE.append(new_officer)
-    _save_officers()
+    _save_officers(request)
 
     # Create signed session JWT
     token_payload = {

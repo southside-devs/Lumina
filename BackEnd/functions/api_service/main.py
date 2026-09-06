@@ -63,11 +63,14 @@ def handler(request: Request):
         return response
 
     try:
-        # Initialize Catalyst SDK
+        # Initialize Catalyst SDK with request for Advanced I/O authentication headers
         try:
-            zcatalyst_sdk.initialize()
+            zcatalyst_sdk.initialize(request)
         except Exception as ie:
-            logger.warning(f"SDK initialize note: {ie}")
+            try:
+                zcatalyst_sdk.initialize()
+            except Exception:
+                logger.warning(f"SDK initialize note: {ie}")
 
         path = request.path.rstrip("/")
         path_parts = [p for p in path.split("/") if p]

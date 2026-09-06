@@ -62,11 +62,21 @@ export function saveStoredEnrolledOfficer(profile: EnrolledOfficerProfile): void
   if (typeof window === "undefined") return;
   try {
     const store = getStoredEnrolledOfficers();
-    const cleanBadge = profile.badgeId.trim().toUpperCase();
+    const rawBadge = profile.badgeId.trim();
+    const cleanBadge = rawBadge.toUpperCase();
+    const lowerBadge = rawBadge.toLowerCase();
+    const normBadge = cleanBadge.replace(/[\s\-_]+/g, "");
+
     store[cleanBadge] = profile;
-    store[profile.badgeId.trim().toLowerCase()] = profile;
+    store[lowerBadge] = profile;
+    store[normBadge] = profile;
+    store[rawBadge] = profile;
+
     if (profile.email) {
-      store[profile.email.trim().toLowerCase()] = profile;
+      const rawEmail = profile.email.trim();
+      store[rawEmail.toLowerCase()] = profile;
+      store[rawEmail.toUpperCase()] = profile;
+      store[rawEmail] = profile;
     }
     localStorage.setItem(ENROLLED_OFFICERS_KEY, JSON.stringify(store));
   } catch (e) {
@@ -172,14 +182,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (badgeId: string, password: string): Promise<OfficerUser> => {
     const apiBase = getApiBase();
-    const cleanId = badgeId.trim().toUpperCase();
+    const rawInput = badgeId.trim();
+    const cleanId = rawInput.toUpperCase();
+    const lowerId = rawInput.toLowerCase();
+    const normId = cleanId.replace(/[\s\-_]+/g, "");
     const enrolledStore = getStoredEnrolledOfficers();
-    const localProfile = enrolledStore[cleanId] || enrolledStore[badgeId.trim().toLowerCase()];
+    const localProfile =
+      enrolledStore[cleanId] ||
+      enrolledStore[lowerId] ||
+      enrolledStore[normId] ||
+      enrolledStore[rawInput];
 
     // Pass enrollment sync metadata to auto-heal cold/recycled cloud serverless containers
     const reqBody: any = { badge_id: badgeId, password };
     if (localProfile && localProfile.password === password) {
       reqBody.enrollment_sync = {
+        badge_id: localProfile.badgeId,
         officer_name: localProfile.officerName,
         station_unit: localProfile.stationUnit,
         rank: localProfile.rank,

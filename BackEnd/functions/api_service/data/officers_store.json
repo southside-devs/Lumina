@@ -51,44 +51,5 @@
     "role": "Officer",
     "status": "Active",
     "created_at": "2026-09-04T19:25:01Z"
-  },
-  {
-    "id": "5",
-    "badge_id": "KSP-TEST-999",
-    "email": "test.officer@ksp.gov.in",
-    "password_hash": "1a67775feeafabe9a72f5fd6d51ca916ca76e86138967ca7aa657f0f1bf7e643",
-    "salt": "c608ae1a6cdeae65a670885bdf78ea60",
-    "officer_name": "Test Officer",
-    "rank": "Sub-Inspector",
-    "station_unit": "Bengaluru Central",
-    "role": "Officer",
-    "status": "Active",
-    "created_at": "2026-09-06T15:09:15Z"
-  },
-  {
-    "id": "6",
-    "badge_id": "KSP-7788",
-    "email": "test.inspector@ksp.gov.in",
-    "password_hash": "e7bc111312b70b5ab114b4310f8ff53cb43ba756cd07fc4c429cd180329b8c54",
-    "salt": "949d487f911468ec0f80e500541bb9b6",
-    "officer_name": "Inspector Test Officer",
-    "rank": "Police Inspector",
-    "station_unit": "Central Command Bengaluru",
-    "role": "Officer",
-    "status": "Active",
-    "created_at": "2026-09-06T15:18:15Z"
-  },
-  {
-    "id": "7",
-    "badge_id": "KSP-0143",
-    "email": "omarvfais@gmail.com",
-    "password_hash": "75623382b21a04b105c0e871e9b481b2265280ab854934adbdfc7a41317269ec",
-    "salt": "5fa7892d02cbc8c17fed869311167d56",
-    "officer_name": "Omar",
-    "rank": "Police Inspector",
-    "station_unit": "Belagavi North Division",
-    "role": "Officer",
-    "status": "Active",
-    "created_at": "2026-09-06T16:56:47Z"
   }
 ]
