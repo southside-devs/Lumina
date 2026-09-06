@@ -37,6 +37,42 @@ interface AuthContextType {
 
 const TOKEN_KEY = "lumina_auth_token";
 const USER_KEY = "lumina_auth_user";
+const ENROLLED_OFFICERS_KEY = "lumina_enrolled_officers";
+
+export interface EnrolledOfficerProfile {
+  badgeId: string;
+  password?: string;
+  officerName: string;
+  stationUnit: string;
+  rank: string;
+  email: string;
+}
+
+export function getStoredEnrolledOfficers(): Record<string, EnrolledOfficerProfile> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(ENROLLED_OFFICERS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveStoredEnrolledOfficer(profile: EnrolledOfficerProfile): void {
+  if (typeof window === "undefined") return;
+  try {
+    const store = getStoredEnrolledOfficers();
+    const cleanBadge = profile.badgeId.trim().toUpperCase();
+    store[cleanBadge] = profile;
+    store[profile.badgeId.trim().toLowerCase()] = profile;
+    if (profile.email) {
+      store[profile.email.trim().toLowerCase()] = profile;
+    }
+    localStorage.setItem(ENROLLED_OFFICERS_KEY, JSON.stringify(store));
+  } catch (e) {
+    console.warn("Could not save enrolled officer to localStorage:", e);
+  }
+}
 
 // Pre-seeded fallback officer (Insp. Rajesh Kumar) for offline presentation resilience
 export const DEFAULT_OFFICER: OfficerUser = {
@@ -78,15 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Validate active session on initial mount
   useEffect(() => {
     let isMounted = true;
-
     const verifySession = async () => {
-      const storedToken = getStoredAuthToken();
-      if (!storedToken) {
-        if (isMounted) {
-          setUser(null);
-          setToken(null);
-          setIsLoading(false);
-        }
+      const activeToken = getStoredAuthToken();
+      if (!activeToken) {
+        setIsLoading(false);
         return;
       }
 
@@ -94,39 +125,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const apiBase = getApiBase();
         const res = await fetch(`${apiBase}/auth/me`, {
           headers: {
-            "X-Lumina-Token": storedToken,
-            "X-Auth-Token": storedToken,
+            Authorization: `Bearer ${activeToken}`,
+            "X-Lumina-Token": activeToken,
             "X-Lumina-Demo-Key": "lumina-demo-ksp-2026",
           },
         });
 
         if (res.ok) {
           const json = await res.json();
-          const officerData = json?.data?.officer;
-          if (officerData && isMounted) {
-            const mappedUser: OfficerUser = {
-              id: String(officerData.id),
-              badgeId: officerData.badge_id || officerData.badgeId,
-              name: officerData.name,
-              rank: officerData.rank,
-              stationUnit: officerData.station_unit || officerData.stationUnit,
-              role: officerData.role,
-              email: officerData.email,
+          if (json.data && isMounted) {
+            const officer = json.data;
+            const validUser: OfficerUser = {
+              id: String(officer.id),
+              badgeId: officer.badge_id,
+              name: officer.name,
+              rank: officer.rank,
+              stationUnit: officer.station_unit,
+              role: officer.role,
+              email: officer.email,
             };
-            setUser(mappedUser);
-            localStorage.setItem(USER_KEY, JSON.stringify(mappedUser));
+            setUser(validUser);
+            localStorage.setItem(USER_KEY, JSON.stringify(validUser));
           }
-        } else if (res.status === 401) {
-          // Token expired or invalid
+        } else if (res.status === 401 || res.status === 403) {
           if (isMounted) {
             localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem(USER_KEY);
-            setUser(null);
             setToken(null);
+            setUser(null);
           }
         }
       } catch (err) {
-        // Network offline fallback: keep cached user if present
         console.warn("Session verification warning (operating in resilient mode):", err);
       } finally {
         if (isMounted) {
@@ -143,14 +172,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (badgeId: string, password: string): Promise<OfficerUser> => {
     const apiBase = getApiBase();
-    const res = await fetch(`${apiBase}/auth/login`, {
+    const cleanId = badgeId.trim().toUpperCase();
+    const enrolledStore = getStoredEnrolledOfficers();
+    const localProfile = enrolledStore[cleanId] || enrolledStore[badgeId.trim().toLowerCase()];
+
+    // Pass enrollment sync metadata to auto-heal cold/recycled cloud serverless containers
+    const reqBody: any = { badge_id: badgeId, password };
+    if (localProfile && localProfile.password === password) {
+      reqBody.enrollment_sync = {
+        officer_name: localProfile.officerName,
+        station_unit: localProfile.stationUnit,
+        rank: localProfile.rank,
+        email: localProfile.email,
+      };
+    }
+
+    let res = await fetch(`${apiBase}/auth/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Lumina-Demo-Key": "lumina-demo-ksp-2026",
       },
-      body: JSON.stringify({ badge_id: badgeId, password }),
+      body: JSON.stringify(reqBody),
     });
+
+    // If 401 and we have matching locally enrolled credentials, attempt active self-healing re-sync
+    if (res.status === 401 && localProfile && localProfile.password === password) {
+      try {
+        const syncRes = await fetch(`${apiBase}/auth/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Lumina-Demo-Key": "lumina-demo-ksp-2026",
+          },
+          body: JSON.stringify({
+            badge_id: localProfile.badgeId,
+            password: localProfile.password,
+            officer_name: localProfile.officerName,
+            station_unit: localProfile.stationUnit,
+            rank: localProfile.rank,
+            email: localProfile.email,
+          }),
+        });
+        if (syncRes.ok) {
+          // Retry login immediately against refreshed worker
+          res = await fetch(`${apiBase}/auth/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Lumina-Demo-Key": "lumina-demo-ksp-2026",
+            },
+            body: JSON.stringify({ badge_id: badgeId, password }),
+          });
+        }
+      } catch (syncErr) {
+        console.warn("Self-healing enrollment sync fallback:", syncErr);
+      }
+    }
 
     let json: any = null;
     try {
@@ -185,6 +263,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     setToken(sessionToken);
     setUser(authenticatedUser);
+
+    // Also update/save enrolled officer credentials on this terminal
+    saveStoredEnrolledOfficer({
+      badgeId: officer.badge_id,
+      password: password,
+      officerName: officer.name,
+      stationUnit: officer.station_unit,
+      rank: officer.rank,
+      email: officer.email,
+    });
 
     return authenticatedUser;
   }, []);
@@ -240,6 +328,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(USER_KEY, JSON.stringify(authenticatedUser));
     setToken(sessionToken);
     setUser(authenticatedUser);
+
+    // Persist enrolled officer credentials to local terminal store
+    saveStoredEnrolledOfficer({
+      badgeId: payload.badgeId,
+      password: payload.password,
+      officerName: payload.officerName,
+      stationUnit: payload.stationUnit || "Karnataka State Police",
+      rank: payload.rank || "Police Officer",
+      email: payload.email,
+    });
 
     return authenticatedUser;
   }, []);
