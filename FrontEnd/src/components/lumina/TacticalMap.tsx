@@ -282,9 +282,9 @@ export function TacticalMap({
       preferCanvas: true,
       scrollWheelZoom: false,
       smoothWheelZoom: true,
-      smoothSensitivity: 1,
+      smoothSensitivity: 1.2,
       zoomSnap: 0,
-      zoomDelta: 0.5,
+      zoomDelta: 0.75,
       zoomAnimation: true,
       zoomAnimationThreshold: 8,
     });

@@ -53,7 +53,7 @@ if (typeof window !== "undefined" && !(L.Map as any).prototype.smoothWheelZoom) 
       const delta = (L.DomEvent as any).getWheelDelta(e);
       const sensitivity = map.options.smoothSensitivity || 1;
 
-      this._goalZoom = this._goalZoom + delta * 0.003 * sensitivity;
+      this._goalZoom = this._goalZoom + delta * 0.012 * sensitivity;
       if (this._goalZoom < map.getMinZoom() || this._goalZoom > map.getMaxZoom()) {
         this._goalZoom = map._limitZoom(this._goalZoom);
       }
@@ -61,7 +61,7 @@ if (typeof window !== "undefined" && !(L.Map as any).prototype.smoothWheelZoom) 
       this._wheelMouseLatLng = map.containerPointToLatLng(this._wheelMousePosition);
 
       if (this._timeoutId) clearTimeout(this._timeoutId);
-      this._timeoutId = setTimeout(this._onWheelEnd.bind(this), 200);
+      this._timeoutId = setTimeout(this._onWheelEnd.bind(this), 140);
 
       L.DomEvent.preventDefault(e);
       L.DomEvent.stopPropagation(e);
@@ -83,7 +83,7 @@ if (typeof window !== "undefined" && !(L.Map as any).prototype.smoothWheelZoom) 
       if (Math.abs(this._goalZoom - map.getZoom()) < 0.001) {
         this._zoom = this._goalZoom;
       } else {
-        this._zoom = map.getZoom() + (this._goalZoom - map.getZoom()) * 0.3;
+        this._zoom = map.getZoom() + (this._goalZoom - map.getZoom()) * 0.45;
       }
       this._zoom = Math.round(this._zoom * 1000) / 1000;
 
