@@ -6,6 +6,7 @@ import { useSystemConfig } from "@/lib/config";
 import { DEFAULT_ST_DBSCAN_CLUSTERS } from "@/lib/default-hotspots";
 
 import karnatakaGeoJson from "./karnataka-boundary.json";
+import "@/lib/leaflet-smooth-wheel-zoom";
 
 
 export interface TacticalHotspot {
@@ -279,6 +280,11 @@ export function TacticalMap({
       zoomControl: false,
       attributionControl: false,
       preferCanvas: true,
+      scrollWheelZoom: false,
+      smoothWheelZoom: true,
+      smoothSensitivity: 1,
+      zoomSnap: 0,
+      zoomDelta: 0.5,
       zoomAnimation: true,
       zoomAnimationThreshold: 8,
     });
@@ -288,39 +294,68 @@ export function TacticalMap({
     initialTileLayer.bringToBack();
     tileLayerRef.current = initialTileLayer;
 
-    // Dedicated SVG Vector Renderer for the Administrative Boundary
-    // Attached directly to Leaflet's overlayPane to eliminate raster canvas blur
-    // and ensure perfect hardware-accelerated zoom scaling in lockstep with map tiles.
-    const boundarySvgRenderer = L.svg({ padding: 0.5 });
+    // Administrative boundary coordinates from GeoJSON
+    const rawGeo = karnatakaGeoJson as any;
+    const rings: [number, number][][] =
+      rawGeo.features[0].geometry.type === "Polygon"
+        ? rawGeo.features[0].geometry.coordinates.map((ring: number[][]) =>
+            ring.map((c: number[]) => [c[1], c[0]] as [number, number])
+          )
+        : rawGeo.features[0].geometry.coordinates.flatMap((poly: number[][][]) =>
+            poly.map((ring: number[][]) =>
+              ring.map((c: number[]) => [c[1], c[0]] as [number, number])
+            )
+          );
 
-    // Karnataka State Administrative Boundary GeoJSON Layer
-    const boundaryLayer = L.geoJSON(karnatakaGeoJson as any, {
-      renderer: boundarySvgRenderer,
-      interactive: false,
-      style: {
-        color: "#e2e8f0",
-        weight: 1.5,
-        opacity: 0.75,
-        dashArray: "5, 5",
-        fillColor: "transparent",
-        fillOpacity: 0,
-        lineCap: "square",
-        lineJoin: "miter",
-        className: "karnataka-state-boundary",
-      },
-    }).addTo(map);
+    // Dedicated SVG Vector Overlay for Karnataka State Administrative Boundary
+    // Mounted directly to the map container (outside Leaflet's scaled overlayPane)
+    // with no CSS transforms. Path coordinates are updated on map move frames,
+    // ensuring 100% crisp, unblurred 1:1 screen vector rendering during flyTo and zoom.
+    const mapContainer = map.getContainer();
+    const svgOverlay = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svgOverlay.setAttribute("class", "karnataka-boundary-overlay");
+    svgOverlay.style.position = "absolute";
+    svgOverlay.style.inset = "0";
+    svgOverlay.style.width = "100%";
+    svgOverlay.style.height = "100%";
+    svgOverlay.style.pointerEvents = "none";
+    svgOverlay.style.zIndex = "450";
+    svgOverlay.style.overflow = "visible";
 
-    // Keep boundary style crisp and properly dash-aligned on zoomend
-    const onZoomEnd = () => {
-      boundaryLayer.setStyle({
-        color: "#e2e8f0",
-        weight: 1.5,
-        opacity: 0.75,
-        dashArray: "5, 5",
-      });
+    const boundaryPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    boundaryPath.setAttribute("class", "karnataka-state-boundary");
+    boundaryPath.setAttribute("stroke", "#e2e8f0");
+    boundaryPath.setAttribute("stroke-width", "1.5");
+    boundaryPath.setAttribute("stroke-dasharray", "5, 5");
+    boundaryPath.setAttribute("stroke-opacity", "0.75");
+    boundaryPath.setAttribute("stroke-linecap", "square");
+    boundaryPath.setAttribute("stroke-linejoin", "miter");
+    boundaryPath.setAttribute("fill", "transparent");
+    boundaryPath.style.vectorEffect = "non-scaling-stroke";
+    boundaryPath.style.shapeRendering = "geometricPrecision";
+    svgOverlay.appendChild(boundaryPath);
+
+    mapContainer.appendChild(svgOverlay);
+
+    const updatePath = () => {
+      let d = "";
+      for (const ring of rings) {
+        if (!ring.length) continue;
+        for (let i = 0; i < ring.length; i++) {
+          const pt = map.latLngToContainerPoint(ring[i]);
+          d += (i === 0 ? "M " : " L ") + pt.x.toFixed(1) + " " + pt.y.toFixed(1);
+        }
+        d += " Z ";
+      }
+      boundaryPath.setAttribute("d", d);
     };
 
-    map.on("zoomend", onZoomEnd);
+    // Initial render
+    updatePath();
+
+    map.on("move", updatePath);
+    map.on("resize", updatePath);
+    map.on("viewreset", updatePath);
 
     if (!prefersReducedMotion) {
       setTimeout(() => {
@@ -347,7 +382,10 @@ export function TacticalMap({
     }
 
     return () => {
-      map.off("zoomend", onZoomEnd);
+      map.off("move", updatePath);
+      map.off("resize", updatePath);
+      map.off("viewreset", updatePath);
+      svgOverlay.remove();
       map.remove();
       mapInstanceRef.current = null;
       layerGroupRef.current = null;
