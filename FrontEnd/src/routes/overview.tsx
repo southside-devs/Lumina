@@ -12,7 +12,6 @@ import { DistrictTable } from "@/components/lumina/DistrictTable";
 import { api, type DashboardOverview, type CrimeTrend, type DistrictSummary } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
-import { AuthGuard } from "@/lib/auth";
 
 
 const title = "LUMINA — Crime Intelligence Overview";
@@ -138,8 +137,7 @@ function Overview() {
   };
 
   return (
-    <AuthGuard>
-      <div className="flex h-screen overflow-hidden bg-shell text-foreground">
+    <div className="flex h-screen overflow-hidden bg-shell text-foreground">
         <SideRail />
 
         <div className="ml-16 flex h-full flex-1 flex-col">
@@ -199,9 +197,6 @@ function Overview() {
             </div>
           </main>
         </div>
-      </div>
-    </AuthGuard>
+    </div>
   );
 }
-
-

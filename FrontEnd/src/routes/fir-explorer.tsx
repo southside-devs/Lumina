@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { api, type FIRItem, type AttachmentItem } from "@/lib/api";
 import { useFIREvents } from "@/lib/fir-events";
 import { generateOfficialFIRPDF } from "@/lib/pdf-generator";
-import { AuthGuard } from "@/lib/auth";
 
 
 const title = "LUMINA — FIR Investigation & Case Explorer";
@@ -194,8 +193,7 @@ function FIRExplorerView() {
   };
 
   return (
-    <AuthGuard>
-      <div className="flex h-screen overflow-hidden bg-shell text-foreground font-sans">
+    <div className="flex h-screen overflow-hidden bg-shell text-foreground font-sans">
         <SideRail />
 
       <div className="ml-16 flex h-full flex-1 flex-col">
@@ -676,6 +674,5 @@ function FIRExplorerView() {
         </div>
       )}
     </div>
-    </AuthGuard>
   );
 }

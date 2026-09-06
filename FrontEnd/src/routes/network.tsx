@@ -4,7 +4,6 @@ import { SideRail } from "@/components/lumina/SideRail";
 import { TopBar } from "@/components/lumina/TopBar";
 import { generateIntelligenceBriefingPDF } from "@/lib/pdf-generator";
 import { api, type TopSuspectItem, type SuspectNetworkResponse, type NetworkGraphNode } from "@/lib/api";
-import { AuthGuard } from "@/lib/auth";
 
 const title = "LUMINA — Network Topology Intelligence";
 const description =
@@ -387,8 +386,7 @@ export function NetworkTopologyView() {
   }, [nodes, selectedCategory]);
 
   return (
-    <AuthGuard>
-      <div className="flex h-screen overflow-hidden bg-[#07080c] text-foreground font-sans selection:bg-red-500/30">
+    <div className="flex h-screen overflow-hidden bg-[#07080c] text-foreground font-sans selection:bg-red-500/30">
         <SideRail />
 
       <div className="ml-16 flex h-full flex-1 flex-col">
@@ -985,6 +983,5 @@ export function NetworkTopologyView() {
         </main>
       </div>
     </div>
-    </AuthGuard>
   );
 }

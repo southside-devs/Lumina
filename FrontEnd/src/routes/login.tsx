@@ -98,7 +98,20 @@ export function LoginPage() {
   // If user is already authenticated, redirect to target immediately
   useEffect(() => {
     if (isAuthenticated && !isBooting) {
-      navigate({ to: redirectTarget });
+      const target = redirectTarget && redirectTarget !== "/login" && !redirectTarget.startsWith("/login?")
+        ? redirectTarget
+        : "/";
+      try {
+        navigate({ to: target as any });
+      } catch {
+        // Fallback
+      }
+      if (typeof window !== "undefined") {
+        const cleanHash = target.startsWith("/") ? `#${target}` : `#/${target}`;
+        if (window.location.hash !== cleanHash) {
+          window.location.hash = cleanHash;
+        }
+      }
     }
   }, [isAuthenticated, isBooting, navigate, redirectTarget]);
 
@@ -203,7 +216,20 @@ export function LoginPage() {
     toast.success(isSignUp ? "Officer Identity Enrolled" : "Access Granted", {
       description: `Welcome, ${activeOfficer?.name || "Officer"}. Command console initialized.`,
     });
-    navigate({ to: redirectTarget });
+    const target = redirectTarget && redirectTarget !== "/login" && !redirectTarget.startsWith("/login?")
+      ? redirectTarget
+      : "/";
+    try {
+      navigate({ to: target as any });
+    } catch {
+      // Fallback
+    }
+    if (typeof window !== "undefined") {
+      const cleanHash = target.startsWith("/") ? `#${target}` : `#/${target}`;
+      if (window.location.hash !== cleanHash) {
+        window.location.hash = cleanHash;
+      }
+    }
   };
 
   return (

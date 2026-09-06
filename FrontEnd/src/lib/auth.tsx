@@ -407,15 +407,26 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isLoginPage = location.pathname === "/login";
+  const isLoginPage =
+    location.pathname === "/login" ||
+    location.pathname.startsWith("/login") ||
+    (typeof window !== "undefined" &&
+      (window.location.hash.startsWith("#/login") || window.location.hash.includes("/login")));
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isLoginPage) {
       const currentPath = location.pathname || "/";
-      navigate({
-        to: "/login",
-        search: currentPath !== "/" && currentPath !== "/login" ? { redirect: currentPath } : undefined,
-      });
+      try {
+        navigate({
+          to: "/login",
+          search: currentPath !== "/" && currentPath !== "/login" ? { redirect: currentPath } : undefined,
+        });
+      } catch {
+        // Fallback
+      }
+      if (typeof window !== "undefined" && !window.location.hash.includes("/login")) {
+        window.location.hash = "#/login";
+      }
     }
   }, [isAuthenticated, isLoading, isLoginPage, navigate, location.pathname]);
 
