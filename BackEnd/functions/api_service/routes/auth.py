@@ -253,7 +253,13 @@ def _save_officers():
     try:
         segment = _get_cache_segment()
         if segment:
-            segment.put("lumina_registered_officers", json.dumps(_OFFICERS_CACHE))
+            try:
+                segment.put("lumina_registered_officers", json.dumps(_OFFICERS_CACHE))
+            except Exception:
+                try:
+                    segment.update("lumina_registered_officers", json.dumps(_OFFICERS_CACHE))
+                except Exception as ue:
+                    logger.debug(f"Catalyst Cache update note: {ue}")
             logger.info("Persisted registered officers to Catalyst Cache.")
     except Exception as ce:
         logger.debug(f"Catalyst Cache put note: {ce}")
